@@ -1,0 +1,10 @@
+---
+import '../styles/global.css'; /* <-- Essa é a linha mágica que faltava */
+import Layout from '../layouts/Layout.astro';
+import Dashboard from '../components/Dashboard';
+---
+
+<Layout title="Core NLP Console">
+	{/* O "client:load" é a mágica do Astro para fazer o React rodar no navegador */}
+	<Dashboard client:load />
+</Layout>
