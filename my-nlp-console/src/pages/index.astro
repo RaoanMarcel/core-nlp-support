@@ -1,10 +1,16 @@
 ---
-import '../styles/global.css'; /* <-- Essa é a linha mágica que faltava */
-import Layout from '../layouts/Layout.astro';
-import Dashboard from '../components/Dashboard';
+// Importamos o nosso novo Roteador
+import AppRouter from '../components/App';
+import '../styles/global.css'; // Mantenha se você tiver um arquivo de css global do tailwind
 ---
 
-<Layout title="Core NLP Console">
-	{/* O "client:load" é a mágica do Astro para fazer o React rodar no navegador */}
-	<Dashboard client:load />
-</Layout>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Core NLP - Console</title>
+  </head>
+  <body class="m-0 p-0 h-screen w-screen overflow-hidden text-slate-900 bg-[#f8f9f9]">
+    <AppRouter client:only="react" />
+  </body>
+</html>
