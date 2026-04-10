@@ -1,12 +1,12 @@
 // src/components/App.tsx
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
+import { SlidersHorizontal } from 'lucide-react';
 import { LayoutDashboard, Inbox, Activity, Settings, LifeBuoy, Menu, X } from 'lucide-react';
 
 import Dashboard from './Dashboard';
 import TicketQueue from './TicketQueue';
-// import SaudeIA from './SaudeIA';
-
+import Relatorios from './Relatorios';
 // ==========================================
 // COMPONENTE DE LAYOUT GLOBAL (SIDEBAR + OUTLET)
 // ==========================================
@@ -22,8 +22,8 @@ function Layout({ children }: { children: React.ReactNode }) {
   const navItems = [
     { path: '/', label: 'Briefing Gerencial', icon: LayoutDashboard },
     { path: '/fila', label: 'Fila de Tickets', icon: Inbox },
-    { path: '/saude', label: 'Saúde da IA', icon: Activity },
-  ];
+    { path: '/relatorios', label: 'Geração de Relatórios', icon: SlidersHorizontal }, 
+ ];
 
   return (
     <div className="flex flex-col md:flex-row h-screen w-full bg-[#f4f5f7] overflow-hidden font-sans relative">
@@ -157,6 +157,7 @@ export default function AppRouter() {
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/fila" element={<TicketQueue />} />
+          <Route path="/relatorios" element={<Relatorios />} />
         </Routes>
       </Layout>
     </BrowserRouter>

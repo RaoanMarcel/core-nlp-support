@@ -36,11 +36,6 @@ export default function Dashboard() {
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Bom dia, Gestor.</h1>
           <p className="text-sm font-medium text-slate-500 mt-0.5">Aqui está o resumo da triagem de IA de hoje.</p>
         </div>
-        <div className="flex gap-3">
-          <button className="bg-white border border-slate-200 text-slate-700 text-sm font-semibold px-4 py-2.5 rounded-lg hover:bg-slate-50 transition shadow-sm">
-            Ajustar Motor NLP
-          </button>
-        </div>
       </header>
 
       <div className="p-8 flex flex-col gap-5 h-full overflow-y-auto">
@@ -137,7 +132,12 @@ export default function Dashboard() {
               </div>
               <div className="flex flex-col gap-2.5 flex-1 overflow-y-auto pr-1">
                 {mockTopCritical.map(ticket => (
-                  <div key={ticket.id} className="group p-3.5 rounded-xl border border-slate-100 hover:border-slate-300 hover:shadow-sm transition-all cursor-pointer bg-slate-50/30 hover:bg-white flex flex-col gap-2">
+                  <div 
+                    key={ticket.id} 
+                    // ADICIONADO: Evento de clique com estado do React Router
+                    onClick={() => navigate('/fila', { state: { selectedTicketId: ticket.id } })}
+                    className="group p-3.5 rounded-xl border border-slate-100 hover:border-slate-300 hover:shadow-sm transition-all cursor-pointer bg-slate-50/30 hover:bg-white flex flex-col gap-2"
+                  >
                     <div className="flex justify-between items-start">
                       <span className="text-xs font-black text-slate-400 group-hover:text-sky-600 transition-colors">{ticket.id}</span>
                       <SeverityBadge type={ticket.severidade} />

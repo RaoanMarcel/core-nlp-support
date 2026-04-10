@@ -1,14 +1,12 @@
-// src/components/TicketQueue.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { 
-  Search, Clock, AlertTriangle, CheckCircle2, Bot, Reply, 
-  User, Paperclip, Image as ImageIcon, FileText, 
-  SlidersHorizontal, Forward, Info, ChevronLeft
+  Search, SlidersHorizontal, AlertTriangle, User, 
+  ChevronLeft, Forward, CheckCircle2, Bot, 
+  Clock, Reply, Info, Image as ImageIcon, 
+  FileText, Paperclip 
 } from 'lucide-react';
 
-// ==========================================
-// DADOS MOCKADOS
-// ==========================================
 const mockTickets = [
   { 
     id: '#1042', subject: 'Falha fatal no Checkout (Pix)', email: 'carlos.e@empresa.com', category: 'Bug Crítico', assignee: 'João P.', waitTime: '4h 15m', sla: 'critical', status: 'Aberto',
@@ -44,10 +42,20 @@ const mockTickets = [
 ];
 
 export default function TicketQueue() {
-  const [selectedTicketId, setSelectedTicketId] = useState(mockTickets[0].id);
-  // Novo estado para controlar a visualização no mobile
-  const [showMobileChat, setShowMobileChat] = useState(false);
+  const location = useLocation();
   
+  const [selectedTicketId, setSelectedTicketId] = useState(mockTickets[0].id);
+  const [showMobileChat, setShowMobileChat] = useState(false);
+
+  // Lê o ID que veio do Dashboard e atualiza o estado
+  useEffect(() => {
+    if (location.state && location.state.selectedTicketId) {
+      setSelectedTicketId(location.state.selectedTicketId);
+      setShowMobileChat(true); // Já abre o chat direto no mobile
+    }
+  }, [location.state]);
+  
+  // Encontra o objeto completo do ticket baseado no ID selecionado
   const selectedTicket = mockTickets.find(t => t.id === selectedTicketId) || mockTickets[0];
 
   return (
@@ -56,7 +64,6 @@ export default function TicketQueue() {
       {/* ========================================================
         1. FILA DE TICKETS (INBOX)
         ======================================================== */}
-      {/* No mobile, esconde se o chat estiver aberto. No desktop (md:), sempre mostra */}
       <div className={`
         ${showMobileChat ? 'hidden md:flex' : 'flex'}
         w-full md:w-[360px] bg-white border-r border-slate-200 flex-col z-10 shrink-0 h-full
@@ -87,7 +94,7 @@ export default function TicketQueue() {
               key={ticket.id}
               onClick={() => {
                 setSelectedTicketId(ticket.id);
-                setShowMobileChat(true); // Abre o chat no mobile ao clicar
+                setShowMobileChat(true); 
               }}
               className={`p-4 border-b border-slate-100 cursor-pointer transition-all border-l-4 flex gap-3 ${
                 selectedTicketId === ticket.id 
@@ -124,7 +131,6 @@ export default function TicketQueue() {
       {/* ========================================================
         2. ÁREA DE CONVERSA (CHAT)
         ======================================================== */}
-      {/* No mobile, esconde se a fila estiver visível. No desktop (md:), sempre mostra ao lado */}
       <div className={`
         ${!showMobileChat ? 'hidden md:flex' : 'flex'}
         flex-1 flex-col min-w-0 bg-white h-full
@@ -132,7 +138,6 @@ export default function TicketQueue() {
         <div className="h-[70px] md:h-[80px] px-4 md:px-8 flex justify-between items-center border-b border-slate-200 shrink-0 gap-2">
           
           <div className="flex items-center gap-2 md:gap-0 min-w-0">
-            {/* Botão Voltar Mobile */}
             <button 
               onClick={() => setShowMobileChat(false)}
               className="md:hidden p-2 -ml-2 text-slate-500 hover:text-slate-900 transition-colors shrink-0"
@@ -161,7 +166,6 @@ export default function TicketQueue() {
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 md:p-8 flex flex-col gap-4 md:gap-6 bg-slate-50/50">
-          {/* Resumo IA */}
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 p-4 md:p-5 rounded-xl flex gap-3 md:gap-4 shadow-sm">
             <div className="mt-0.5 shrink-0">
               <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shadow-sm">
@@ -176,7 +180,6 @@ export default function TicketQueue() {
             </div>
           </div>
 
-          {/* Mensagens */}
           <div className="flex flex-col gap-4">
             {selectedTicket.timeline.map(item => (
               item.type === 'system' ? (
@@ -200,7 +203,6 @@ export default function TicketQueue() {
           </div>
         </div>
 
-        {/* Editor de Resposta */}
         <div className="p-4 md:p-6 bg-white border-t border-slate-200 shrink-0">
           <div className="border border-slate-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent transition-all shadow-sm">
             <textarea 
