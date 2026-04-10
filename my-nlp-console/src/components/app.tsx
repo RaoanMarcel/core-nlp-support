@@ -1,12 +1,23 @@
 // src/components/App.tsx
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { SlidersHorizontal } from 'lucide-react';
-import { LayoutDashboard, Inbox, Activity, Settings, LifeBuoy, Menu, X } from 'lucide-react';
+import { 
+  SlidersHorizontal, 
+  LayoutDashboard, 
+  Inbox, 
+  Activity, 
+  Settings, 
+  LifeBuoy, 
+  Menu, 
+  X,
+  BookOpen // <-- Adicionado para o ícone da Base de Conhecimento
+} from 'lucide-react';
 
 import Dashboard from './Dashboard';
 import TicketQueue from './TicketQueue';
 import Relatorios from './Relatorios';
+import KnowledgeBase from './KnowledgeBase'; // <-- Import do novo componente
+
 // ==========================================
 // COMPONENTE DE LAYOUT GLOBAL (SIDEBAR + OUTLET)
 // ==========================================
@@ -19,11 +30,13 @@ function Layout({ children }: { children: React.ReactNode }) {
     setIsMobileMenuOpen(false);
   }, [location.pathname]);
 
+  // Lista de itens de navegação atualizada
   const navItems = [
     { path: '/', label: 'Briefing Gerencial', icon: LayoutDashboard },
     { path: '/fila', label: 'Fila de Tickets', icon: Inbox },
-    { path: '/relatorios', label: 'Geração de Relatórios', icon: SlidersHorizontal }, 
- ];
+    { path: '/relatorios', label: 'Geração de Relatórios', icon: SlidersHorizontal },
+    { path: '/base', label: 'Base Interna', icon: BookOpen }, // <-- Nova Rota na Sidebar
+  ];
 
   return (
     <div className="flex flex-col md:flex-row h-screen w-full bg-[#f4f5f7] overflow-hidden font-sans relative">
@@ -158,6 +171,7 @@ export default function AppRouter() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/fila" element={<TicketQueue />} />
           <Route path="/relatorios" element={<Relatorios />} />
+          <Route path="/base" element={<KnowledgeBase />} />
         </Routes>
       </Layout>
     </BrowserRouter>
