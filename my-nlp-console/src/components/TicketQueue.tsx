@@ -4,22 +4,36 @@ import {
   Search, SlidersHorizontal, AlertTriangle, User, 
   ChevronLeft, Forward, CheckCircle2, Bot, 
   Clock, Reply, Info, Image as ImageIcon, 
-  FileText, Paperclip 
+  FileText, Paperclip, ChevronDown, RefreshCw, UserPlus 
 } from 'lucide-react';
 
 const mockTickets = [
   { 
-    id: '#1042', subject: 'Falha fatal no Checkout (Pix)', email: 'carlos.e@empresa.com', category: 'Bug Crítico', assignee: 'João P.', waitTime: '4h 15m', sla: 'critical', status: 'Aberto',
+    id: '#1042', 
+    subject: 'Falha fatal no Checkout (Pix)', 
+    email: 'carlos.e@empresa.com', 
+    category: 'Bug Crítico', 
+    assignee: 'Raoan.', 
+    sector: 'Desenvolvimento',
+    priority: 'Alta',
+    waitTime: '4h 15m', 
+    sla: 'critical', 
+    status: 'Em Análise',
     createdAt: 'Hoje, 10:42',
     aiSummary: 'Cliente relata erro 500 na tela de checkout via Pix. Log de sistema confirma timeout no gateway de pagamento.',
     timeline: [
       { 
-        id: 1, type: 'message', sender: 'carlos.e@empresa.com', time: '10:42', 
+        id: 1, type: 'message', sender: 'carlos.e@empresa.com', time: 'Hoje, 10:42', 
         content: 'Olá, tentei realizar a compra do plano Pro três vezes usando o Pix e em todas as vezes a tela fica branca e recebo um erro 500 no console. Meu saldo não foi descontado, mas preciso disso urgente para a campanha de amanhã!' 
       },
-      { 
-        id: 2, type: 'system', time: '10:43', 
-        content: 'Sistema detectou 3 tentativas falhas de transação (Gateway Timeout). ID do Log: #99281-A' 
+      
+      {
+        id: 3, type: 'system_event', icon: 'user', time: 'Hoje, 10:45',
+        content: 'Raoan assumiu o ticket'
+      },
+      {
+        id: 4, type: 'system_event', icon: 'refresh', time: 'Hoje, 14:30',
+        content: 'Raoan alterou o status para "Em Análise"'
       }
     ],
     attachments: [
@@ -28,7 +42,16 @@ const mockTickets = [
     ]
   },
   { 
-    id: '#1047', subject: 'Gateway de pagamento retornando 500', email: 'dev@cliente.com', category: 'Bug Crítico', assignee: 'Ana S.', waitTime: '3h 40m', sla: 'warning', status: 'Resolvendo',
+    id: '#1047', 
+    subject: 'Gateway de pagamento retornando 500', 
+    email: 'dev@cliente.com', 
+    category: 'Bug Crítico', 
+    assignee: 'Ana S.', 
+    sector: 'Financeiro',
+    priority: 'Média',
+    waitTime: '3h 40m', 
+    sla: 'warning', 
+    status: 'Resolvendo',
     createdAt: 'Hoje, 11:15',
     aiSummary: 'Relato de instabilidade na API de pagamentos. Possível correlação com o ticket #1042.',
     timeline: [
@@ -47,15 +70,13 @@ export default function TicketQueue() {
   const [selectedTicketId, setSelectedTicketId] = useState(mockTickets[0].id);
   const [showMobileChat, setShowMobileChat] = useState(false);
 
-  // Lê o ID que veio do Dashboard e atualiza o estado
   useEffect(() => {
     if (location.state && location.state.selectedTicketId) {
       setSelectedTicketId(location.state.selectedTicketId);
-      setShowMobileChat(true); // Já abre o chat direto no mobile
+      setShowMobileChat(true); 
     }
   }, [location.state]);
   
-  // Encontra o objeto completo do ticket baseado no ID selecionado
   const selectedTicket = mockTickets.find(t => t.id === selectedTicketId) || mockTickets[0];
 
   return (
@@ -166,6 +187,8 @@ export default function TicketQueue() {
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 md:p-8 flex flex-col gap-4 md:gap-6 bg-slate-50/50">
+          
+          {/* Caixa de Resumo IA */}
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 p-4 md:p-5 rounded-xl flex gap-3 md:gap-4 shadow-sm">
             <div className="mt-0.5 shrink-0">
               <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shadow-sm">
@@ -180,15 +203,38 @@ export default function TicketQueue() {
             </div>
           </div>
 
+          {/* Timeline de Mensagens e Eventos */}
           <div className="flex flex-col gap-4">
-            {selectedTicket.timeline.map(item => (
-              item.type === 'system' ? (
-                <div key={item.id} className="flex justify-center my-2">
-                  <div className="bg-white border border-slate-200 rounded-full px-3 py-1.5 md:px-4 md:py-1.5 text-[10px] md:text-xs text-slate-500 flex items-center gap-2 shadow-sm text-center">
-                    <Clock size={12} className="shrink-0" /> {item.time} - {item.content}
+            {selectedTicket.timeline.map(item => {
+              
+              // EVENTO DE SISTEMA (Auditoria)
+              if (item.type === 'system_event') {
+                return (
+                  <div key={item.id} className="flex justify-center my-1">
+                    <div className="flex items-center gap-2 text-[11px] md:text-xs text-slate-500 bg-transparent px-3 py-1 rounded-full">
+                      {item.icon === 'refresh' && <RefreshCw size={12} className="text-slate-400 shrink-0" />}
+                      {item.icon === 'user' && <UserPlus size={12} className="text-slate-400 shrink-0" />}
+                      <span>
+                        <span className="font-semibold text-slate-600">{item.content}</span> <span className="text-slate-300 mx-1">•</span> {item.time}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              ) : (
+                )
+              }
+              
+              // LOG/ALERTA DE SISTEMA
+              if (item.type === 'system') {
+                return (
+                  <div key={item.id} className="flex justify-center my-2">
+                    <div className="bg-white border border-slate-200 rounded-full px-3 py-1.5 md:px-4 md:py-1.5 text-[10px] md:text-xs text-slate-500 flex items-center gap-2 shadow-sm text-center">
+                      <Clock size={12} className="shrink-0" /> {item.time} - {item.content}
+                    </div>
+                  </div>
+                )
+              }
+
+              // MENSAGEM DO CLIENTE/AGENTE
+              return (
                 <div key={item.id} className="bg-white border border-slate-200 p-4 md:p-6 rounded-xl shadow-sm relative">
                   <div className="flex justify-between items-center mb-3 md:mb-4">
                     <span className="text-xs md:text-sm font-bold text-slate-900">{item.sender}</span>
@@ -199,7 +245,7 @@ export default function TicketQueue() {
                   </p>
                 </div>
               )
-            ))}
+            })}
           </div>
         </div>
 
@@ -210,7 +256,12 @@ export default function TicketQueue() {
               className="w-full p-3 md:p-4 h-20 md:h-24 resize-none text-xs md:text-sm focus:outline-none"
             />
             <div className="bg-slate-50 px-3 md:px-4 py-2.5 md:py-3 border-t border-slate-200 flex justify-between items-center">
-              <div className="flex gap-2 md:gap-3">
+              <div className="flex items-center gap-2 md:gap-3">
+                {/* NOVO BOTÃO DE ANEXO AQUI */}
+                <button className="text-slate-400 hover:text-slate-600 hover:bg-slate-200/50 p-1.5 md:p-2 rounded-lg transition-colors flex items-center justify-center" title="Adicionar Anexo">
+                  <Paperclip size={18} />
+                </button>
+                
                 <button className="text-[10px] md:text-[11px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1.5 transition-colors uppercase tracking-wide bg-blue-50 px-2 md:px-3 py-1.5 rounded-lg border border-blue-100">
                   <Bot size={14} /> <span className="hidden sm:inline">Sugerir Resposta</span><span className="sm:hidden">Sugerir</span>
                 </button>
@@ -224,7 +275,7 @@ export default function TicketQueue() {
       </div>
 
       {/* ========================================================
-        3. DIREITA: DETALHES E ANEXOS (Apenas Desktop/Lg)
+        3. DIREITA: DETALHES E METADADOS (Apenas Desktop/Lg)
         ======================================================== */}
       <div className="w-[300px] bg-[#f8f9fa] border-l border-slate-200 flex-col shrink-0 hidden lg:flex h-full">
         <div className="h-[80px] px-6 flex items-center border-b border-slate-200 shrink-0 bg-white">
@@ -234,6 +285,8 @@ export default function TicketQueue() {
         </div>
 
         <div className="p-6 flex flex-col gap-8 overflow-y-auto no-scrollbar">
+          
+          {/* Seção: Classificação */}
           <div>
             <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Classificação</h4>
             <span className="px-3 py-1.5 text-xs font-bold uppercase rounded-lg bg-rose-100 text-rose-700 border border-rose-200 inline-block">
@@ -241,6 +294,60 @@ export default function TicketQueue() {
             </span>
           </div>
 
+          {/* Nova Seção: Atributos do Ticket */}
+          <div>
+            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">Atributos do Ticket</h4>
+            <div className="flex flex-col gap-3">
+              
+              {/* Status */}
+              <div className="flex justify-between items-center group cursor-pointer">
+                <span className="text-xs text-slate-500">Status</span>
+                <div className="flex items-center gap-1.5 px-2 py-1 -mr-2 rounded-md hover:bg-slate-200/50 transition-colors">
+                  <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
+                  <span className="text-xs font-semibold text-slate-900">{selectedTicket.status}</span>
+                  <ChevronDown size={14} className="text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
+              </div>
+
+              {/* Prioridade */}
+              <div className="flex justify-between items-center group cursor-pointer">
+                <span className="text-xs text-slate-500">Prioridade</span>
+                <div className="flex items-center gap-1.5 px-2 py-1 -mr-2 rounded-md hover:bg-slate-200/50 transition-colors">
+                  <AlertTriangle size={14} className={`
+                    ${selectedTicket.priority === 'Alta' ? 'text-rose-500' : ''}
+                    ${selectedTicket.priority === 'Média' ? 'text-amber-500' : ''}
+                    ${selectedTicket.priority === 'Baixa' ? 'text-emerald-500' : ''}
+                  `} />
+                  <span className="text-xs font-semibold text-slate-900">{selectedTicket.priority}</span>
+                  <ChevronDown size={14} className="text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
+              </div>
+
+              {/* Responsável */}
+              <div className="flex justify-between items-center group cursor-pointer">
+                <span className="text-xs text-slate-500">Responsável</span>
+                <div className="flex items-center gap-2 px-2 py-1 -mr-2 rounded-md hover:bg-slate-200/50 transition-colors">
+                  <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px] font-bold">
+                    {selectedTicket.assignee.charAt(0)}
+                  </div>
+                  <span className="text-xs font-semibold text-slate-900">{selectedTicket.assignee}</span>
+                  <ChevronDown size={14} className="text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
+              </div>
+
+              {/* Setor */}
+              <div className="flex justify-between items-center group cursor-pointer">
+                <span className="text-xs text-slate-500">Setor</span>
+                <div className="flex items-center gap-1.5 px-2 py-1 -mr-2 rounded-md hover:bg-slate-200/50 transition-colors">
+                  <span className="text-xs font-semibold text-slate-900">{selectedTicket.sector}</span>
+                  <ChevronDown size={14} className="text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          {/* Seção: Anexos */}
           <div>
             <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 flex justify-between items-center">
               Anexos 
@@ -268,6 +375,7 @@ export default function TicketQueue() {
               </div>
             )}
           </div>
+
         </div>
       </div>
 
