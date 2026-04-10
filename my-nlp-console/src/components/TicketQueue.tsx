@@ -3,8 +3,7 @@ import React, { useState } from 'react';
 import { 
   Search, Clock, AlertTriangle, CheckCircle2, Bot, Reply, 
   User, Paperclip, Image as ImageIcon, FileText, 
-  SlidersHorizontal, Inbox, Forward, Info, 
-  LayoutDashboard, BarChart2, Settings, LifeBuoy
+  SlidersHorizontal, Forward, Info, ChevronLeft
 } from 'lucide-react';
 
 // ==========================================
@@ -46,21 +45,27 @@ const mockTickets = [
 
 export default function TicketQueue() {
   const [selectedTicketId, setSelectedTicketId] = useState(mockTickets[0].id);
+  // Novo estado para controlar a visualização no mobile
+  const [showMobileChat, setShowMobileChat] = useState(false);
+  
   const selectedTicket = mockTickets.find(t => t.id === selectedTicketId) || mockTickets[0];
 
   return (
-    <div className="flex h-screen w-full bg-[#f4f5f7] overflow-hidden font-sans">
+    <div className="flex h-full w-full bg-[#f4f5f7] overflow-hidden font-sans">
       
-
       {/* ========================================================
-        2. FILA DE TICKETS (INBOX) FIXA
+        1. FILA DE TICKETS (INBOX)
         ======================================================== */}
-      <div className="w-[360px] bg-white border-r border-slate-200 flex flex-col z-10 shrink-0">
-        <div className="p-5 pb-0 shrink-0 h-[80px] flex items-center border-b border-slate-100">
-          <h1 className="text-xl font-bold text-slate-900 tracking-tight">Fila de Atendimento</h1>
+      {/* No mobile, esconde se o chat estiver aberto. No desktop (md:), sempre mostra */}
+      <div className={`
+        ${showMobileChat ? 'hidden md:flex' : 'flex'}
+        w-full md:w-[360px] bg-white border-r border-slate-200 flex-col z-10 shrink-0 h-full
+      `}>
+        <div className="p-4 md:p-5 pb-0 shrink-0 h-[70px] md:h-[80px] flex items-center border-b border-slate-100">
+          <h1 className="text-lg md:text-xl font-bold text-slate-900 tracking-tight">Fila de Atendimento</h1>
         </div>
 
-        <div className="p-4 border-b border-slate-100 shrink-0">
+        <div className="p-3 md:p-4 border-b border-slate-100 shrink-0">
           <div className="flex gap-2">
             <div className="relative flex-1">
               <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -76,11 +81,14 @@ export default function TicketQueue() {
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto no-scrollbar">
           {mockTickets.map(ticket => (
             <div 
               key={ticket.id}
-              onClick={() => setSelectedTicketId(ticket.id)}
+              onClick={() => {
+                setSelectedTicketId(ticket.id);
+                setShowMobileChat(true); // Abre o chat no mobile ao clicar
+              }}
               className={`p-4 border-b border-slate-100 cursor-pointer transition-all border-l-4 flex gap-3 ${
                 selectedTicketId === ticket.id 
                   ? 'bg-blue-50 border-l-blue-600' 
@@ -114,37 +122,55 @@ export default function TicketQueue() {
       </div>
 
       {/* ========================================================
-        3. ÁREA DE CONVERSA (CHAT)
+        2. ÁREA DE CONVERSA (CHAT)
         ======================================================== */}
-      <div className="flex-1 flex flex-col min-w-0 bg-white">
-        <div className="h-[80px] px-8 flex justify-between items-center border-b border-slate-200 shrink-0">
-          <div className="flex flex-col">
-            <h2 className="text-xl font-black text-slate-900 truncate">{selectedTicket.subject}</h2>
-            <p className="text-xs text-slate-500 flex items-center gap-2 mt-0.5">
-              <span className="font-semibold text-slate-700">{selectedTicket.email}</span> • Aberto {selectedTicket.createdAt}
-            </p>
-          </div>
-          <div className="flex items-center gap-2 shrink-0 ml-4">
-            <button className="flex items-center gap-2 px-4 py-2 text-sm font-bold bg-white border border-slate-200 rounded-lg text-slate-700 hover:bg-slate-50 transition-colors shadow-sm">
-              <Forward size={16} /> Encaminhar
+      {/* No mobile, esconde se a fila estiver visível. No desktop (md:), sempre mostra ao lado */}
+      <div className={`
+        ${!showMobileChat ? 'hidden md:flex' : 'flex'}
+        flex-1 flex-col min-w-0 bg-white h-full
+      `}>
+        <div className="h-[70px] md:h-[80px] px-4 md:px-8 flex justify-between items-center border-b border-slate-200 shrink-0 gap-2">
+          
+          <div className="flex items-center gap-2 md:gap-0 min-w-0">
+            {/* Botão Voltar Mobile */}
+            <button 
+              onClick={() => setShowMobileChat(false)}
+              className="md:hidden p-2 -ml-2 text-slate-500 hover:text-slate-900 transition-colors shrink-0"
+            >
+              <ChevronLeft size={24} />
             </button>
-            <button className="flex items-center gap-2 px-4 py-2 text-sm font-bold bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm">
-              <CheckCircle2 size={16} /> Marcar Resolvido
+            
+            <div className="flex flex-col min-w-0">
+              <h2 className="text-base md:text-xl font-black text-slate-900 truncate">{selectedTicket.subject}</h2>
+              <p className="text-[11px] md:text-xs text-slate-500 flex items-center gap-1 md:gap-2 mt-0.5 truncate">
+                <span className="font-semibold text-slate-700 truncate max-w-[120px] md:max-w-none">{selectedTicket.email}</span> 
+                <span className="hidden sm:inline">•</span> 
+                <span className="truncate">Aberto {selectedTicket.createdAt}</span>
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <button className="hidden sm:flex items-center gap-2 px-3 py-2 md:px-4 md:py-2 text-sm font-bold bg-white border border-slate-200 rounded-lg text-slate-700 hover:bg-slate-50 transition-colors shadow-sm">
+              <Forward size={16} /> <span className="hidden md:inline">Encaminhar</span>
+            </button>
+            <button className="flex items-center gap-1.5 md:gap-2 px-3 py-2 md:px-4 md:py-2 text-sm font-bold bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm">
+              <CheckCircle2 size={16} /> <span className="hidden sm:inline">Resolver</span>
             </button>
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-8 flex flex-col gap-6 bg-slate-50/50">
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 flex flex-col gap-4 md:gap-6 bg-slate-50/50">
           {/* Resumo IA */}
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 p-5 rounded-xl flex gap-4 shadow-sm">
-            <div className="mt-0.5">
-              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shadow-sm">
-                <Bot size={18} />
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 p-4 md:p-5 rounded-xl flex gap-3 md:gap-4 shadow-sm">
+            <div className="mt-0.5 shrink-0">
+              <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shadow-sm">
+                <Bot size={16} className="md:w-[18px] md:h-[18px]" />
               </div>
             </div>
             <div>
-              <h4 className="text-xs font-bold text-blue-900 uppercase tracking-wider mb-1">Resumo da Triagem IA</h4>
-              <p className="text-sm text-blue-900/80 leading-relaxed font-medium">
+              <h4 className="text-[11px] md:text-xs font-bold text-blue-900 uppercase tracking-wider mb-1">Resumo da Triagem IA</h4>
+              <p className="text-xs md:text-sm text-blue-900/80 leading-relaxed font-medium">
                 {selectedTicket.aiSummary}
               </p>
             </div>
@@ -155,17 +181,17 @@ export default function TicketQueue() {
             {selectedTicket.timeline.map(item => (
               item.type === 'system' ? (
                 <div key={item.id} className="flex justify-center my-2">
-                  <div className="bg-white border border-slate-200 rounded-full px-4 py-1.5 text-xs text-slate-500 flex items-center gap-2 shadow-sm">
-                    <Clock size={12} /> {item.time} - {item.content}
+                  <div className="bg-white border border-slate-200 rounded-full px-3 py-1.5 md:px-4 md:py-1.5 text-[10px] md:text-xs text-slate-500 flex items-center gap-2 shadow-sm text-center">
+                    <Clock size={12} className="shrink-0" /> {item.time} - {item.content}
                   </div>
                 </div>
               ) : (
-                <div key={item.id} className="bg-white border border-slate-200 p-6 rounded-xl shadow-sm relative">
-                  <div className="flex justify-between items-center mb-4">
-                    <span className="text-sm font-bold text-slate-900">{item.sender}</span>
-                    <span className="text-xs text-slate-400">{item.time}</span>
+                <div key={item.id} className="bg-white border border-slate-200 p-4 md:p-6 rounded-xl shadow-sm relative">
+                  <div className="flex justify-between items-center mb-3 md:mb-4">
+                    <span className="text-xs md:text-sm font-bold text-slate-900">{item.sender}</span>
+                    <span className="text-[10px] md:text-xs text-slate-400">{item.time}</span>
                   </div>
-                  <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+                  <p className="text-xs md:text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
                     {item.content}
                   </p>
                 </div>
@@ -175,19 +201,19 @@ export default function TicketQueue() {
         </div>
 
         {/* Editor de Resposta */}
-        <div className="p-6 bg-white border-t border-slate-200 shrink-0">
+        <div className="p-4 md:p-6 bg-white border-t border-slate-200 shrink-0">
           <div className="border border-slate-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent transition-all shadow-sm">
             <textarea 
-              placeholder="Escreva sua resposta para o cliente..." 
-              className="w-full p-4 h-24 resize-none text-sm focus:outline-none"
+              placeholder="Escreva sua resposta..." 
+              className="w-full p-3 md:p-4 h-20 md:h-24 resize-none text-xs md:text-sm focus:outline-none"
             />
-            <div className="bg-slate-50 px-4 py-3 border-t border-slate-200 flex justify-between items-center">
-              <div className="flex gap-3">
-                <button className="text-[11px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1.5 transition-colors uppercase tracking-wide bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100">
-                  <Bot size={14} /> Sugerir Resposta
+            <div className="bg-slate-50 px-3 md:px-4 py-2.5 md:py-3 border-t border-slate-200 flex justify-between items-center">
+              <div className="flex gap-2 md:gap-3">
+                <button className="text-[10px] md:text-[11px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1.5 transition-colors uppercase tracking-wide bg-blue-50 px-2 md:px-3 py-1.5 rounded-lg border border-blue-100">
+                  <Bot size={14} /> <span className="hidden sm:inline">Sugerir Resposta</span><span className="sm:hidden">Sugerir</span>
                 </button>
               </div>
-              <button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm">
+              <button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 md:px-5 md:py-2 rounded-lg text-xs md:text-sm font-bold transition-colors shadow-sm">
                 <Reply size={16} /> Enviar
               </button>
             </div>
@@ -196,16 +222,16 @@ export default function TicketQueue() {
       </div>
 
       {/* ========================================================
-        4. DIREITA: DETALHES E ANEXOS
+        3. DIREITA: DETALHES E ANEXOS (Apenas Desktop/Lg)
         ======================================================== */}
-      <div className="w-[300px] bg-[#f8f9fa] border-l border-slate-200 flex flex-col shrink-0 hidden lg:flex">
+      <div className="w-[300px] bg-[#f8f9fa] border-l border-slate-200 flex-col shrink-0 hidden lg:flex h-full">
         <div className="h-[80px] px-6 flex items-center border-b border-slate-200 shrink-0 bg-white">
           <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
             <Info size={16} className="text-slate-400" /> Detalhes
           </h3>
         </div>
 
-        <div className="p-6 flex flex-col gap-8 overflow-y-auto">
+        <div className="p-6 flex flex-col gap-8 overflow-y-auto no-scrollbar">
           <div>
             <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Classificação</h4>
             <span className="px-3 py-1.5 text-xs font-bold uppercase rounded-lg bg-rose-100 text-rose-700 border border-rose-200 inline-block">
