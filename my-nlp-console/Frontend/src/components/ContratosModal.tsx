@@ -1,307 +1,269 @@
-import React, { useState, useEffect, useRef } from 'react';
-import Papa from 'papaparse';
-import { UploadCloud, Search, Phone, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
-// import ProspectModal from './ContratosModal'; // Descomente quando for plugar o modal
+import React, { useState } from 'react';
+import { Phone, Mail, Building, FileText, ArrowLeft, CheckCircle2, XCircle } from 'lucide-react';
+import { type Prospect } from './Contratos';
 
-export interface Prospect {
-  id: string;
-  cnpj: string;
-  nome: string;
-  modulosAtuais: string;
-  telefone: string;
-  status: 'PENDENTE' | 'EM_ATENDIMENTO' | 'APROVADO' | 'REPROVADO';
-  atendente?: string; // Novo campo opcional para mostrar quem está atendendo
-}
-
+const MODULOS_DISPONIVEIS = ['NFE', 'NFCE', 'MDFE', 'CTE', 'NFSE', 'FINANCEIRO', 'ESTOQUE'];
 const API_URL = 'http://localhost:3000/prospects';
 
-// ==========================================
-// DADOS DE TESTE (Para você visualizar o layout)
-// ==========================================
-const MOCK_DATA: Prospect[] = [
-  { id: '1', cnpj: '00.000.000/0001-01', nome: 'Empresa Alpha Ltda', telefone: '(11) 99999-9999', modulosAtuais: 'Nenhum', status: 'PENDENTE' },
-  { id: '2', cnpj: '11.111.111/0001-11', nome: 'Bazar Beta & Cia', telefone: '(11) 88888-8888', modulosAtuais: 'NFE', status: 'EM_ATENDIMENTO', atendente: 'Raoan' },
-  { id: '3', cnpj: '22.222.222/0001-22', nome: 'Fagundes & Cia Ltda', telefone: '(41) 3667-4743', modulosAtuais: 'Nenhum', status: 'PENDENTE' },
-  { id: '4', cnpj: '33.333.333/0001-33', nome: 'Guedes e Licheski Ltda', telefone: '(41) 3282-5643', modulosAtuais: 'NFCE', status: 'APROVADO' },
-  { id: '5', cnpj: '44.444.444/0001-44', nome: 'TG Industria de Lubrificantes', telefone: '(41) 3014-4056', modulosAtuais: 'Nenhum', status: 'REPROVADO' },
-  { id: '6', cnpj: '55.555.555/0001-55', nome: 'Lumi Light Comunicação', telefone: 'Sem Telefone', modulosAtuais: 'Nenhum', status: 'PENDENTE' },
-  { id: '7', cnpj: '66.666.666/0001-66', nome: 'Fernando Luiz Aguiar', telefone: 'Sem Telefone', modulosAtuais: 'Nenhum', status: 'EM_ATENDIMENTO', atendente: 'João' },
-];
+interface ModalProps {
+  prospect: Prospect;
+  onClose: () => void;
+  currentUserId: string;
+}
 
-export default function ProspectList() {
-  // Estados principais
-  const [prospects, setProspects] = useState<Prospect[]>(MOCK_DATA); // ⚠️ Troque MOCK_DATA por [] quando ligar na API
-  const [selectedProspect, setSelectedProspect] = useState<Prospect | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isImporting, setIsImporting] = useState(false);
-  
-  // Estados de Filtro e Paginação
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('TODOS');
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 6; // Quantidade de cards por página
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const currentUserId = "user-123"; 
+export default function ProspectModal({ prospect, onClose, currentUserId }: ModalProps) {
+  const [observacoes, setObservacoes] = useState('');
+  const [modulosSelecionados, setModulosSelecionados] = useState<string[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
 
   // ==========================================
-  // LÓGICA DE FILTROS E PESQUISA (Client-side)
+  // FUNÇÕES DE AÇÃO
   // ==========================================
-  const filteredProspects = prospects.filter(prospect => {
-    // Filtro de Texto (Nome, CNPJ ou Telefone)
-    const termo = searchQuery.toLowerCase();
-    const matchBusca = 
-      prospect.nome.toLowerCase().includes(termo) || 
-      prospect.cnpj.includes(termo) || 
-      prospect.telefone.includes(termo);
+  const handleCheck = (modulo: string) => {
+    setModulosSelecionados(prev => 
+      prev.includes(modulo) 
+        ? prev.filter(m => m !== modulo) 
+        : [...prev, modulo]
+    );
+  };
 
-    // Filtro de Status
-    const matchStatus = 
-      statusFilter === 'TODOS' ? true :
-      statusFilter === 'FINALIZADOS' ? (prospect.status === 'APROVADO' || prospect.status === 'REPROVADO') :
-      prospect.status === statusFilter;
-
-    return matchBusca && matchStatus;
-  });
-
-  // ==========================================
-  // LÓGICA DE PAGINAÇÃO
-  // ==========================================
-  const totalPages = Math.ceil(filteredProspects.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedProspects = filteredProspects.slice(startIndex, startIndex + itemsPerPage);
-
-  // Reseta a página para 1 sempre que o usuário digitar na busca ou mudar o filtro
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery, statusFilter]);
-
-  // ==========================================
-  // INTEGRAÇÃO COM BACKEND (Deixado comentado para você reativar)
-  // ==========================================
-  /*
-  const fetchProspects = async () => {
+  const handleSubmit = async (acao: 'APROVADO' | 'REPROVADO' | 'PENDENTE') => {
+    setIsSaving(true);
     try {
-      const response = await fetch(API_URL);
-      if (!response.ok) throw new Error('Falha ao buscar dados');
-      const data = await response.json();
-      setProspects(data);
+      const endpoint = acao === 'PENDENTE' ? 'finish' : 'finish'; 
+      
+      const response = await fetch(`${API_URL}/${prospect.id}/${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: currentUserId,
+          observacoes,
+          novosModulos: modulosSelecionados,
+          acao: acao
+        })
+      });
+
+      if (response.ok) {
+        if (acao !== 'PENDENTE') alert(`Atendimento ${acao.toLowerCase()} com sucesso!`);
+        onClose(); 
+      } else {
+        alert('Erro ao processar atendimento. Tente novamente.');
+        setIsSaving(false);
+      }
     } catch (error) {
       console.error(error);
-    }
-  };
-  useEffect(() => { fetchProspects(); }, []);
-  */
-
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    // ... Mantenha sua lógica de PapaParse aqui exatamente como estava no código anterior
-    alert("Função de importar mantida do seu código original!");
-  };
-
-  // ==========================================
-  // CLIQUE NO CARD (Dar Lock)
-  // ==========================================
-  const handleCardClick = async (prospect: Prospect) => {
-    if (prospect.status !== 'PENDENTE') {
-      alert(`Este cliente já está ${prospect.status.replace('_', ' ').toLowerCase()}.`);
-      return;
-    }
-
-    // Lógica visual simulada (Substitua pelo seu fetch /:id/travar)
-    setProspects(prev => prev.map(p => 
-      p.id === prospect.id ? { ...p, status: 'EM_ATENDIMENTO', atendente: 'Você' } : p
-    ));
-    setSelectedProspect(prospect);
-    setIsModalOpen(true);
-  };
-
-  // ==========================================
-  // RENDERIZAÇÃO DO LAYOUT DO CARD
-  // ==========================================
-  const getCardStyle = (status: string) => {
-    switch (status) {
-      case 'PENDENTE': return 'bg-white border-l-gray-200 hover:shadow-md hover:-translate-y-0.5';
-      case 'EM_ATENDIMENTO': return 'bg-yellow-50 border-l-yellow-400 opacity-90 cursor-not-allowed';
-      case 'APROVADO': return 'bg-green-50 border-l-green-500 opacity-80 cursor-default';
-      case 'REPROVADO': return 'bg-red-50 border-l-red-500 opacity-80 cursor-default';
-      default: return 'bg-white border-l-gray-200';
+      alert('Erro de conexão com o servidor.');
+      setIsSaving(false);
     }
   };
 
-  const getBadgeStyle = (status: string) => {
-    switch (status) {
-      case 'PENDENTE': return 'bg-gray-100 text-gray-600';
-      case 'EM_ATENDIMENTO': return 'bg-yellow-200 text-yellow-800 animate-pulse';
-      case 'APROVADO': return 'bg-green-200 text-green-800';
-      case 'REPROVADO': return 'bg-red-200 text-red-800';
-      default: return 'bg-gray-100 text-gray-600';
+  // 👇 Agora a função está no lugar certo, fora do handleSubmit!
+  const handleOutsideClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget) {
+      handleSubmit('PENDENTE'); 
     }
+  };
+
+  // Helper para cor da situação cadastral
+  const getBadgeColor = (status?: string) => {
+    if (!status) return 'bg-slate-100 text-slate-600 border-slate-200';
+    const text = status.toLowerCase();
+    if (text.includes('ativa')) return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+    if (text.includes('baixa') || text.includes('inapta')) return 'bg-rose-50 text-rose-700 border-rose-200';
+    return 'bg-amber-50 text-amber-700 border-amber-200';
   };
 
   return (
-    <div className="p-8 bg-gray-100 min-h-screen font-sans">
-      
-      {/* ================= TOP BAR ================= */}
-      <div className="mb-8 space-y-4">
-        <div className="flex justify-between items-end">
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 sm:p-6 font-sans" onClick={handleOutsideClick}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[95vh] ring-1 ring-slate-900/5">
+        
+        {/* ================= HEADER ================= */}
+        <div className="px-8 py-6 border-b border-slate-100 bg-white flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shrink-0">
           <div>
-            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Fila de Prospecção</h1>
-            <p className="text-gray-500 text-sm mt-1">Gerencie e inicie atendimentos com seus clientes B2B.</p>
+            <div className="flex items-center gap-3 mb-1">
+              <h2 className="text-2xl font-black text-slate-900 tracking-tight leading-none">
+                {prospect.nome}
+              </h2>
+              <span className="bg-amber-100 text-amber-800 text-[10px] px-2 py-0.5 rounded uppercase font-bold tracking-wider animate-pulse border border-amber-200">
+                Em Atendimento
+              </span>
+            </div>
+            <div className="flex items-center gap-3 mt-2">
+              <span className="text-sm font-mono font-medium text-slate-500 bg-slate-50 px-2 py-0.5 rounded border border-slate-100">
+                {prospect.cnpj}
+              </span>
+              <span className={`text-[11px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider border ${getBadgeColor(prospect.situacaoCadastral)}`}>
+                {prospect.situacaoCadastral || 'Status Desconhecido'}
+              </span>
+            </div>
           </div>
+        </div>
+
+        {/* ================= BODY ================= */}
+        <div className="p-8 overflow-y-auto flex-1 bg-slate-50/50">
           
-          <div>
-            <input type="file" accept=".csv" className="hidden" ref={fileInputRef} onChange={handleFileUpload} />
-            <button 
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isImporting}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold transition-all shadow-sm disabled:opacity-50"
-            >
-              <UploadCloud size={20} />
-              {isImporting ? 'Enviando...' : 'Importar CSV'}
-            </button>
-          </div>
-        </div>
-
-        {/* Barra de Filtros e Busca */}
-        <div className="flex gap-4 bg-white p-3 rounded-2xl shadow-sm border border-gray-200">
-          
-          {/* Busca Unificada */}
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-            <input 
-              type="text" 
-              placeholder="Buscar por Nome, CNPJ ou Telefone..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
-            />
-          </div>
-
-          {/* Filtro de Status */}
-          <div className="w-64">
-            <select 
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-700 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
-            >
-              <option value="TODOS">Todos os Status</option>
-              <option value="PENDENTE">Pendentes (Livres)</option>
-              <option value="EM_ATENDIMENTO">Em Atendimento</option>
-              <option value="FINALIZADOS">Finalizados</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {/* ================= GRID DE CARDS ================= */}
-      {paginatedProspects.length === 0 ? (
-        <div className="text-center py-20 bg-white rounded-2xl border border-gray-200 border-dashed">
-          <p className="text-gray-500 font-medium">Nenhum cliente encontrado com os filtros atuais.</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-          {paginatedProspects.map((prospect) => (
-            <div 
-              key={prospect.id} 
-              onClick={() => handleCardClick(prospect)}
-              className={`flex flex-col p-5 rounded-r-xl border-l-4 border-y border-r border-y-gray-200 border-r-gray-200 shadow-sm transition-all duration-200 ${getCardStyle(prospect.status)}`}
-            >
+          {/* Painel Superior: Dados em 2 Colunas */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            
+            {/* Coluna Esquerda: Dados Cadastrais */}
+            <div className="space-y-5 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                <Building size={14} /> Detalhes da Empresa
+              </h3>
               
-              {/* Header do Card */}
-              <div className="flex justify-between items-start mb-3">
-                <span className={`px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider ${getBadgeStyle(prospect.status)}`}>
-                  {prospect.status.replace('_', ' ')}
-                </span>
+              <div className="space-y-4">
+                <div>
+                  <span className="text-xs font-medium text-slate-500 block mb-1">Atividade Principal</span>
+                  <p className="text-sm text-slate-900 font-semibold leading-snug">
+                    {prospect.atividadePrincipal || 'Não informada'}
+                  </p>
+                </div>
                 
-                {/* Indicador de quem está atendendo */}
-                {prospect.status === 'EM_ATENDIMENTO' && prospect.atendente && (
-                  <span className="flex items-center gap-1 text-xs font-bold text-yellow-700 bg-yellow-100 px-2 py-1 rounded-full">
-                    <RefreshCw size={12} className="animate-spin" />
-                    {prospect.atendente}
-                  </span>
-                )}
-              </div>
-
-              {/* Corpo do Card */}
-              <div className="mb-4 flex-1">
-                <h3 className="text-lg font-bold text-gray-900 leading-tight mb-1 line-clamp-2">
-                  {prospect.nome}
-                </h3>
-                <p className="text-sm font-medium text-gray-500 font-mono">
-                  {prospect.cnpj}
-                </p>
-              </div>
-
-              {/* Footer do Card */}
-              <div className="flex justify-between items-center pt-3 border-t border-black/5 mt-auto">
-                <div className="flex items-center gap-1.5 text-gray-600">
-                  <Phone size={14} />
-                  <span className="text-sm font-semibold">{prospect.telefone}</span>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <span className="text-xs font-medium text-slate-500 block mb-1">Simples Nacional</span>
+                    <p className="text-sm text-slate-900 font-semibold">{prospect.simplesNacional || 'Não'}</p>
+                  </div>
+                  <div>
+                    <span className="text-xs font-medium text-slate-500 block mb-1">Módulos Atuais</span>
+                    <p className="text-sm text-slate-900 font-semibold">{prospect.modulosAtuais}</p>
+                  </div>
                 </div>
               </div>
-
             </div>
-          ))}
-        </div>
-      )}
 
-      {/* ================= PAGINAÇÃO ================= */}
-      {totalPages > 1 && (
-        <div className="mt-8 flex justify-between items-center bg-white px-4 py-3 rounded-xl shadow-sm border border-gray-200">
-          <span className="text-sm text-gray-600 font-medium">
-            Mostrando <strong className="text-gray-900">{startIndex + 1}</strong> até <strong className="text-gray-900">{Math.min(startIndex + itemsPerPage, filteredProspects.length)}</strong> de <strong className="text-gray-900">{filteredProspects.length}</strong> clientes
-          </span>
-          
-          <div className="flex gap-2">
-            <button 
-              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <ChevronLeft size={20} className="text-gray-700" />
-            </button>
-            
-            <div className="flex items-center gap-1 px-2">
-              {Array.from({ length: totalPages }).map((_, idx) => {
-                const page = idx + 1;
-                // Mostra no máximo 5 botões de página para não quebrar o layout
-                if (page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1)) {
+            {/* Coluna Direita: Contatos */}
+            <div className="space-y-5 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                <Phone size={14} /> Contatos
+              </h3>
+              
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
+                    <Phone size={16} className="text-blue-600" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Principal</span>
+                    <p className="text-sm font-semibold text-slate-900">{prospect.telefone}</p>
+                  </div>
+                </div>
+
+                {prospect.telefoneSecundario && (
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center shrink-0">
+                      <Phone size={16} className="text-slate-500" />
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Secundário</span>
+                      <p className="text-sm font-semibold text-slate-900">{prospect.telefoneSecundario}</p>
+                    </div>
+                  </div>
+                )}
+
+                {prospect.email && (
+                  <div className="flex items-center gap-3 mt-4 pt-4 border-t border-slate-100">
+                    <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center shrink-0">
+                      <Mail size={16} className="text-indigo-600" />
+                    </div>
+                    <div className="min-w-0">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">E-mail</span>
+                      <p className="text-sm font-semibold text-slate-900 truncate">{prospect.email}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Painel Inferior: Ações de Fechamento */}
+          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2 mb-5">
+              <FileText size={14} /> Registro de Atendimento
+            </h3>
+
+            {/* Checkboxes de Módulos */}
+            <div className="mb-6">
+              <label className="block text-sm font-bold text-slate-700 mb-3">
+                Quais módulos o cliente demonstrou interesse?
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {MODULOS_DISPONIVEIS.map(modulo => {
+                  const isChecked = modulosSelecionados.includes(modulo);
                   return (
-                    <button
-                      key={page}
-                      onClick={() => setCurrentPage(page)}
-                      className={`w-8 h-8 rounded-lg text-sm font-bold transition-colors ${
-                        currentPage === page 
-                          ? 'bg-blue-600 text-white' 
-                          : 'text-gray-600 hover:bg-gray-100'
+                    <label 
+                      key={modulo} 
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-semibold cursor-pointer transition-all ${
+                        isChecked 
+                          ? 'bg-blue-50 border-blue-200 text-blue-700 shadow-sm' 
+                          : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50'
                       }`}
                     >
-                      {page}
-                    </button>
+                      <input 
+                        type="checkbox" 
+                        className="hidden"
+                        checked={isChecked}
+                        onChange={() => handleCheck(modulo)}
+                      />
+                      {modulo}
+                    </label>
                   );
-                } else if (page === currentPage - 2 || page === currentPage + 2) {
-                  return <span key={page} className="text-gray-400 text-sm">...</span>;
-                }
-                return null;
-              })}
+                })}
+              </div>
             </div>
 
+            {/* Textarea */}
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-2">
+                Observações da Ligação / Reunião
+              </label>
+              <textarea 
+                className="w-full border border-slate-300 rounded-xl p-4 text-sm text-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 resize-none shadow-sm"
+                rows={4}
+                value={observacoes}
+                onChange={(e) => setObservacoes(e.target.value)}
+                placeholder="Descreva aqui os principais pontos conversados com o cliente..."
+                disabled={isSaving}
+              />
+            </div>
+          </div>
+
+        </div>
+
+        {/* ================= FOOTER (AÇÕES) ================= */}
+        <div className="px-8 py-5 border-t border-slate-200 bg-white flex justify-between items-center shrink-0">
+          
+          <button 
+            onClick={() => handleSubmit('PENDENTE')}
+            disabled={isSaving}
+            className="flex items-center gap-2 px-4 py-2 text-slate-600 font-semibold hover:bg-slate-100 rounded-lg transition-colors disabled:opacity-50"
+          >
+            <ArrowLeft size={18} />
+            Desistir / Voltar para a Fila
+          </button>
+          
+          <div className="flex gap-3">
             <button 
-              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              onClick={() => handleSubmit('REPROVADO')}
+              disabled={isSaving}
+              className="flex items-center gap-2 px-6 py-2.5 bg-white border-2 border-rose-200 text-rose-600 font-bold rounded-xl hover:bg-rose-50 hover:border-rose-300 transition-all disabled:opacity-50 shadow-sm"
             >
-              <ChevronRight size={20} className="text-gray-700" />
+              <XCircle size={18} />
+              Reprovar Lead
+            </button>
+            <button 
+              onClick={() => handleSubmit('APROVADO')}
+              disabled={isSaving}
+              className="flex items-center gap-2 px-6 py-2.5 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition-all disabled:opacity-50 shadow-sm shadow-emerald-600/20"
+            >
+              <CheckCircle2 size={18} />
+              {isSaving ? 'Salvando...' : 'Aprovar Venda'}
             </button>
           </div>
+
         </div>
-      )}
-
-      {/* MODAL PLACEHOLDER */}
-      {/* {isModalOpen && selectedProspect && (
-        <ProspectModal ... />
-      )} */}
-
+        
+      </div>
     </div>
   );
 }
