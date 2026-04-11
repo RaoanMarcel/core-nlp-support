@@ -32,6 +32,8 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 import authRoutes from './routes/Auth.routes';
 import { authMiddleware } from './middlewares/auth';
+import { relatoriosRoutes } from './routes/Relatorios.routes';
+
 
 
 // Rotas públicas
@@ -39,6 +41,7 @@ app.use('/auth', authRoutes);
 
 // Rotas Protegidas (Exige Token!)
 app.use('/prospects', authMiddleware, contratosRoutes);
+app.use('/relatorios', authMiddleware, relatoriosRoutes);
 
 server.listen(3000, () => {
   console.log('🚀 Servidor HTTP e WebSocket rodando lindamente na porta 3000');
