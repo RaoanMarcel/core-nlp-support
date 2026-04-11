@@ -249,7 +249,7 @@ export default function ProspectModal({ prospect, onClose, currentUserId }: Moda
               className="flex items-center gap-2 px-6 py-2.5 bg-white border-2 border-rose-200 text-rose-600 font-bold rounded-xl hover:bg-rose-50 hover:border-rose-300 transition-all disabled:opacity-50 shadow-sm"
             >
               <XCircle size={18} />
-              Reprovar Lead
+                    Não interessado
             </button>
             <button 
               onClick={() => handleSubmit('APROVADO')}
@@ -257,7 +257,7 @@ export default function ProspectModal({ prospect, onClose, currentUserId }: Moda
               className="flex items-center gap-2 px-6 py-2.5 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition-all disabled:opacity-50 shadow-sm shadow-emerald-600/20"
             >
               <CheckCircle2 size={18} />
-              {isSaving ? 'Salvando...' : 'Aprovar Venda'}
+              {isSaving ? 'Salvando...' : 'Interessado'}
             </button>
           </div>
 

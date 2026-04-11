@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Papa from 'papaparse';
-import { UploadCloud, Search, Phone, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
+import { UploadCloud, Search, Phone, RefreshCw, Inbox, PlayCircle, CheckCircle2, XCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import ProspectModal from './ContratosModal';
 
 export interface Prospect {
@@ -12,7 +12,6 @@ export interface Prospect {
   status: 'PENDENTE' | 'EM_ATENDIMENTO' | 'APROVADO' | 'REPROVADO';
   atendente?: string; 
   
-  // Novas colunas (opcionais para não quebrar telas antigas)
   simplesNacional?: string;
   situacaoCadastral?: string;
   telefoneSecundario?: string;
@@ -23,258 +22,74 @@ export interface Prospect {
 
 const API_URL = 'http://localhost:3000/prospects';
 
-export default function ProspectList() {
-  const [prospects, setProspects] = useState<Prospect[]>([]); 
-  const [selectedProspect, setSelectedProspect] = useState<Prospect | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isImporting, setIsImporting] = useState(false);
-  
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('TODOS');
+// ==========================================
+// FUNÇÕES DE ESTILO (Movidas para fora para otimização)
+// ==========================================
+const getCardStyle = (status: string) => {
+  switch (status) {
+    case 'PENDENTE': return 'bg-white border-transparent hover:border-blue-300 hover:shadow-sm hover:ring-1 hover:ring-blue-100 cursor-pointer';
+    case 'EM_ATENDIMENTO': return 'bg-amber-50/40 border-amber-200 opacity-90 cursor-not-allowed';
+    case 'APROVADO': return 'bg-emerald-50/40 border-emerald-200 opacity-80 cursor-default';
+    case 'REPROVADO': return 'bg-rose-50/40 border-rose-200 opacity-80 cursor-default';
+    default: return 'bg-white border-transparent';
+  }
+};
+
+const getBadgeStyle = (status: string) => {
+  switch (status) {
+    case 'PENDENTE': return 'bg-slate-100 text-slate-500 border-slate-200';
+    case 'EM_ATENDIMENTO': return 'bg-amber-50 text-amber-700 border-amber-200 animate-pulse';
+    case 'APROVADO': return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+    case 'REPROVADO': return 'bg-rose-50 text-rose-700 border-rose-200';
+    default: return 'bg-slate-100 text-slate-500 border-slate-200';
+  }
+};
+
+// ==========================================
+// COMPONENTE DE SEÇÃO PAGINADA
+// ==========================================
+interface SectionProps {
+  title: string;
+  icon: React.ReactNode;
+  data: Prospect[];
+  emptyMessage: string;
+  onCardClick: (prospect: Prospect) => void;
+}
+
+function PaginatedSection({ title, icon, data, emptyMessage, onCardClick }: SectionProps) {
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 9; 
+  const itemsPerPage = 6; // Mostra 6 cards por vez (2 linhas de 3 no desktop)
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const currentUserId = "user-123"; 
-
-  // ==========================================
-  // BUSCAR DO BANCO DE DADOS
-  // ==========================================
-  const fetchProspects = async () => {
-    try {
-      const response = await fetch(`${API_URL}?t=${new Date().getTime()}`, {
-        method: 'GET',
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0'
-        }
-      });
-
-      if (!response.ok) throw new Error('Falha ao buscar dados');
-      
-      const data = await response.json();
-      setProspects(data);
-    } catch (error) {
-      console.error('Erro ao carregar prospects:', error);
-      alert('Erro ao carregar a lista do banco de dados.');
-    }
-  };
-
-  useEffect(() => {
-    fetchProspects();
-  }, []);
-
-  // ==========================================
-  // IMPORTAR CSV LENDO PELAS COLUNAS EXATAS
-  // ==========================================
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    setIsImporting(true);
-
-    try {
-      const text = await file.text();
-      const lines = text.split('\n');
-      if (lines[0].includes('Estabelecimentos')) lines.shift(); 
-      const cleanCsv = lines.join('\n');
-
-      Papa.parse(cleanCsv, {
-        header: false, // <-- TRUQUE: Ignora nomes e usa os números das colunas
-        skipEmptyLines: true,
-        complete: async (results) => {
-          // A primeira linha (index 0) será o cabeçalho. Pegamos apenas os dados:
-          const dataRows = results.data.slice(1);
-
-          const novosProspects = dataRows
-            .filter((row: any) => row[0]) // Só importa se a Coluna A (CNPJ) existir
-            .map((row: any) => ({
-              cnpj:               String(row[0] || '').trim(), // A
-              nome:               String(row[1] || 'Sem Nome').trim(), // B
-              simplesNacional:    String(row[8] || '').trim(), // I
-              situacaoCadastral:  String(row[16] || '').trim(), // Q
-              telefone:           String(row[23] || 'Sem Telefone').trim(), // X
-              telefoneSecundario: String(row[24] || '').trim(), // Y
-              email:              String(row[25] || '').trim(), // Z
-              atividadePrincipal: String(row[37] || '').trim(), // AL
-              telefoneBackup:     String(row[41] || '').trim(), // AP
-              modulosAtuais:      String(row[42] || 'Nenhum').trim() // AQ
-            }));
-
-          try {
-            const response = await fetch(`${API_URL}/importar`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ prospects: novosProspects })
-            });
-
-            if (!response.ok) throw new Error('Erro ao salvar no banco');
-            
-            const resultData = await response.json();
-            alert(resultData.message || 'Importação concluída!');
-            await fetchProspects(); 
-
-          } catch (apiError) {
-            console.error('Erro na API:', apiError);
-            alert('Falha ao enviar os dados para o servidor.');
-          } finally {
-            setIsImporting(false);
-            if (fileInputRef.current) fileInputRef.current.value = '';
-          }
-        }
-      });
-    } catch (error) {
-      console.error(error);
-      alert('Falha ao processar CSV.');
-      setIsImporting(false);
-    }
-  };
-
-  // ==========================================
-  // TRAVAR CLIENTE NO BANCO AO CLICAR
-  // ==========================================
-  const handleCardClick = async (prospect: Prospect) => {
-    if (prospect.status !== 'PENDENTE') {
-      alert(`Este cliente já está em status: ${prospect.status}`);
-      return;
-    }
-
-    try {
-      const response = await fetch(`${API_URL}/${prospect.id}/travar`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: currentUserId })
-      });
-
-      if (response.status === 409) {
-        alert('Este cliente acabou de ser pego por outro operador!');
-        fetchProspects(); 
-        return;
-      }
-
-      if (!response.ok) throw new Error('Erro ao travar cliente no backend');
-
-      const updatedProspect = await response.json();
-
-      setProspects(prev => prev.map(p => p.id === prospect.id ? updatedProspect : p));
-      setSelectedProspect(updatedProspect);
-      setIsModalOpen(true);
-
-    } catch (error) {
-      console.error('Erro ao travar:', error);
-      alert('Não foi possível iniciar o atendimento.');
-    }
-  };
-
-  // ==========================================
-  // LÓGICA DE FILTROS E PAGINAÇÃO
-  // ==========================================
-  const filteredProspects = prospects.filter(prospect => {
-    const termo = searchQuery.toLowerCase();
-    const matchBusca = 
-      prospect.nome.toLowerCase().includes(termo) || 
-      prospect.cnpj.includes(termo) || 
-      prospect.telefone.includes(termo);
-
-    const matchStatus = 
-      statusFilter === 'TODOS' ? true :
-      statusFilter === 'FINALIZADOS' ? (prospect.status === 'APROVADO' || prospect.status === 'REPROVADO') :
-      prospect.status === statusFilter;
-
-    return matchBusca && matchStatus;
-  });
-
-  const totalPages = Math.ceil(filteredProspects.length / itemsPerPage);
+  const totalPages = Math.ceil(data.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedProspects = filteredProspects.slice(startIndex, startIndex + itemsPerPage);
+  const paginatedData = data.slice(startIndex, startIndex + itemsPerPage);
 
+  // Se o usuário buscar na barra de pesquisa e a quantidade de itens mudar, volta pra página 1
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, statusFilter]);
-
-  // ==========================================
-  // ESTILOS VISUAIS REFINADOS
-  // ==========================================
-  const getCardStyle = (status: string) => {
-    switch (status) {
-      case 'PENDENTE': return 'bg-white border-transparent hover:border-blue-300 hover:shadow-sm hover:ring-1 hover:ring-blue-100 cursor-pointer';
-      case 'EM_ATENDIMENTO': return 'bg-amber-50/40 border-amber-200 opacity-90 cursor-not-allowed';
-      case 'APROVADO': return 'bg-emerald-50/40 border-emerald-200 opacity-80 cursor-default';
-      case 'REPROVADO': return 'bg-rose-50/40 border-rose-200 opacity-80 cursor-default';
-      default: return 'bg-white border-transparent';
-    }
-  };
-
-  const getBadgeStyle = (status: string) => {
-    switch (status) {
-      case 'PENDENTE': return 'bg-slate-100 text-slate-500 border-slate-200';
-      case 'EM_ATENDIMENTO': return 'bg-amber-50 text-amber-700 border-amber-200 animate-pulse';
-      case 'APROVADO': return 'bg-emerald-50 text-emerald-700 border-emerald-200';
-      case 'REPROVADO': return 'bg-rose-50 text-rose-700 border-rose-200';
-      default: return 'bg-slate-100 text-slate-500 border-slate-200';
-    }
-  };
+  }, [data.length]);
 
   return (
-    <div className="p-8 bg-[#f4f5f7] min-h-screen font-sans">
-      <div className="max-w-7xl mx-auto space-y-6">
-        
-        {/* Cabeçalho */}
-        <div className="flex justify-between items-end mb-2">
-          <div>
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight">Fila de Prospecção</h1>
-            <p className="text-slate-500 text-sm mt-1">Gerencie e inicie atendimentos com seus clientes B2B.</p>
-          </div>
-          <div>
-            <input type="file" accept=".csv" className="hidden" ref={fileInputRef} onChange={handleFileUpload} />
-            <button 
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isImporting}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition-all shadow-sm disabled:opacity-50"
-            >
-              <UploadCloud size={18} />
-              {isImporting ? 'Enviando...' : 'Importar CSV'}
-            </button>
-          </div>
-        </div>
+    <div className="mb-10">
+      <div className="flex items-center gap-2 mb-4">
+        {icon}
+        <h2 className="text-xl font-bold text-slate-800 tracking-tight">{title}</h2>
+        <span className="bg-slate-200 text-slate-600 text-xs font-bold px-2.5 py-0.5 rounded-full ml-2">
+          {data.length}
+        </span>
+      </div>
 
-        {/* Barra de Busca e Filtros */}
-        <div className="flex flex-col sm:flex-row gap-4 bg-white p-3 rounded-xl shadow-sm border border-slate-200">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-            <input 
-              type="text" 
-              placeholder="Buscar por Nome, CNPJ ou Telefone..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-sm"
-            />
-          </div>
-          <div className="w-full sm:w-64">
-            <select 
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm cursor-pointer"
-            >
-              <option value="TODOS">Todos os Status</option>
-              <option value="PENDENTE">Pendentes (Livres)</option>
-              <option value="EM_ATENDIMENTO">Em Atendimento</option>
-              <option value="FINALIZADOS">Finalizados</option>
-            </select>
-          </div>
+      {data.length === 0 ? (
+        <div className="bg-white/50 border border-slate-200 border-dashed rounded-xl p-8 text-center">
+          <p className="text-slate-500 font-medium text-sm">{emptyMessage}</p>
         </div>
-
-        {/* Grid de Cards */}
-        {paginatedProspects.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-xl border border-slate-200 border-dashed">
-            <p className="text-slate-500 font-medium text-sm">Nenhum cliente encontrado.</p>
-          </div>
-        ) : (
+      ) : (
+        <>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {paginatedProspects.map((prospect) => (
+            {paginatedData.map((prospect) => (
               <div 
                 key={prospect.id} 
-                onClick={() => handleCardClick(prospect)}
+                onClick={() => onCardClick(prospect)}
                 className={`flex flex-col p-5 rounded-xl border shadow-sm transition-all duration-200 ${getCardStyle(prospect.status)}`}
               >
                 <div className="flex justify-between items-start mb-3">
@@ -296,7 +111,7 @@ export default function ProspectList() {
                     {prospect.cnpj}
                   </p>
                 </div>
-                <div className="flex justify-between items-center pt-3 border-t border-slate-100 mt-auto">
+                <div className="flex justify-between items-center pt-3 border-t border-slate-100/80 mt-auto">
                   <div className="flex items-center gap-1.5 text-slate-600">
                     <Phone size={14} className="text-slate-400" />
                     <span className="text-xs font-semibold">{prospect.telefone}</span>
@@ -305,59 +120,272 @@ export default function ProspectList() {
               </div>
             ))}
           </div>
-        )}
 
-        {/* Paginação */}
-        {totalPages > 1 && (
-          <div className="flex justify-between items-center bg-white px-4 py-3 rounded-xl shadow-sm border border-slate-200 mt-4">
-            <span className="text-xs text-slate-500 font-medium">
-              Mostrando <strong className="text-slate-900">{startIndex + 1}</strong> até <strong className="text-slate-900">{Math.min(startIndex + itemsPerPage, filteredProspects.length)}</strong> de <strong className="text-slate-900">{filteredProspects.length}</strong> clientes
-            </span>
-            <div className="flex gap-1.5">
-              <button 
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="p-1.5 rounded-md hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors border border-transparent hover:border-slate-200"
-              >
-                <ChevronLeft size={18} className="text-slate-600" />
-              </button>
-              <div className="flex items-center gap-1 px-1">
-                {Array.from({ length: totalPages }).map((_, idx) => {
-                  const page = idx + 1;
-                  if (page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1)) {
-                    return (
-                      <button
-                        key={page}
-                        onClick={() => setCurrentPage(page)}
-                        className={`w-7 h-7 rounded-md text-xs font-bold transition-colors ${
-                          currentPage === page 
-                            ? 'bg-blue-600 text-white shadow-sm' 
-                            : 'text-slate-600 hover:bg-slate-50 hover:border hover:border-slate-200'
-                        }`}
-                      >
-                        {page}
-                      </button>
-                    );
-                  } else if (page === currentPage - 2 || page === currentPage + 2) {
-                    return <span key={page} className="text-slate-400 text-xs px-1">...</span>;
-                  }
-                  return null;
-                })}
+          {/* Controle de Paginação Específico da Seção */}
+          {totalPages > 1 && (
+            <div className="flex justify-between items-center bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-200 mt-4">
+              <span className="text-xs text-slate-500 font-medium">
+                Pág. <strong className="text-slate-900">{currentPage}</strong> de <strong className="text-slate-900">{totalPages}</strong>
+              </span>
+              
+              <div className="flex gap-1">
+                <button 
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="p-1.5 rounded-md hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors border border-transparent hover:border-slate-200"
+                >
+                  <ChevronLeft size={16} className="text-slate-600" />
+                </button>
+                <div className="flex items-center gap-0.5 px-1">
+                  {Array.from({ length: totalPages }).map((_, idx) => {
+                    const page = idx + 1;
+                    if (page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1)) {
+                      return (
+                        <button
+                          key={page}
+                          onClick={() => setCurrentPage(page)}
+                          className={`w-6 h-6 rounded-md text-[11px] font-bold transition-colors ${
+                            currentPage === page 
+                              ? 'bg-blue-600 text-white shadow-sm' 
+                              : 'text-slate-600 hover:bg-slate-50 hover:border hover:border-slate-200'
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      );
+                    } else if (page === currentPage - 2 || page === currentPage + 2) {
+                      return <span key={page} className="text-slate-400 text-xs px-0.5">...</span>;
+                    }
+                    return null;
+                  })}
+                </div>
+                <button 
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="p-1.5 rounded-md hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors border border-transparent hover:border-slate-200"
+                >
+                  <ChevronRight size={16} className="text-slate-600" />
+                </button>
               </div>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+// ==========================================
+// TELA PRINCIPAL
+// ==========================================
+export default function ProspectList() {
+  const [prospects, setProspects] = useState<Prospect[]>([]); 
+  const [selectedProspect, setSelectedProspect] = useState<Prospect | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const currentUserId = "user-123"; 
+
+  const fetchProspects = async () => {
+    try {
+      const response = await fetch(`${API_URL}?t=${new Date().getTime()}`, {
+        method: 'GET',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      });
+
+      if (!response.ok) throw new Error('Falha ao buscar dados');
+      
+      const data = await response.json();
+      setProspects(data);
+    } catch (error) {
+      console.error('Erro ao carregar prospects:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchProspects();
+  }, []);
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setIsImporting(true);
+
+    try {
+      const text = await file.text();
+      const lines = text.split('\n');
+      if (lines[0].includes('Estabelecimentos')) lines.shift(); 
+      const cleanCsv = lines.join('\n');
+
+      Papa.parse(cleanCsv, {
+        header: false, 
+        skipEmptyLines: true,
+        complete: async (results) => {
+          const dataRows = results.data.slice(1);
+
+          const novosProspects = dataRows
+            .filter((row: any) => row[0]) 
+            .map((row: any) => ({
+              cnpj:               String(row[0] || '').trim(), 
+              nome:               String(row[1] || 'Sem Nome').trim(), 
+              simplesNacional:    String(row[8] || '').trim(), 
+              situacaoCadastral:  String(row[16] || '').trim(), 
+              telefone:           String(row[23] || 'Sem Telefone').trim(), 
+              telefoneSecundario: String(row[24] || '').trim(), 
+              email:              String(row[25] || '').trim(), 
+              atividadePrincipal: String(row[37] || '').trim(), 
+              telefoneBackup:     String(row[41] || '').trim(), 
+              modulosAtuais:      String(row[42] || 'Nenhum').trim() 
+            }));
+
+          try {
+            const response = await fetch(`${API_URL}/importar`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ prospects: novosProspects })
+            });
+
+            if (!response.ok) throw new Error('Erro ao salvar no banco');
+            
+            await fetchProspects(); 
+
+          } catch (apiError) {
+            console.error('Erro na API:', apiError);
+          } finally {
+            setIsImporting(false);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Falha ao processar CSV', error);
+      setIsImporting(false);
+    }
+  };
+
+  const handleCardClick = async (prospect: Prospect) => {
+    if (prospect.status !== 'PENDENTE') {
+      return; 
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/${prospect.id}/travar`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: currentUserId })
+      });
+
+      if (response.status === 409) {
+        fetchProspects(); 
+        return;
+      }
+
+      if (!response.ok) throw new Error('Erro ao travar cliente no backend');
+
+      const updatedProspect = await response.json();
+
+      setProspects(prev => prev.map(p => p.id === prospect.id ? updatedProspect : p));
+      setSelectedProspect(updatedProspect);
+      setIsModalOpen(true);
+
+    } catch (error) {
+      console.error('Erro ao travar:', error);
+    }
+  };
+
+  const filteredProspects = prospects.filter(prospect => {
+    const termo = searchQuery.toLowerCase();
+    return prospect.nome.toLowerCase().includes(termo) || 
+           prospect.cnpj.includes(termo) || 
+           prospect.telefone.includes(termo);
+  });
+
+  const prospectsPendentes = filteredProspects.filter(p => p.status === 'PENDENTE');
+  const prospectsEmAtendimento = filteredProspects.filter(p => p.status === 'EM_ATENDIMENTO');
+  const prospectsAprovados = filteredProspects.filter(p => p.status === 'APROVADO');
+  const prospectsReprovados = filteredProspects.filter(p => p.status === 'REPROVADO');
+
+  return (
+      <div className="p-8 bg-[#f4f5f7] h-screen overflow-y-auto font-sans pb-24">
+        <div className="max-w-7xl mx-auto space-y-6">
+        
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 gap-4">
+          <div>
+            <h1 className="text-3xl font-black text-slate-900 tracking-tight">Fila de Prospecção</h1>
+            <p className="text-slate-500 text-sm mt-1">Gerencie e inicie atendimentos com seus clientes B2B.</p>
+          </div>
+          
+          <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
+            <div className="relative w-full sm:w-72">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+              <input 
+                type="text" 
+                placeholder="Buscar cliente..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+              />
+            </div>
+
+            <div className="w-full sm:w-auto">
+              <input type="file" accept=".csv" className="hidden" ref={fileInputRef} onChange={handleFileUpload} />
               <button 
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-                className="p-1.5 rounded-md hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors border border-transparent hover:border-slate-200"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isImporting}
+                className="w-full flex justify-center items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-bold transition-all shadow-sm disabled:opacity-50"
               >
-                <ChevronRight size={18} className="text-slate-600" />
+                <UploadCloud size={18} />
+                {isImporting ? 'Enviando...' : 'Importar CSV'}
               </button>
             </div>
           </div>
-        )}
+        </div>
+
+        <hr className="border-slate-200 mb-8" />
+
+        {/* Componentes Independentes (Cada um controla sua própria páginação!) */}
+        
+        <PaginatedSection 
+          title="Para Triagem" 
+          icon={<Inbox size={20} className="text-blue-600" />}
+          data={prospectsPendentes}
+          emptyMessage="Não há nenhum cliente aguardando atendimento."
+          onCardClick={handleCardClick}
+        />
+
+        <PaginatedSection 
+          title="Em Atendimento" 
+          icon={<PlayCircle size={20} className="text-amber-500" />}
+          data={prospectsEmAtendimento}
+          emptyMessage="Nenhum cliente está sendo atendido neste momento."
+          onCardClick={handleCardClick}
+        />
+
+        <PaginatedSection 
+          title="Interessados" 
+          icon={<CheckCircle2 size={20} className="text-emerald-500" />}
+          data={prospectsAprovados}
+          emptyMessage="Nenhuma venda foi aprovada na sua busca."
+          onCardClick={handleCardClick}
+        />
+
+        <PaginatedSection 
+          title="Não Interessados" 
+          icon={<XCircle size={20} className="text-rose-500" />}
+          data={prospectsReprovados}
+          emptyMessage="Nenhum cliente foi reprovado na sua busca."
+          onCardClick={handleCardClick}
+        />
 
       </div>
 
-      {/* Modal */}
       {isModalOpen && selectedProspect && (
         <ProspectModal 
           prospect={selectedProspect} 
