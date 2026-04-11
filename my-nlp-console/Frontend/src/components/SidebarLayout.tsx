@@ -1,27 +1,19 @@
-// src/components/App.tsx
+// src/components/SidebarLayout.tsx
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { 
   SlidersHorizontal, 
   LayoutDashboard, 
   Inbox, 
-  Activity, 
   Settings, 
   LifeBuoy, 
   Menu, 
   X,
-  BookOpen // <-- Adicionado para o ícone da Base de Conhecimento
+  BookOpen,
+  FileText // <-- 1. Importamos um ícone novo para os Contratos
 } from 'lucide-react';
 
-import Dashboard from './Dashboard';
-import TicketQueue from './TicketQueue';
-import Relatorios from './Relatorios';
-import KnowledgeBase from './KnowledgeBase'; // <-- Import do novo componente
-
-// ==========================================
-// COMPONENTE DE LAYOUT GLOBAL (SIDEBAR + OUTLET)
-// ==========================================
-function Layout({ children }: { children: React.ReactNode }) {
+export default function AppLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -30,12 +22,13 @@ function Layout({ children }: { children: React.ReactNode }) {
     setIsMobileMenuOpen(false);
   }, [location.pathname]);
 
-  // Lista de itens de navegação atualizada
+  // 2. Adicionamos a rota na lista de navegação
   const navItems = [
     { path: '/', label: 'Briefing Gerencial', icon: LayoutDashboard },
     { path: '/fila', label: 'Fila de Tickets', icon: Inbox },
     { path: '/relatorios', label: 'Geração de Relatórios', icon: SlidersHorizontal },
-    { path: '/base', label: 'Base Interna', icon: BookOpen }, // <-- Nova Rota na Sidebar
+    { path: '/base', label: 'Base Interna', icon: BookOpen },
+    { path: '/contratos', label: 'Contratos', icon: FileText }, // <-- Nova rota adicionada aqui!
   ];
 
   return (
@@ -75,9 +68,7 @@ function Layout({ children }: { children: React.ReactNode }) {
       <aside className={`
         fixed md:relative top-0 left-0 h-full bg-[#0a1128] flex flex-col z-50 
         transition-all duration-300 ease-in-out shrink-0 shadow-[4px_0_24px_-15px_rgba(0,0,0,0.5)] group
-        /* Mobile: Escondido fora da tela ou visível com largura fixa */
         ${isMobileMenuOpen ? 'translate-x-0 w-[260px]' : '-translate-x-full w-[260px]'}
-        /* Desktop: Sempre na tela, 76px padrão, expande no hover */
         md:translate-x-0 md:w-[76px] hover:md:w-[260px]
       `}>
         
@@ -94,14 +85,13 @@ function Layout({ children }: { children: React.ReactNode }) {
           <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center shrink-0 shadow-md">
             <LifeBuoy size={20} className="text-white" />
           </div>
-          {/* Textos visíveis no mobile, mas com delay de hover no desktop */}
           <div className="ml-4 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300 md:delay-75">
             <h1 className="text-lg font-black text-white leading-tight">AutoDesk</h1>
             <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Core NLP</p>
           </div>
         </div>
 
-        {/* Navigation Links via React Router */}
+        {/* Navigation Links */}
         <nav className="flex-1 overflow-y-auto no-scrollbar py-6 flex flex-col gap-2 px-3 overflow-x-hidden">
           <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 mt-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300 px-3 whitespace-nowrap">
             Menu Principal
@@ -150,30 +140,12 @@ function Layout({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* ========================================================
-        ÁREA PRINCIPAL (OUTLET DO REACT ROUTER)
+        ÁREA PRINCIPAL (Aqui dentro vai o Dashboard, Fila, etc)
         ======================================================== */}
       <main className="flex-1 flex flex-col h-full overflow-hidden bg-[#f4f5f7]">
         {children}
       </main>
 
     </div>
-  );
-}
-
-// ==========================================
-// ROTEADOR PRINCIPAL
-// ==========================================
-export default function AppRouter() {
-  return (
-    <BrowserRouter>
-      <Layout>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/fila" element={<TicketQueue />} />
-          <Route path="/relatorios" element={<Relatorios />} />
-          <Route path="/base" element={<KnowledgeBase />} />
-        </Routes>
-      </Layout>
-    </BrowserRouter>
   );
 }
