@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { type Prospect } from './Contratos';
 
 const MODULOS_DISPONIVEIS = ['NFE', 'NFCE', 'MDFE', 'CTE', 'NFSE'];
+const API_URL = 'http://localhost:3000/prospects'; // <-- Apontando pro backend!
 
 interface ModalProps {
   prospect: Prospect;
@@ -23,7 +24,8 @@ export default function ProspectModal({ prospect, onClose, currentUserId }: Moda
 
   const handleSubmit = async (acao: 'APROVADO' | 'REPROVADO') => {
     try {
-      const response = await fetch(`/api/prospects/${prospect.id}/finish`, {
+      // <-- Agora o fetch vai para a porta 3000!
+      const response = await fetch(`${API_URL}/${prospect.id}/finish`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -35,12 +37,14 @@ export default function ProspectModal({ prospect, onClose, currentUserId }: Moda
       });
 
       if (response.ok) {
-        onClose(); // Fecha modal e idealmente atualiza a tabela pai
+        alert(`Atendimento ${acao.toLowerCase()} com sucesso!`);
+        onClose(); // Fecha modal e a tabela pai vai recarregar automaticamente (já configuramos isso lá)
       } else {
-        alert('Erro ao processar atendimento.');
+        alert('Erro ao processar atendimento. Tente novamente.');
       }
     } catch (error) {
       console.error(error);
+      alert('Erro de conexão com o servidor.');
     }
   };
 
