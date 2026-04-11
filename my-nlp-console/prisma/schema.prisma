@@ -1,0 +1,32 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum StatusAtendimento {
+  PENDENTE
+  EM_ATENDIMENTO
+  APROVADO
+  REPROVADO
+}
+
+model Prospect {
+  id            String            @id @default(uuid())
+  cnpj          String            @unique
+  nome          String
+  modulosAtuais String            // Ex: "NFE, NFCE"
+  telefone      String?
+  observacoes   String?           @db.Text
+  novosModulos  String[]          // Array do Postgres para [NFE, NFCE...]
+  status        StatusAtendimento @default(PENDENTE)
+  
+  // Controle de concorrência
+  lockedBy      String?           // ID do usuário que está atendendo
+  lockedAt      DateTime?
+  
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+}
