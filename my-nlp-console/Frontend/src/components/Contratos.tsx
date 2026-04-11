@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Papa from 'papaparse';
 import { UploadCloud, Search, Phone, RefreshCw, Inbox, PlayCircle, CheckCircle2, XCircle, ChevronLeft, ChevronRight } from 'lucide-react';
-import { io } from 'socket.io-client'; // <-- Import do Socket.io Client
+import { io } from 'socket.io-client'; 
 import ProspectModal from './ContratosModal';
 
 export interface Prospect {
@@ -22,7 +22,6 @@ export interface Prospect {
 }
 
 const API_URL = 'http://localhost:3000/prospects';
-// Extrai apenas a base "http://localhost:3000" para conectar o WebSocket
 const SOCKET_URL = API_URL.replace('/prospects', ''); 
 
 // ==========================================
@@ -186,21 +185,40 @@ export default function ProspectList() {
   const [isImporting, setIsImporting] = useState(false);
   
   const [searchQuery, setSearchQuery] = useState('');
-
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const currentUserId = "user-123"; 
+
+  // 1. Pegando dados do usuário e Token do LocalStorage
+  const token = localStorage.getItem('@CRM:token');
+  const userStr = localStorage.getItem('@CRM:user');
+  const currentUser = userStr ? JSON.parse(userStr) : null;
+  const currentUserId = currentUser?.id || '';
+
+  // Helper para lidar com token expirado (Erro 401)
+  const handleAuthError = (res: Response) => {
+    if (res.status === 401) {
+      localStorage.removeItem('@CRM:token');
+      localStorage.removeItem('@CRM:user');
+      window.location.reload();
+      return true;
+    }
+    return false;
+  };
 
   const fetchProspects = async () => {
     try {
       const response = await fetch(`${API_URL}?t=${new Date().getTime()}`, {
         method: 'GET',
         headers: {
+          'Authorization': `Bearer ${token}`, // <--- ENVIANDO TOKEN AQUI
           'Cache-Control': 'no-cache, no-store, must-revalidate',
           'Pragma': 'no-cache',
           'Expires': '0'
         }
       });
+      
+      if (handleAuthError(response)) return; // Se for 401, para aqui.
       if (!response.ok) throw new Error('Falha ao buscar dados');
+      
       const data = await response.json();
       setProspects(data);
     } catch (error) {
@@ -208,29 +226,21 @@ export default function ProspectList() {
     }
   };
 
-  // ==========================================
-  // MAGIA DO WEB-SOCKET ⚡
-  // ==========================================
   useEffect(() => {
-    // Busca a carga inicial na primeira vez que abre a tela
     fetchProspects();
 
-    // Conecta ao servidor WebSocket
     const socket = io(SOCKET_URL);
 
-    // Ouve as atualizações individuais (Quando alguém trava ou finaliza um card)
     socket.on('prospectUpdated', (updatedProspect: Prospect) => {
       setProspects(prev => prev.map(p => 
         p.id === updatedProspect.id ? updatedProspect : p
       ));
     });
 
-    // Ouve atualizações em massa (Quando alguém importa um CSV novo)
     socket.on('prospectsRefresh', () => {
       fetchProspects();
     });
 
-    // Desconecta ao sair da tela
     return () => {
       socket.disconnect();
     };
@@ -269,12 +279,17 @@ export default function ProspectList() {
             }));
 
           try {
-            await fetch(`${API_URL}/importar`, {
+            const response = await fetch(`${API_URL}/importar`, {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}` // <--- ENVIANDO TOKEN AQUI
+              },
               body: JSON.stringify({ prospects: novosProspects })
             });
-            // O Socket avisa todo mundo pra recarregar a lista, não precisamos chamar fetch aqui!
+
+            if (handleAuthError(response)) return;
+            // O Socket avisa todo mundo pra recarregar a lista
           } catch (apiError) {
             console.error('Erro na API:', apiError);
           } finally {
@@ -295,12 +310,18 @@ export default function ProspectList() {
     try {
       const response = await fetch(`${API_URL}/${prospect.id}/travar`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: currentUserId })
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` // <--- ENVIANDO TOKEN AQUI
+        },
+        body: JSON.stringify({ 
+          userId: currentUserId,
+          userName: currentUser?.nome // Enviando também o nome para mostrar no badge quem atende!
+        })
       });
 
-      if (response.status === 409) return; // O Socket vai atualizar e mostrar que está travado
-
+      if (handleAuthError(response)) return;
+      if (response.status === 409) return; 
       if (!response.ok) throw new Error('Erro ao travar cliente no backend');
 
       const updatedProspect = await response.json();
@@ -396,7 +417,6 @@ export default function ProspectList() {
 
       </div>
 
-      {/* Não é mais necessário o fetchProspects() no onClose porque o WebSocket vai atualizar automaticamente quando o backend responder ao final do atendimento! */}
       {isModalOpen && selectedProspect && (
         <ProspectModal 
           prospect={selectedProspect} 

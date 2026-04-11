@@ -30,7 +30,15 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-app.use('/prospects', contratosRoutes);
+import authRoutes from './routes/Auth.routes';
+import { authMiddleware } from './middlewares/auth';
+
+
+// Rotas públicas
+app.use('/auth', authRoutes);
+
+// Rotas Protegidas (Exige Token!)
+app.use('/prospects', authMiddleware, contratosRoutes);
 
 server.listen(3000, () => {
   console.log('🚀 Servidor HTTP e WebSocket rodando lindamente na porta 3000');

@@ -1,4 +1,3 @@
-// src/components/SidebarLayout.tsx
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
@@ -10,33 +9,41 @@ import {
   Menu, 
   X,
   BookOpen,
-  FileText // <-- 1. Importamos um ícone novo para os Contratos
+  FileText,
+  LogOut // <-- 1. Importamos o ícone de Sair
 } from 'lucide-react';
 
-export default function AppLayout({ children }: { children: React.ReactNode }) {
+// 2. Definimos que o AppLayout agora aceita a função de deslogar
+interface AppLayoutProps {
+  children: React.ReactNode;
+  onLogout: () => void; 
+}
+
+export default function AppLayout({ children, onLogout }: AppLayoutProps) {
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Fecha o menu mobile automaticamente ao trocar de rota
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [location.pathname]);
 
-  // 2. Adicionamos a rota na lista de navegação
   const navItems = [
     { path: '/', label: 'Briefing Gerencial', icon: LayoutDashboard },
     { path: '/fila', label: 'Fila de Tickets', icon: Inbox },
     { path: '/relatorios', label: 'Geração de Relatórios', icon: SlidersHorizontal },
     { path: '/base', label: 'Base Interna', icon: BookOpen },
-    { path: '/contratos', label: 'Contratos', icon: FileText }, // <-- Nova rota adicionada aqui!
+    { path: '/contratos', label: 'Contratos', icon: FileText }, 
   ];
+
+  // Pegamos o nome do usuário logado para mostrar no menu!
+  const userStr = localStorage.getItem('@CRM:user');
+  const currentUser = userStr ? JSON.parse(userStr) : { nome: 'Admin', role: 'Gestor' };
+  const iniciais = currentUser.nome ? currentUser.nome.substring(0, 2).toUpperCase() : 'US';
 
   return (
     <div className="flex flex-col md:flex-row h-screen w-full bg-[#f4f5f7] overflow-hidden font-sans relative">
       
-      {/* ========================================================
-        TOP BAR MOBILE (Aparece apenas em telas pequenas)
-        ======================================================== */}
+      {/* TOP BAR MOBILE */}
       <div className="md:hidden flex items-center justify-between bg-[#0a1128] h-16 px-4 shrink-0 shadow-md z-30">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-md">
@@ -52,9 +59,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </button>
       </div>
 
-      {/* ========================================================
-        OVERLAY ESCURO MOBILE (Fundo ao abrir o menu)
-        ======================================================== */}
+      {/* OVERLAY ESCURO MOBILE */}
       {isMobileMenuOpen && (
         <div 
           className="fixed inset-0 bg-black/60 z-40 md:hidden backdrop-blur-sm transition-opacity"
@@ -62,9 +67,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         />
       )}
 
-      {/* ========================================================
-        BARRA LATERAL (Drawer no Mobile / Hover no Desktop)
-        ======================================================== */}
+      {/* BARRA LATERAL */}
       <aside className={`
         fixed md:relative top-0 left-0 h-full bg-[#0a1128] flex flex-col z-50 
         transition-all duration-300 ease-in-out shrink-0 shadow-[4px_0_24px_-15px_rgba(0,0,0,0.5)] group
@@ -72,7 +75,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         md:translate-x-0 md:w-[76px] hover:md:w-[260px]
       `}>
         
-        {/* Botão Fechar Mobile */}
         <button 
           onClick={() => setIsMobileMenuOpen(false)}
           className="absolute top-6 right-4 text-slate-400 hover:text-white md:hidden"
@@ -126,22 +128,29 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <Settings size={22} className="shrink-0" />
             <span className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300 text-sm">Configurações</span>
           </button>
+          
+          {/* 3. BOTÃO DE SAIR */}
+          <button 
+            onClick={onLogout}
+            className="w-full flex items-center gap-4 px-2 py-2 mb-4 rounded-xl text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 font-bold transition-all whitespace-nowrap cursor-pointer text-left"
+          >
+            <LogOut size={22} className="shrink-0" />
+            <span className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300 text-sm">Sair do Sistema</span>
+          </button>
 
-          <div className="flex items-center gap-4 px-2 py-2 mt-2">
+          <div className="flex items-center gap-4 px-2 py-2 mt-2 bg-slate-800/30 rounded-xl">
             <div className="w-9 h-9 shrink-0 rounded-full bg-slate-700 flex items-center justify-center text-slate-300 font-bold text-xs border border-slate-600">
-              US
+              {iniciais}
             </div>
             <div className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">
-              <p className="text-sm font-bold text-white leading-tight">Admin</p>
-              <p className="text-[10px] font-semibold text-slate-400 uppercase mt-0.5">Gestor</p>
+              <p className="text-sm font-bold text-white leading-tight capitalize">{currentUser.nome}</p>
+              <p className="text-[10px] font-semibold text-slate-400 uppercase mt-0.5">{currentUser.role || 'Usuário'}</p>
             </div>
           </div>
         </div>
       </aside>
 
-      {/* ========================================================
-        ÁREA PRINCIPAL (Aqui dentro vai o Dashboard, Fila, etc)
-        ======================================================== */}
+      {/* ÁREA PRINCIPAL */}
       <main className="flex-1 flex flex-col h-full overflow-hidden bg-[#f4f5f7]">
         {children}
       </main>
