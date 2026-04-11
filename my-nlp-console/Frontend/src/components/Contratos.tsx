@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Papa from 'papaparse';
 import { UploadCloud, Search, Phone, RefreshCw, Inbox, PlayCircle, CheckCircle2, XCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { io } from 'socket.io-client'; // <-- Import do Socket.io Client
 import ProspectModal from './ContratosModal';
 
 export interface Prospect {
@@ -21,9 +22,11 @@ export interface Prospect {
 }
 
 const API_URL = 'http://localhost:3000/prospects';
+// Extrai apenas a base "http://localhost:3000" para conectar o WebSocket
+const SOCKET_URL = API_URL.replace('/prospects', ''); 
 
 // ==========================================
-// FUNÇÕES DE ESTILO (Movidas para fora para otimização)
+// FUNÇÕES DE ESTILO
 // ==========================================
 const getCardStyle = (status: string) => {
   switch (status) {
@@ -58,13 +61,12 @@ interface SectionProps {
 
 function PaginatedSection({ title, icon, data, emptyMessage, onCardClick }: SectionProps) {
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 6; // Mostra 6 cards por vez (2 linhas de 3 no desktop)
+  const itemsPerPage = 6; 
 
   const totalPages = Math.ceil(data.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedData = data.slice(startIndex, startIndex + itemsPerPage);
 
-  // Se o usuário buscar na barra de pesquisa e a quantidade de itens mudar, volta pra página 1
   useEffect(() => {
     setCurrentPage(1);
   }, [data.length]);
@@ -121,7 +123,6 @@ function PaginatedSection({ title, icon, data, emptyMessage, onCardClick }: Sect
             ))}
           </div>
 
-          {/* Controle de Paginação Específico da Seção */}
           {totalPages > 1 && (
             <div className="flex justify-between items-center bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-200 mt-4">
               <span className="text-xs text-slate-500 font-medium">
@@ -199,9 +200,7 @@ export default function ProspectList() {
           'Expires': '0'
         }
       });
-
       if (!response.ok) throw new Error('Falha ao buscar dados');
-      
       const data = await response.json();
       setProspects(data);
     } catch (error) {
@@ -209,8 +208,32 @@ export default function ProspectList() {
     }
   };
 
+  // ==========================================
+  // MAGIA DO WEB-SOCKET ⚡
+  // ==========================================
   useEffect(() => {
+    // Busca a carga inicial na primeira vez que abre a tela
     fetchProspects();
+
+    // Conecta ao servidor WebSocket
+    const socket = io(SOCKET_URL);
+
+    // Ouve as atualizações individuais (Quando alguém trava ou finaliza um card)
+    socket.on('prospectUpdated', (updatedProspect: Prospect) => {
+      setProspects(prev => prev.map(p => 
+        p.id === updatedProspect.id ? updatedProspect : p
+      ));
+    });
+
+    // Ouve atualizações em massa (Quando alguém importa um CSV novo)
+    socket.on('prospectsRefresh', () => {
+      fetchProspects();
+    });
+
+    // Desconecta ao sair da tela
+    return () => {
+      socket.disconnect();
+    };
   }, []);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -246,16 +269,12 @@ export default function ProspectList() {
             }));
 
           try {
-            const response = await fetch(`${API_URL}/importar`, {
+            await fetch(`${API_URL}/importar`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ prospects: novosProspects })
             });
-
-            if (!response.ok) throw new Error('Erro ao salvar no banco');
-            
-            await fetchProspects(); 
-
+            // O Socket avisa todo mundo pra recarregar a lista, não precisamos chamar fetch aqui!
           } catch (apiError) {
             console.error('Erro na API:', apiError);
           } finally {
@@ -271,9 +290,7 @@ export default function ProspectList() {
   };
 
   const handleCardClick = async (prospect: Prospect) => {
-    if (prospect.status !== 'PENDENTE') {
-      return; 
-    }
+    if (prospect.status !== 'PENDENTE') return; 
 
     try {
       const response = await fetch(`${API_URL}/${prospect.id}/travar`, {
@@ -282,16 +299,11 @@ export default function ProspectList() {
         body: JSON.stringify({ userId: currentUserId })
       });
 
-      if (response.status === 409) {
-        fetchProspects(); 
-        return;
-      }
+      if (response.status === 409) return; // O Socket vai atualizar e mostrar que está travado
 
       if (!response.ok) throw new Error('Erro ao travar cliente no backend');
 
       const updatedProspect = await response.json();
-
-      setProspects(prev => prev.map(p => p.id === prospect.id ? updatedProspect : p));
       setSelectedProspect(updatedProspect);
       setIsModalOpen(true);
 
@@ -349,8 +361,6 @@ export default function ProspectList() {
         </div>
 
         <hr className="border-slate-200 mb-8" />
-
-        {/* Componentes Independentes (Cada um controla sua própria páginação!) */}
         
         <PaginatedSection 
           title="Para Triagem" 
@@ -386,13 +396,11 @@ export default function ProspectList() {
 
       </div>
 
+      {/* Não é mais necessário o fetchProspects() no onClose porque o WebSocket vai atualizar automaticamente quando o backend responder ao final do atendimento! */}
       {isModalOpen && selectedProspect && (
         <ProspectModal 
           prospect={selectedProspect} 
-          onClose={() => {
-            setIsModalOpen(false);
-            fetchProspects(); 
-          }} 
+          onClose={() => setIsModalOpen(false)} 
           currentUserId={currentUserId}
         />
       )}

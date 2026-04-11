@@ -22,6 +22,10 @@ export class ProspectController {
         data: prospects,
         skipDuplicates: true 
       });
+      
+      // Avisa TODOS os frontends para recarregarem a tela inteira!
+      req.app.get('io').emit('prospectsRefresh');
+      
       res.status(201).json({ message: 'Planilha importada com sucesso!' });
     } catch (error) {
       console.error(error);
@@ -42,6 +46,10 @@ export class ProspectController {
         where: { id },
         data: { status: 'EM_ATENDIMENTO' }
       });
+
+      // Avisa todos os frontends enviando o card atualizado (para mudar a cor na hora)
+      req.app.get('io').emit('prospectUpdated', atualizado);
+
       res.json(atualizado);
     } catch (error) {
       console.error(error);
@@ -52,12 +60,15 @@ export class ProspectController {
   finalizar = async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      const { acao } = req.body; // 'APROVADO' ou 'REPROVADO'
+      const { acao } = req.body; 
 
       const atualizado = await prisma.prospect.update({
         where: { id },
         data: { status: acao }
       });
+
+      req.app.get('io').emit('prospectUpdated', atualizado);
+
       res.json({ message: 'Atendimento finalizado!', prospect: atualizado });
     } catch (error) {
       console.error(error);
