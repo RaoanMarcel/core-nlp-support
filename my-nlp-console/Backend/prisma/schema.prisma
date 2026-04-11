@@ -15,19 +15,28 @@ enum StatusAtendimento {
 }
 
 model Prospect {
-  id            String            @id @default(uuid())
-  cnpj          String            @unique
-  nome          String
-  modulosAtuais String            // Ex: "NFE, NFCE"
-  telefone      String?
-  observacoes   String?           @db.Text
-  novosModulos  String[]          // Array do Postgres para [NFE, NFCE...]
-  status        StatusAtendimento @default(PENDENTE)
+  id                 String            @id @default(uuid())
+  cnpj               String            @unique
+  nome               String
+  modulosAtuais      String?
+  telefone           String?
   
-  // Controle de concorrência
-  lockedBy      String?           // ID do usuário que está atendendo
-  lockedAt      DateTime?
+  // === NOVAS COLUNAS ===
+  simplesNacional    String?
+  situacaoCadastral  String?
+  telefoneSecundario String?
+  email              String?
+  atividadePrincipal String?
+  telefoneBackup     String?
+  // =====================
+
+  observacoes        String?           @db.Text
+  novosModulos       String[]          
+  status             StatusAtendimento @default(PENDENTE)
   
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
+  lockedBy           String?           
+  lockedAt           DateTime?
+  
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
 }
