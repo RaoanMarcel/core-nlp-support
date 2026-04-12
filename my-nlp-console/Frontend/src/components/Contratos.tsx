@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import axios from 'axios';
 import Papa from 'papaparse';
 import { UploadCloud, Search, Phone, RefreshCw, Inbox, PlayCircle, CheckCircle2, XCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { io } from 'socket.io-client'; 
@@ -21,8 +22,13 @@ export interface Prospect {
   telefoneBackup?: string;
 }
 
-const API_URL = 'http://localhost:3000/prospects';
-const SOCKET_URL = API_URL.replace('/prospects', ''); 
+// ==========================================
+// CONFIGURAÇÃO DE API / AXIOS
+// ==========================================
+const BASE_URL = import.meta.env?.VITE_API_URL || process.env?.REACT_APP_API_URL || 'http://localhost:3000';
+
+const API_URL = `${BASE_URL}/prospects`;
+const SOCKET_URL = BASE_URL; 
 
 // ==========================================
 // FUNÇÕES DE ESTILO
@@ -193,9 +199,9 @@ export default function ProspectList() {
   const currentUser = userStr ? JSON.parse(userStr) : null;
   const currentUserId = currentUser?.id || '';
 
-  // Helper para lidar com token expirado (Erro 401)
-  const handleAuthError = (res: Response) => {
-    if (res.status === 401) {
+  // Helper para lidar com token expirado no Axios (Erro 401)
+  const handleAuthError = (error: any) => {
+    if (error.response && error.response.status === 401) {
       localStorage.removeItem('@CRM:token');
       localStorage.removeItem('@CRM:user');
       window.location.reload();
@@ -206,22 +212,19 @@ export default function ProspectList() {
 
   const fetchProspects = async () => {
     try {
-      const response = await fetch(`${API_URL}?t=${new Date().getTime()}`, {
-        method: 'GET',
+      const response = await axios.get(`${API_URL}?t=${new Date().getTime()}`, {
         headers: {
-          'Authorization': `Bearer ${token}`, // <--- ENVIANDO TOKEN AQUI
+          'Authorization': `Bearer ${token}`, 
           'Cache-Control': 'no-cache, no-store, must-revalidate',
           'Pragma': 'no-cache',
           'Expires': '0'
         }
       });
       
-      if (handleAuthError(response)) return; // Se for 401, para aqui.
-      if (!response.ok) throw new Error('Falha ao buscar dados');
-      
-      const data = await response.json();
-      setProspects(data);
-    } catch (error) {
+      // O Axios já entrega o JSON pronto dentro de response.data
+      setProspects(response.data);
+    } catch (error: any) {
+      if (handleAuthError(error)) return; // Se for 401, para aqui e desloga.
       console.error('Erro ao carregar prospects:', error);
     }
   };
@@ -279,18 +282,19 @@ export default function ProspectList() {
             }));
 
           try {
-            const response = await fetch(`${API_URL}/importar`, {
-              method: 'POST',
-              headers: { 
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}` // <--- ENVIANDO TOKEN AQUI
-              },
-              body: JSON.stringify({ prospects: novosProspects })
-            });
+            await axios.post(`${API_URL}/importar`, 
+              { prospects: novosProspects },
+              {
+                headers: { 
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${token}` 
+                }
+              }
+            );
 
-            if (handleAuthError(response)) return;
-            // O Socket avisa todo mundo pra recarregar a lista
-          } catch (apiError) {
+            // Se der sucesso, o Socket avisa todo mundo pra recarregar a lista
+          } catch (apiError: any) {
+            if (handleAuthError(apiError)) return;
             console.error('Erro na API:', apiError);
           } finally {
             setIsImporting(false);
@@ -308,27 +312,33 @@ export default function ProspectList() {
     if (prospect.status !== 'PENDENTE') return; 
 
     try {
-      const response = await fetch(`${API_URL}/${prospect.id}/travar`, {
-        method: 'PUT',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` // <--- ENVIANDO TOKEN AQUI
-        },
-        body: JSON.stringify({ 
+      const response = await axios.put(`${API_URL}/${prospect.id}/travar`, 
+        { 
           userId: currentUserId,
-          userName: currentUser?.nome // Enviando também o nome para mostrar no badge quem atende!
-        })
-      });
+          userName: currentUser?.nome 
+        },
+        {
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
 
-      if (handleAuthError(response)) return;
-      if (response.status === 409) return; 
-      if (!response.ok) throw new Error('Erro ao travar cliente no backend');
-
-      const updatedProspect = await response.json();
+      // response.data contém o prospect atualizado retornado pelo backend
+      const updatedProspect = response.data;
       setSelectedProspect(updatedProspect);
       setIsModalOpen(true);
 
-    } catch (error) {
+    } catch (error: any) {
+      if (handleAuthError(error)) return;
+      
+      // O Axios acessa o status através de error.response.status
+      if (error.response && error.response.status === 409) {
+        console.warn('Cliente já está travado por outro usuário');
+        return; 
+      }
+      
       console.error('Erro ao travar:', error);
     }
   };

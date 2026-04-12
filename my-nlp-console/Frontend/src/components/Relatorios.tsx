@@ -1,10 +1,16 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { 
   Calendar, Zap, BarChart2, Bot, Download, 
   LayoutDashboard, TableProperties, Info, FileSpreadsheet,
   Loader2, Play, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
+
+// ==========================================
+// CONFIGURAÇÃO DE API
+// ==========================================
+const BASE_URL = import.meta.env?.VITE_API_URL || process.env?.REACT_APP_API_URL || import.meta.env?.PUBLIC_API_URL || 'http://localhost:3000';
 
 // ==========================================
 // FUNÇÕES AUXILIARES DE DATA
@@ -104,7 +110,7 @@ export default function Relatorios() {
   const moduleConfig = REPORT_MODULES[selectedModule];
   const canGenerate = selectedDimensions.length > 0 && selectedMetrics.length > 0;
 
-  // BUSCAR DADOS DO BACKEND
+  // BUSCAR DADOS DO BACKEND VIA AXIOS
   const handleGerarPrevia = async () => {
     if (!canGenerate) return;
     setIsLoading(true);
@@ -120,32 +126,28 @@ export default function Relatorios() {
 
       const token = localStorage.getItem('@CRM:token');
 
-      const response = await fetch('http://localhost:3000/relatorios/build', {
-        method: 'POST',
+      const response = await axios.post(`${BASE_URL}/relatorios/build`, payload, {
         headers: { 
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(payload)
+        }
       });
 
-      if (response.status === 401) {
+      // Com axios, não precisamos do response.ok ou await response.json()
+      // O dado já vem tratado em response.data
+      setReportData(response.data);
+      setCurrentPage(1); 
+      setHasPreview(true);
+
+    } catch (error: any) {
+      // Axios joga os erros de status HTTP diretamente para o catch
+      if (error.response && error.response.status === 401) {
         localStorage.removeItem('@CRM:token');
         localStorage.removeItem('@CRM:user');
         window.location.reload();
         return;
       }
-
-      if (response.ok) {
-        const data = await response.json();
-        setReportData(data);
-        setCurrentPage(1); 
-        setHasPreview(true);
-      } else {
-        console.error("Erro ao gerar relatório");
-      }
-    } catch (error) {
-      console.error("Erro de conexão", error);
+      console.error("Erro ao gerar relatório:", error);
     } finally {
       setIsLoading(false);
     }
