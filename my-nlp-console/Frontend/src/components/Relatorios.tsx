@@ -8,7 +8,7 @@ import {
 import * as XLSX from 'xlsx';
 
 
-const BASE_URL = import.meta.env?.PUBLIC_API_URL || import.meta.env?.VITE_API_URL || 'https://seu-app-backend.onrender.com';
+const BASE_URL = import.meta.env?.PUBLIC_API_URL || import.meta.env?.VITE_API_URL || 'https://core-nlp-support.onrender.com';
 
 
 const getFormattedDate = (date: Date) => {

@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
 import { Lock, User, Loader2, ArrowRight, ShieldCheck } from 'lucide-react';
 
-// Substitua esta URL pela URL do seu backend no Render
-const API_URL = 'https://seu-app-backend.onrender.com';
-
+const API_URL = 'https://core-nlp-support.onrender.com';
 interface LoginProps {
   onLoginSuccess: (token: string, user: any) => void;
 }
