@@ -5,8 +5,8 @@ import { type Prospect } from './Contratos';
 
 const MODULOS_DISPONIVEIS = ['NFE', 'NFCE', 'MDFE', 'CTE', 'NFSE', 'FINANCEIRO', 'ESTOQUE'];
 
-// Substitua esta URL pela URL do seu backend no Render
-const API_URL = 'https://seu-app-backend.onrender.com/prospects';
+
+const API_URL = 'https://core-nlp-support.onrender.com/prospects';
 
 interface ModalProps {
   prospect: Prospect;
