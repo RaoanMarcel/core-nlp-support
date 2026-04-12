@@ -20,25 +20,25 @@ export interface Prospect {
   email?: string;
   atividadePrincipal?: string;
   telefoneBackup?: string;
+
+  observacoes?: string;
+  novosModulos?: string[] | string;
+  
+  atendidoPor?: string;
+  dataAtendimento?: string | Date;
 }
 
-// ==========================================
-// CONFIGURAÇÃO DE API / AXIOS
-// ==========================================
-const BASE_URL = import.meta.env?.VITE_API_URL || process.env?.REACT_APP_API_URL || 'http://localhost:3000';
+const BASE_URL = import.meta.env?.PUBLIC_API_URL || import.meta.env?.VITE_API_URL || 'http://localhost:3000';
 
 const API_URL = `${BASE_URL}/prospects`;
 const SOCKET_URL = BASE_URL; 
 
-// ==========================================
-// FUNÇÕES DE ESTILO
-// ==========================================
 const getCardStyle = (status: string) => {
   switch (status) {
     case 'PENDENTE': return 'bg-white border-transparent hover:border-blue-300 hover:shadow-sm hover:ring-1 hover:ring-blue-100 cursor-pointer';
     case 'EM_ATENDIMENTO': return 'bg-amber-50/40 border-amber-200 opacity-90 cursor-not-allowed';
-    case 'APROVADO': return 'bg-emerald-50/40 border-emerald-200 opacity-80 cursor-default';
-    case 'REPROVADO': return 'bg-rose-50/40 border-rose-200 opacity-80 cursor-default';
+    case 'APROVADO': return 'bg-emerald-50/40 border-emerald-200 opacity-80 hover:opacity-100 hover:shadow-sm transition-all cursor-pointer';
+    case 'REPROVADO': return 'bg-rose-50/40 border-rose-200 opacity-80 hover:opacity-100 hover:shadow-sm transition-all cursor-pointer';
     default: return 'bg-white border-transparent';
   }
 };
@@ -53,9 +53,6 @@ const getBadgeStyle = (status: string) => {
   }
 };
 
-// ==========================================
-// COMPONENTE DE SEÇÃO PAGINADA
-// ==========================================
 interface SectionProps {
   title: string;
   icon: React.ReactNode;
@@ -180,10 +177,6 @@ function PaginatedSection({ title, icon, data, emptyMessage, onCardClick }: Sect
     </div>
   );
 }
-
-// ==========================================
-// TELA PRINCIPAL
-// ==========================================
 export default function ProspectList() {
   const [prospects, setProspects] = useState<Prospect[]>([]); 
   const [selectedProspect, setSelectedProspect] = useState<Prospect | null>(null);
@@ -193,13 +186,11 @@ export default function ProspectList() {
   const [searchQuery, setSearchQuery] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // 1. Pegando dados do usuário e Token do LocalStorage
   const token = localStorage.getItem('@CRM:token');
   const userStr = localStorage.getItem('@CRM:user');
   const currentUser = userStr ? JSON.parse(userStr) : null;
   const currentUserId = currentUser?.id || '';
 
-  // Helper para lidar com token expirado no Axios (Erro 401)
   const handleAuthError = (error: any) => {
     if (error.response && error.response.status === 401) {
       localStorage.removeItem('@CRM:token');
@@ -220,11 +211,9 @@ export default function ProspectList() {
           'Expires': '0'
         }
       });
-      
-      // O Axios já entrega o JSON pronto dentro de response.data
       setProspects(response.data);
     } catch (error: any) {
-      if (handleAuthError(error)) return; // Se for 401, para aqui e desloga.
+      if (handleAuthError(error)) return; 
       console.error('Erro ao carregar prospects:', error);
     }
   };
@@ -291,8 +280,6 @@ export default function ProspectList() {
                 }
               }
             );
-
-            // Se der sucesso, o Socket avisa todo mundo pra recarregar a lista
           } catch (apiError: any) {
             if (handleAuthError(apiError)) return;
             console.error('Erro na API:', apiError);
@@ -309,37 +296,41 @@ export default function ProspectList() {
   };
 
   const handleCardClick = async (prospect: Prospect) => {
-    if (prospect.status !== 'PENDENTE') return; 
-
-    try {
-      const response = await axios.put(`${API_URL}/${prospect.id}/travar`, 
-        { 
-          userId: currentUserId,
-          userName: currentUser?.nome 
-        },
-        {
-          headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          }
-        }
-      );
-
-      // response.data contém o prospect atualizado retornado pelo backend
-      const updatedProspect = response.data;
-      setSelectedProspect(updatedProspect);
+    if (prospect.status === 'EM_ATENDIMENTO') return; 
+    if (prospect.status === 'APROVADO' || prospect.status === 'REPROVADO') {
+      setSelectedProspect(prospect);
       setIsModalOpen(true);
+      return;
+    }
+    if (prospect.status === 'PENDENTE') {
+      try {
+        const response = await axios.put(`${API_URL}/${prospect.id}/travar`, 
+          { 
+            userId: currentUserId,
+            userName: currentUser?.nome 
+          },
+          {
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            }
+          }
+        );
 
-    } catch (error: any) {
-      if (handleAuthError(error)) return;
-      
-      // O Axios acessa o status através de error.response.status
-      if (error.response && error.response.status === 409) {
-        console.warn('Cliente já está travado por outro usuário');
-        return; 
+        const updatedProspect = response.data;
+        setSelectedProspect(updatedProspect);
+        setIsModalOpen(true);
+
+      } catch (error: any) {
+        if (handleAuthError(error)) return;
+        
+        if (error.response && error.response.status === 409) {
+          alert('Este cliente já está sendo atendido por outro usuário.');
+          return; 
+        }
+        
+        console.error('Erro ao travar:', error);
       }
-      
-      console.error('Erro ao travar:', error);
     }
   };
 
@@ -427,11 +418,12 @@ export default function ProspectList() {
 
       </div>
 
-      {isModalOpen && selectedProspect && (
+       {isModalOpen && selectedProspect && (
         <ProspectModal 
           prospect={selectedProspect} 
           onClose={() => setIsModalOpen(false)} 
           currentUserId={currentUserId}
+          currentUserName={currentUser?.nome || 'Usuário'} 
         />
       )}
     </div>

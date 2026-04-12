@@ -10,7 +10,7 @@ import * as XLSX from 'xlsx';
 // ==========================================
 // CONFIGURAÇÃO DE API
 // ==========================================
-const BASE_URL = import.meta.env?.VITE_API_URL || process.env?.REACT_APP_API_URL || import.meta.env?.PUBLIC_API_URL || 'http://localhost:3000';
+const BASE_URL = import.meta.env?.PUBLIC_API_URL || import.meta.env?.VITE_API_URL || 'http://localhost:3000';
 
 // ==========================================
 // FUNÇÕES AUXILIARES DE DATA

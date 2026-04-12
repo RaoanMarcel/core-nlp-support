@@ -21,14 +21,12 @@ model Prospect {
   modulosAtuais      String?
   telefone           String?
   
-  // === NOVAS COLUNAS ===
   simplesNacional    String?
   situacaoCadastral  String?
   telefoneSecundario String?
   email              String?
   atividadePrincipal String?
   telefoneBackup     String?
-  // =====================
 
   observacoes        String?           @db.Text
   novosModulos       String[]          
@@ -36,17 +34,18 @@ model Prospect {
   
   lockedBy           String?           
   lockedAt           DateTime?
-  
+    atendidoPor        String?           
+  dataAtendimento    DateTime?         
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @updatedAt
 }
 
 model User {
-  id        String   @id @default(uuid())
-  nome      String
-  usuario   String   @unique // Será o login (ex: joao.silva)
-  senha     String   // Aqui vai o hash do bcrypt, nunca a senha real
-  primeiroAcesso Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String   @id @default(uuid())
+  nome            String
+  usuario         String   @unique
+  senha           String   
+  primeiroAcesso  Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
