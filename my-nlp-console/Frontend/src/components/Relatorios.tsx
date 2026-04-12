@@ -7,19 +7,15 @@ import {
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
-// ==========================================
-// CONFIGURAÇÃO DE API
-// ==========================================
-const BASE_URL = import.meta.env?.PUBLIC_API_URL || import.meta.env?.VITE_API_URL || 'http://localhost:3000';
 
-// ==========================================
-// FUNÇÕES AUXILIARES DE DATA
-// ==========================================
+const BASE_URL = import.meta.env?.PUBLIC_API_URL || import.meta.env?.VITE_API_URL || 'https://seu-app-backend.onrender.com';
+
+
 const getFormattedDate = (date: Date) => {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`; // Formato obrigatório para <input type="date">
+  return `${year}-${month}-${day}`; 
 };
 
 const getInitialDates = () => {
@@ -33,9 +29,7 @@ const getInitialDates = () => {
   };
 };
 
-// ==========================================
-// 1. DICIONÁRIO DE MÓDULOS (Configuração Base)
-// ==========================================
+
 const REPORT_MODULES = {
   prospects: {
     label: 'Prospecção e Vendas',
@@ -63,9 +57,7 @@ type ModuleKey = keyof typeof REPORT_MODULES;
 const ITEMS_PER_PAGE = 15;
 
 export default function Relatorios() {
-  // ==========================================
-  // ESTADOS
-  // ==========================================
+
   const [selectedModule, setSelectedModule] = useState<ModuleKey>('prospects');
   const [selectedDimensions, setSelectedDimensions] = useState<string[]>([]);
   const [selectedMetrics, setSelectedMetrics] = useState<string[]>([]);
@@ -81,22 +73,16 @@ export default function Relatorios() {
   const [hasPreview, setHasPreview] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
 
-  // ==========================================
-  // LÓGICA DE PAGINAÇÃO
-  // ==========================================
   const totalPages = Math.ceil(reportData.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const paginatedData = reportData.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
-  // ==========================================
-  // EFEITOS E HANDLERS
-  // ==========================================
   useEffect(() => {
     setSelectedDimensions([]);
     setSelectedMetrics([]);
     setReportData([]);
     setHasPreview(false);
-    setCurrentPage(1); // Reseta a página ao trocar de módulo
+    setCurrentPage(1); 
   }, [selectedModule]);
 
   const toggleDimension = (id: string) => {
@@ -110,7 +96,6 @@ export default function Relatorios() {
   const moduleConfig = REPORT_MODULES[selectedModule];
   const canGenerate = selectedDimensions.length > 0 && selectedMetrics.length > 0;
 
-  // BUSCAR DADOS DO BACKEND VIA AXIOS
   const handleGerarPrevia = async () => {
     if (!canGenerate) return;
     setIsLoading(true);
@@ -121,7 +106,7 @@ export default function Relatorios() {
         dataInicial: startDate,
         dataFinal: endDate,
         dimensoes: selectedDimensions,
-        metricas: selectedMetrics
+        metrics: selectedMetrics 
       };
 
       const token = localStorage.getItem('@CRM:token');
@@ -133,14 +118,11 @@ export default function Relatorios() {
         }
       });
 
-      // Com axios, não precisamos do response.ok ou await response.json()
-      // O dado já vem tratado em response.data
       setReportData(response.data);
       setCurrentPage(1); 
       setHasPreview(true);
 
     } catch (error: any) {
-      // Axios joga os erros de status HTTP diretamente para o catch
       if (error.response && error.response.status === 401) {
         localStorage.removeItem('@CRM:token');
         localStorage.removeItem('@CRM:user');
@@ -177,7 +159,6 @@ export default function Relatorios() {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Relatório');
 
-    // Se quiser que o nome do arquivo tenha a data no padrão BR:
     const dataBR = startDate.split('-').reverse().join('-');
     XLSX.writeFile(workbook, `exportacao_${selectedModule}_${dataBR}.xlsx`);
   };
@@ -185,7 +166,6 @@ export default function Relatorios() {
   return (
     <div className="flex-1 h-full bg-[#f8f9f9] overflow-y-auto p-4 md:p-8 font-sans">
       
-      {/* CABEÇALHO */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight">Relatórios e Exportação</h1>
@@ -195,7 +175,6 @@ export default function Relatorios() {
         </div>
       </div>
 
-      {/* SESSÃO: CONSTRUTOR DE RELATÓRIOS DINÂMICO */}
       <div className="mb-8">
         <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2">
           <LayoutDashboard size={16} /> Construtor Avançado
@@ -203,10 +182,8 @@ export default function Relatorios() {
         
         <div className="bg-white border border-[#d8dcde] rounded-xl shadow-sm flex flex-col md:flex-row min-h-[500px] overflow-hidden">
           
-          {/* COLUNA ESQUERDA: AS OPÇÕES */}
           <div className="w-full md:w-[320px] bg-[#fafafa] border-r border-[#d8dcde] p-6 flex flex-col shrink-0">
             
-            {/* 1. SELEÇÃO DO MÓDULO */}
             <div className="mb-6">
               <label className="text-sm font-bold text-slate-900 block mb-2">Base de Dados</label>
               <select 
@@ -222,7 +199,6 @@ export default function Relatorios() {
 
             <hr className="border-[#d8dcde] mb-6" />
 
-            {/* 2. Filtro de Data */}
             <div className="mb-6">
               <h3 className="text-sm font-bold text-slate-900 mb-3">Período <span className="text-[10px] font-normal text-slate-500">(Filtro)</span></h3>
               <div className="flex flex-col gap-3">
@@ -245,7 +221,6 @@ export default function Relatorios() {
 
             <hr className="border-[#d8dcde] mb-6" />
 
-            {/* 3. Dimensões Dinâmicas */}
             <div className="mb-6">
               <h3 className="text-sm font-bold text-slate-900 mb-3">Agrupar por <span className="text-[10px] font-normal text-slate-500">(Dimensões)</span></h3>
               <div className="space-y-2.5">

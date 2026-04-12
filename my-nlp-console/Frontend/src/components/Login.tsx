@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { Lock, User, Loader2, ArrowRight, ShieldCheck } from 'lucide-react';
 
+// Substitua esta URL pela URL do seu backend no Render
+const API_URL = 'https://seu-app-backend.onrender.com';
+
 interface LoginProps {
   onLoginSuccess: (token: string, user: any) => void;
 }
@@ -22,7 +25,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
     setErro('');
 
     try {
-      const response = await fetch('http://localhost:3000/auth/login', {
+      const response = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ usuario, senha })
@@ -63,7 +66,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
     setErro('');
 
     try {
-      const response = await fetch('http://localhost:3000/auth/primeiro-acesso', {
+      const response = await fetch(`${API_URL}/auth/primeiro-acesso`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 

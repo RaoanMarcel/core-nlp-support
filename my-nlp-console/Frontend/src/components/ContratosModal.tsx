@@ -4,7 +4,9 @@ import { Phone, Mail, Building, FileText, ArrowLeft, CheckCircle2, XCircle, Edit
 import { type Prospect } from './Contratos'; 
 
 const MODULOS_DISPONIVEIS = ['NFE', 'NFCE', 'MDFE', 'CTE', 'NFSE', 'FINANCEIRO', 'ESTOQUE'];
-const API_URL = 'http://localhost:3000/prospects';
+
+// Substitua esta URL pela URL do seu backend no Render
+const API_URL = 'https://seu-app-backend.onrender.com/prospects';
 
 interface ModalProps {
   prospect: Prospect;
