@@ -5,15 +5,16 @@ import {
   LayoutDashboard, 
   Inbox, 
   Settings, 
-  LifeBuoy, 
   Menu, 
   X,
   BookOpen,
   FileText,
-  LogOut // <-- 1. Importamos o ícone de Sair
+  LogOut 
 } from 'lucide-react';
 
-// 2. Definimos que o AppLayout agora aceita a função de deslogar
+// Importação com ?url para extrair o caminho correto do arquivo
+import logoSvg from '../assets/logo.svg?url';
+
 interface AppLayoutProps {
   children: React.ReactNode;
   onLogout: () => void; 
@@ -35,7 +36,6 @@ export default function AppLayout({ children, onLogout }: AppLayoutProps) {
     { path: '/contratos', label: 'Contratos', icon: FileText }, 
   ];
 
-  // Pegamos o nome do usuário logado para mostrar no menu!
   const userStr = localStorage.getItem('@CRM:user');
   const currentUser = userStr ? JSON.parse(userStr) : { nome: 'Admin', role: 'Gestor' };
   const iniciais = currentUser.nome ? currentUser.nome.substring(0, 2).toUpperCase() : 'US';
@@ -46,8 +46,9 @@ export default function AppLayout({ children, onLogout }: AppLayoutProps) {
       {/* TOP BAR MOBILE */}
       <div className="md:hidden flex items-center justify-between bg-[#0a1128] h-16 px-4 shrink-0 shadow-md z-30">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-md">
-            <LifeBuoy size={16} className="text-white" />
+          {/* Logo Mobile */}
+          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-md overflow-hidden">
+            <img src={logoSvg as string} alt="AutoDesk Logo" className="w-5 h-5 object-contain" />
           </div>
           <h1 className="font-black text-white text-lg">AutoDesk</h1>
         </div>
@@ -71,8 +72,8 @@ export default function AppLayout({ children, onLogout }: AppLayoutProps) {
       <aside className={`
         fixed md:relative top-0 left-0 h-full bg-[#0a1128] flex flex-col z-50 
         transition-all duration-300 ease-in-out shrink-0 shadow-[4px_0_24px_-15px_rgba(0,0,0,0.5)] group
-        ${isMobileMenuOpen ? 'translate-x-0 w-[260px]' : '-translate-x-full w-[260px]'}
-        md:translate-x-0 md:w-[76px] hover:md:w-[260px]
+        ${isMobileMenuOpen ? 'translate-x-0 w-65' : '-translate-x-full w-65'}
+        md:translate-x-0 md:w-19 hover:md:w-65
       `}>
         
         <button 
@@ -83,9 +84,10 @@ export default function AppLayout({ children, onLogout }: AppLayoutProps) {
         </button>
 
         {/* Logo Area */}
-        <div className="h-[80px] flex items-center px-5 shrink-0 border-b border-slate-800/60 whitespace-nowrap mt-4 md:mt-0">
-          <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center shrink-0 shadow-md">
-            <LifeBuoy size={20} className="text-white" />
+        <div className="h-20 flex items-center px-5 shrink-0 border-b border-slate-800/60 whitespace-nowrap mt-4 md:mt-0">
+          {/* Logo Desktop */}
+          <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center shrink-0 shadow-md overflow-hidden">
+            <img src={logoSvg as string} alt="AutoDesk Logo" className="w-6 h-6 object-contain" />
           </div>
           <div className="ml-4 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300 md:delay-75">
             <h1 className="text-lg font-black text-white leading-tight">AutoDesk</h1>
@@ -123,13 +125,12 @@ export default function AppLayout({ children, onLogout }: AppLayoutProps) {
         </nav>
 
         {/* Footer Area / User */}
-        <div className="p-4 border-t border-slate-800/60 shrink-0 whitespace-nowrap">
+        <div className="p-4 border-t border-slate-800/60 shrink-0 whitespace-nowrap flex flex-col">
           <button className="w-full flex items-center gap-4 px-2 py-2 mb-2 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-white font-bold transition-all whitespace-nowrap cursor-pointer text-left">
             <Settings size={22} className="shrink-0" />
             <span className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300 text-sm">Configurações</span>
           </button>
           
-          {/* 3. BOTÃO DE SAIR */}
           <button 
             onClick={onLogout}
             className="w-full flex items-center gap-4 px-2 py-2 mb-4 rounded-xl text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 font-bold transition-all whitespace-nowrap cursor-pointer text-left"
@@ -146,6 +147,12 @@ export default function AppLayout({ children, onLogout }: AppLayoutProps) {
               <p className="text-sm font-bold text-white leading-tight capitalize">{currentUser.nome}</p>
               <p className="text-[10px] font-semibold text-slate-400 uppercase mt-0.5">{currentUser.role || 'Usuário'}</p>
             </div>
+          </div>
+
+          <div className="mt-4 flex items-center justify-center opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">
+            <p className="text-[10px] text-slate-500/80 font-medium tracking-wide">
+              Desenvolvido por <span className="font-bold text-slate-400">Raoan</span>
+            </p>
           </div>
         </div>
       </aside>
