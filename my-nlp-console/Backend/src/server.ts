@@ -43,6 +43,9 @@ app.use('/auth', authRoutes);
 app.use('/prospects', authMiddleware, contratosRoutes);
 app.use('/relatorios', authMiddleware, relatoriosRoutes);
 
+app.get('/ping', (req, res) => {
+  res.status(200).json({ message: 'Pong! Servidor acordado.' });
+});
 server.listen(3000, () => {
   console.log('🚀 Servidor HTTP e WebSocket rodando lindamente na porta 3000');
 });
