@@ -153,7 +153,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
               <div className="relative">
                 <Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 z-10" />
                 <input type={showPassword ? "text" : "password"} id="senha" required value={senha} onChange={(e) => setSenha(e.target.value)} className={inputClass} placeholder=" " />
-                <label htmlFor="senha" className={labelClass}>Senha Provisória</label>
+                <label htmlFor="senha" className={labelClass}>Senha</label>
                 <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-600 transition-colors z-10">
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
