@@ -1,7 +1,20 @@
 import React, { useState } from 'react';
-import { Lock, User, Loader2, ArrowRight, ShieldCheck } from 'lucide-react';
+import { 
+  Lock, 
+  User, 
+  Loader2, 
+  ArrowRight, 
+  ShieldCheck, 
+  Eye, 
+  EyeOff, 
+  AlertCircle,
+  X 
+} from 'lucide-react';
+
+import logoSvg from '../assets/logo.svg?url';
 
 const API_URL = 'https://core-nlp-support.onrender.com';
+
 interface LoginProps {
   onLoginSuccess: (token: string, user: any) => void;
 }
@@ -15,8 +28,8 @@ export default function Login({ onLoginSuccess }: LoginProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [erro, setErro] = useState('');
   const [modoTrocaSenha, setModoTrocaSenha] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
-  // LOGIN NORMAL
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -36,49 +49,32 @@ export default function Login({ onLoginSuccess }: LoginProps) {
         localStorage.setItem('@CRM:user', JSON.stringify(data.user));
         onLoginSuccess(data.token, data.user);
       } else if (response.status === 403 && data.requirePasswordChange) {
-        // CAIU NO PRIMEIRO ACESSO!
         setModoTrocaSenha(true);
       } else {
-        setErro(data.error || 'Erro ao fazer login');
+        setErro(data.error || 'Credenciais inválidas.');
       }
     } catch (error) {
-      setErro('Erro de conexão com o servidor.');
+      setErro('Erro na conexão com o servidor.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // TROCA DE SENHA (PRIMEIRO ACESSO)
   const handleTrocarSenha = async (e: React.FormEvent) => {
     e.preventDefault();
     if (novaSenha !== confirmarSenha) {
       setErro('As senhas não conferem!');
       return;
     }
-    if (novaSenha.length < 6) {
-      setErro('A nova senha deve ter no mínimo 6 caracteres.');
-      return;
-    }
-
     setIsLoading(true);
-    setErro('');
-
     try {
       const response = await fetch(`${API_URL}/auth/primeiro-acesso`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          usuario, 
-          senhaAtual: senha, // A senha que ele usou para tentar logar agora pouco
-          novaSenha 
-        })
+        body: JSON.stringify({ usuario, senhaAtual: senha, novaSenha })
       });
-
       const data = await response.json();
-
       if (response.ok) {
-        localStorage.setItem('@CRM:token', data.token);
-        localStorage.setItem('@CRM:user', JSON.stringify(data.user));
         onLoginSuccess(data.token, data.user);
       } else {
         setErro(data.error || 'Erro ao atualizar senha');
@@ -90,105 +86,125 @@ export default function Login({ onLoginSuccess }: LoginProps) {
     }
   };
 
+  const inputClass = "block w-full px-10 pt-6 pb-2 text-sm text-slate-900 bg-white/50 border border-slate-200/60 rounded-xl appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 peer transition-all backdrop-blur-sm";
+  const labelClass = "absolute text-sm text-slate-400 duration-300 transform -translate-y-3 scale-75 top-4 z-10 origin-[0] left-10 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-3 peer-focus:text-blue-600 pointer-events-none";
+
   return (
-    <div className="min-h-screen bg-[#f4f5f7] flex items-center justify-center p-4 font-sans">
-      <div className="bg-white w-full max-w-md rounded-2xl shadow-xl border border-slate-100 p-8">
+    <div className="min-h-screen relative flex items-center justify-center p-4 font-sans overflow-hidden bg-[#f8fafc]">
+      
+      {/* --- ELEMENTOS DE FUNDO (MESH GRADIENT) --- */}
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-400/20 rounded-full blur-[120px] animate-pulse" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-500/10 rounded-full blur-[120px]" />
+      <div className="absolute top-[20%] right-[10%] w-[20%] h-[20%] bg-blue-600/10 rounded-full blur-[80px]" />
+
+      {/* --- O CARD CUSTOMIZADO --- */}
+      <div className="w-full max-w-md relative group">
         
-        <div className="text-center mb-8">
-          <div className={`w-12 h-12 ${modoTrocaSenha ? 'bg-amber-500' : 'bg-blue-600'} text-white rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg`}>
-            {modoTrocaSenha ? <ShieldCheck size={24} /> : <Lock size={24} />}
+        {/* Glow atrás do card */}
+        <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl blur opacity-10 group-hover:opacity-20 transition duration-1000"></div>
+        
+        <div className="relative bg-white/80 backdrop-blur-xl rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-white/60 p-8 overflow-hidden">
+          
+          {/* Detalhe Decorativo Interno */}
+          <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-blue-500/5 rounded-full" />
+
+          {/* Barra de Progresso */}
+          {isLoading && (
+            <div className="absolute top-0 left-0 w-full h-1 bg-blue-50 overflow-hidden">
+              <div className="w-full h-full bg-gradient-to-r from-blue-400 via-blue-600 to-blue-400 animate-progress origin-left"></div>
+            </div>
+          )}
+
+          {/* Toast de Erro */}
+          {erro && (
+            <div className="absolute top-4 left-4 right-4 z-30 flex items-center gap-3 bg-white border-l-4 border-rose-500 text-rose-600 px-4 py-3 rounded-r-xl shadow-lg animate-in fade-in slide-in-from-top-4 duration-300">
+              <AlertCircle size={18} className="shrink-0" />
+              <p className="text-[11px] font-bold flex-1 leading-tight">{erro}</p>
+              <button onClick={() => setErro('')} className="hover:bg-rose-50 p-1 rounded-lg transition-colors text-slate-400">
+                <X size={14} />
+              </button>
+            </div>
+          )}
+          
+          <div className="text-center mb-10 relative">
+            <div className={`w-20 h-20 ${modoTrocaSenha ? 'bg-amber-500' : 'bg-gradient-to-br from-blue-600 to-indigo-700'} rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-blue-500/30 transform transition-all duration-500 hover:rotate-6`}>
+              {modoTrocaSenha ? (
+                <ShieldCheck size={36} className="text-white" />
+              ) : (
+                <img src={logoSvg as string} alt="Logo" className="w-12 h-12 object-contain brightness-0 invert" />
+              )}
+            </div>
+            <h1 className="text-2xl font-black text-slate-800 tracking-tight">
+              {modoTrocaSenha ? 'Segurança Adicional' : 'Acesso ao Sistema'}
+            </h1>
+            <p className="text-xs text-slate-400 mt-2 font-medium tracking-wide uppercase">
+              {modoTrocaSenha ? 'Crie uma senha segura' : 'Plataforma Core NLP'}
+            </p>
           </div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-            {modoTrocaSenha ? 'Segurança Adicional' : 'Acesso ao Sistema'}
-          </h1>
-          <p className="text-sm text-slate-500 mt-1">
-            {modoTrocaSenha ? 'Você precisa definir uma senha definitiva' : 'Insira suas credenciais para continuar'}
-          </p>
+
+          {!modoTrocaSenha ? (
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="relative">
+                <User size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 z-10" />
+                <input type="text" id="usuario" required value={usuario} onChange={(e) => setUsuario(e.target.value)} className={inputClass} placeholder=" " />
+                <label htmlFor="usuario" className={labelClass}>Usuário</label>
+              </div>
+
+              <div className="relative">
+                <Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 z-10" />
+                <input type={showPassword ? "text" : "password"} id="senha" required value={senha} onChange={(e) => setSenha(e.target.value)} className={inputClass} placeholder=" " />
+                <label htmlFor="senha" className={labelClass}>Senha Provisória</label>
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-600 transition-colors z-10">
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+
+              <button 
+                type="submit" 
+                disabled={isLoading}
+                className="w-full relative group/btn flex items-center justify-center gap-3 bg-slate-900 text-white py-4 rounded-xl font-bold transition-all overflow-hidden hover:bg-slate-800 disabled:opacity-70 mt-6 shadow-xl active:scale-[0.98]"
+              >
+                {isLoading ? (
+                  <Loader2 className="animate-spin" size={20} />
+                ) : (
+                  <>
+                    <span className="relative z-10">Entrar no Painel</span>
+                    <ArrowRight size={18} className="relative z-10 group-hover/btn:translate-x-1 transition-transform" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300" />
+                  </>
+                )}
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleTrocarSenha} className="space-y-4">
+              {/* Campos de Troca de Senha mantendo o estilo visual */}
+              <div className="relative">
+                <input type="password" id="novaSenha" required value={novaSenha} onChange={(e) => setNovaSenha(e.target.value)} className={inputClass.replace('px-10', 'px-4')} placeholder=" " />
+                <label htmlFor="novaSenha" className={labelClass.replace('left-10', 'left-4')}>Nova Senha</label>
+              </div>
+              <div className="relative">
+                <input type="password" id="confirmarSenha" required value={confirmarSenha} onChange={(e) => setConfirmarSenha(e.target.value)} className={inputClass.replace('px-10', 'px-4')} placeholder=" " />
+                <label htmlFor="confirmarSenha" className={labelClass.replace('left-10', 'left-4')}>Confirmar Nova Senha</label>
+              </div>
+              <button type="submit" disabled={isLoading} className="w-full bg-amber-500 hover:bg-amber-600 text-white py-4 rounded-xl font-bold transition-all shadow-lg mt-4 active:scale-[0.98]">
+                {isLoading ? <Loader2 className="animate-spin" size={20} /> : 'Salvar e Acessar'}
+              </button>
+              <button type="button" onClick={() => setModoTrocaSenha(false)} className="w-full text-[10px] font-black text-slate-400 hover:text-slate-600 transition-colors uppercase tracking-[0.2em] pt-4">
+                Cancelar e Voltar
+              </button>
+            </form>
+          )}
         </div>
-
-        {erro && (
-          <div className="bg-rose-50 text-rose-600 p-3 rounded-lg text-sm font-semibold mb-6 border border-rose-100 text-center animate-pulse">
-            {erro}
-          </div>
-        )}
-
-        {!modoTrocaSenha ? (
-          /* FORMULÁRIO DE LOGIN NORMAL */
-          <form onSubmit={handleLogin} className="space-y-5">
-            <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Usuário</label>
-              <div className="relative">
-                <User size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input 
-                  type="text" required value={usuario}
-                  onChange={(e) => setUsuario(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-                  placeholder="Ex: joao.silva"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Senha Provisória</label>
-              <div className="relative">
-                <Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input 
-                  type="password" required value={senha}
-                  onChange={(e) => setSenha(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-                  placeholder="••••••••"
-                />
-              </div>
-            </div>
-
-            <button 
-              type="submit" disabled={isLoading}
-              className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold transition-all shadow-md disabled:opacity-70 mt-2"
-            >
-              {isLoading ? <Loader2 className="animate-spin" size={20} /> : <>{'Entrar'} <ArrowRight size={18} /></>}
-            </button>
-          </form>
-        ) : (
-          /* FORMULÁRIO DE TROCA DE SENHA */
-          <form onSubmit={handleTrocarSenha} className="space-y-5">
-            <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Nova Senha</label>
-              <input 
-                type="password" required value={novaSenha}
-                onChange={(e) => setNovaSenha(e.target.value)}
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all"
-                placeholder="Mínimo 6 caracteres"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Confirmar Nova Senha</label>
-              <input 
-                type="password" required value={confirmarSenha}
-                onChange={(e) => setConfirmarSenha(e.target.value)}
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all"
-                placeholder="Repita a nova senha"
-              />
-            </div>
-
-            <button 
-              type="submit" disabled={isLoading}
-              className="w-full flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-white py-3 rounded-xl font-bold transition-all shadow-md disabled:opacity-70 mt-2"
-            >
-              {isLoading ? <Loader2 className="animate-spin" size={20} /> : 'Salvar Senha e Entrar'}
-            </button>
-            
-            <button 
-              type="button" 
-              onClick={() => setModoTrocaSenha(false)}
-              className="w-full text-xs font-bold text-slate-400 hover:text-slate-600 transition-colors uppercase"
-            >
-              Voltar para o login
-            </button>
-          </form>
-        )}
-
       </div>
+      
+      {/* Branding de rodapé */}
+      <div className="absolute bottom-8 flex flex-col items-center gap-2">
+        <div className="h-px w-12 bg-slate-200 mb-2" />
+        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.3em]">
+          Powered by <span className="text-blue-600/60">Interplace</span>
+        </p>
+      </div>
+
     </div>
   );
 }
