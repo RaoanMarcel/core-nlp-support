@@ -1,7 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import Papa from 'papaparse';
-import { UploadCloud, Search, Phone, RefreshCw, Inbox, PlayCircle, CheckCircle2, XCircle, ChevronLeft, ChevronRight, Target } from 'lucide-react';
+import { 
+  UploadCloud, Search, Phone, RefreshCw, Inbox, PlayCircle, 
+  CheckCircle2, XCircle, ChevronLeft, ChevronRight, Target, 
+  Clock, ChevronDown, ChevronUp 
+} from 'lucide-react';
 import { io } from 'socket.io-client'; 
 import ProspectModal from './ContratosModal';
 
@@ -11,8 +15,8 @@ export interface Prospect {
   nome: string;
   modulosAtuais: string;
   telefone: string;
-  status: 'PENDENTE' | 'EM_ATENDIMENTO' | 'APROVADO' | 'REPROVADO' | 'POSSIBILIDADE';
-  lockedBy?: string; // Atualizado para bater com o Prisma
+  status: 'PENDENTE' | 'EM_ATENDIMENTO' | 'APROVADO' | 'REPROVADO' | 'POSSIBILIDADE' | 'RETORNAR';
+  lockedBy?: string;
   
   simplesNacional?: string;
   situacaoCadastral?: string;
@@ -37,6 +41,7 @@ const getCardStyle = (status: string) => {
   switch (status) {
     case 'PENDENTE': return 'bg-white border-transparent hover:border-blue-300 hover:shadow-sm hover:ring-1 hover:ring-blue-100 cursor-pointer';
     case 'EM_ATENDIMENTO': return 'bg-amber-50/40 border-amber-200 opacity-90 cursor-not-allowed';
+    case 'RETORNAR': return 'bg-purple-50/40 border-purple-200 opacity-80 hover:opacity-100 hover:shadow-sm transition-all cursor-pointer';
     case 'POSSIBILIDADE': return 'bg-blue-50/40 border-blue-200 opacity-80 hover:opacity-100 hover:shadow-sm transition-all cursor-pointer';
     case 'APROVADO': return 'bg-emerald-50/40 border-emerald-200 opacity-80 hover:opacity-100 hover:shadow-sm transition-all cursor-pointer';
     case 'REPROVADO': return 'bg-rose-50/40 border-rose-200 opacity-80 hover:opacity-100 hover:shadow-sm transition-all cursor-pointer';
@@ -48,6 +53,7 @@ const getBadgeStyle = (status: string) => {
   switch (status) {
     case 'PENDENTE': return 'bg-slate-100 text-slate-500 border-slate-200';
     case 'EM_ATENDIMENTO': return 'bg-amber-50 text-amber-700 border-amber-200 animate-pulse';
+    case 'RETORNAR': return 'bg-purple-50 text-purple-700 border-purple-200';
     case 'POSSIBILIDADE': return 'bg-blue-50 text-blue-700 border-blue-200';
     case 'APROVADO': return 'bg-emerald-50 text-emerald-700 border-emerald-200';
     case 'REPROVADO': return 'bg-rose-50 text-rose-700 border-rose-200';
@@ -65,6 +71,7 @@ interface SectionProps {
 
 function PaginatedSection({ title, icon, data, emptyMessage, onCardClick }: SectionProps) {
   const [currentPage, setCurrentPage] = useState(1);
+  const [isExpanded, setIsExpanded] = useState(true);
   const itemsPerPage = 6; 
 
   const totalPages = Math.ceil(data.length / itemsPerPage);
@@ -76,109 +83,124 @@ function PaginatedSection({ title, icon, data, emptyMessage, onCardClick }: Sect
   }, [data.length]);
 
   return (
-    <div className="mb-10">
-      <div className="flex items-center gap-2 mb-4">
-        {icon}
-        <h2 className="text-xl font-bold text-slate-800 tracking-tight">{title}</h2>
-        <span className="bg-slate-200 text-slate-600 text-xs font-bold px-2.5 py-0.5 rounded-full ml-2">
-          {data.length}
-        </span>
+    <div className="mb-8 bg-white/40 p-2 rounded-2xl border border-transparent hover:border-slate-200 transition-colors">
+      {/* Cabeçalho Clicável (Sanfona) */}
+      <div 
+        className="flex items-center justify-between p-2 cursor-pointer rounded-xl hover:bg-slate-100/80 transition-all select-none"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        <div className="flex items-center gap-2">
+          {icon}
+          <h2 className="text-xl font-bold text-slate-800 tracking-tight">{title}</h2>
+          <span className="bg-slate-200 text-slate-600 text-xs font-bold px-2.5 py-0.5 rounded-full ml-2">
+            {data.length}
+          </span>
+        </div>
+        
+        {/* Flechinha indicadora */}
+        <div className="text-slate-400 bg-white rounded-lg p-1 shadow-sm border border-slate-100">
+          {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+        </div>
       </div>
 
-      {data.length === 0 ? (
-        <div className="bg-white/50 border border-slate-200 border-dashed rounded-xl p-8 text-center">
-          <p className="text-slate-500 font-medium text-sm">{emptyMessage}</p>
-        </div>
-      ) : (
-        <>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {paginatedData.map((prospect) => (
-              <div 
-                key={prospect.id} 
-                onClick={() => onCardClick(prospect)}
-                className={`flex flex-col p-5 rounded-xl border shadow-sm transition-all duration-200 ${getCardStyle(prospect.status)}`}
-              >
-                <div className="flex justify-between items-start mb-3">
-                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${getBadgeStyle(prospect.status)}`}>
-                    {prospect.status.replace('_', ' ')}
+      {/* Conteúdo Recolhível */}
+      {isExpanded && (
+        <div className="mt-4 px-2 pb-2 animate-in fade-in duration-300">
+          {data.length === 0 ? (
+            <div className="bg-white/50 border border-slate-200 border-dashed rounded-xl p-8 text-center">
+              <p className="text-slate-500 font-medium text-sm">{emptyMessage}</p>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {paginatedData.map((prospect) => (
+                  <div 
+                    key={prospect.id} 
+                    onClick={() => onCardClick(prospect)}
+                    className={`flex flex-col p-5 rounded-xl border shadow-sm transition-all duration-200 ${getCardStyle(prospect.status)}`}
+                  >
+                    <div className="flex justify-between items-start mb-3">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${getBadgeStyle(prospect.status)}`}>
+                        {prospect.status.replace('_', ' ')}
+                      </span>
+                      {prospect.status === 'EM_ATENDIMENTO' && prospect.lockedBy && (
+                        <span 
+                          className="flex items-center gap-1.5 text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded max-w-[120px]"
+                          title={`Sendo atendido por: ${prospect.lockedBy}`}
+                        >
+                          <RefreshCw size={10} className="animate-spin shrink-0" />
+                          <span className="truncate">{prospect.lockedBy}</span>
+                        </span>
+                      )}
+                    </div>
+                    <div className="mb-4 flex-1">
+                      <h3 className="text-base font-bold text-slate-900 leading-tight mb-1 line-clamp-2">
+                        {prospect.nome}
+                      </h3>
+                      <p className="text-xs font-medium text-slate-500 font-mono">
+                        {prospect.cnpj}
+                      </p>
+                    </div>
+                    <div className="flex justify-between items-center pt-3 border-t border-slate-100/80 mt-auto">
+                      <div className="flex items-center gap-1.5 text-slate-600">
+                        <Phone size={14} className="text-slate-400" />
+                        <span className="text-xs font-semibold">{prospect.telefone}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {totalPages > 1 && (
+                <div className="flex justify-between items-center bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-200 mt-4">
+                  <span className="text-xs text-slate-500 font-medium">
+                    Pág. <strong className="text-slate-900">{currentPage}</strong> de <strong className="text-slate-900">{totalPages}</strong>
                   </span>
-                  {/* Badge de usuário em atendimento (Atualizado) */}
-                  {prospect.status === 'EM_ATENDIMENTO' && prospect.lockedBy && (
-                    <span 
-                      className="flex items-center gap-1.5 text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded max-w-[120px]"
-                      title={`Sendo atendido por: ${prospect.lockedBy}`}
+                  
+                  <div className="flex gap-1">
+                    <button 
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      className="p-1.5 rounded-md hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors border border-transparent hover:border-slate-200"
                     >
-                      <RefreshCw size={10} className="animate-spin shrink-0" />
-                      <span className="truncate">{prospect.lockedBy}</span>
-                    </span>
-                  )}
-                </div>
-                <div className="mb-4 flex-1">
-                  <h3 className="text-base font-bold text-slate-900 leading-tight mb-1 line-clamp-2">
-                    {prospect.nome}
-                  </h3>
-                  <p className="text-xs font-medium text-slate-500 font-mono">
-                    {prospect.cnpj}
-                  </p>
-                </div>
-                <div className="flex justify-between items-center pt-3 border-t border-slate-100/80 mt-auto">
-                  <div className="flex items-center gap-1.5 text-slate-600">
-                    <Phone size={14} className="text-slate-400" />
-                    <span className="text-xs font-semibold">{prospect.telefone}</span>
+                      <ChevronLeft size={16} className="text-slate-600" />
+                    </button>
+                    <div className="flex items-center gap-0.5 px-1">
+                      {Array.from({ length: totalPages }).map((_, idx) => {
+                        const page = idx + 1;
+                        if (page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1)) {
+                          return (
+                            <button
+                              key={page}
+                              onClick={() => setCurrentPage(page)}
+                              className={`w-6 h-6 rounded-md text-[11px] font-bold transition-colors ${
+                                currentPage === page 
+                                  ? 'bg-blue-600 text-white shadow-sm' 
+                                  : 'text-slate-600 hover:bg-slate-50 hover:border hover:border-slate-200'
+                              }`}
+                            >
+                              {page}
+                            </button>
+                          );
+                        } else if (page === currentPage - 2 || page === currentPage + 2) {
+                          return <span key={page} className="text-slate-400 text-xs px-0.5">...</span>;
+                        }
+                        return null;
+                      })}
+                    </div>
+                    <button 
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                      className="p-1.5 rounded-md hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors border border-transparent hover:border-slate-200"
+                    >
+                      <ChevronRight size={16} className="text-slate-600" />
+                    </button>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-
-          {totalPages > 1 && (
-            <div className="flex justify-between items-center bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-200 mt-4">
-              <span className="text-xs text-slate-500 font-medium">
-                Pág. <strong className="text-slate-900">{currentPage}</strong> de <strong className="text-slate-900">{totalPages}</strong>
-              </span>
-              
-              <div className="flex gap-1">
-                <button 
-                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                  className="p-1.5 rounded-md hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors border border-transparent hover:border-slate-200"
-                >
-                  <ChevronLeft size={16} className="text-slate-600" />
-                </button>
-                <div className="flex items-center gap-0.5 px-1">
-                  {Array.from({ length: totalPages }).map((_, idx) => {
-                    const page = idx + 1;
-                    if (page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1)) {
-                      return (
-                        <button
-                          key={page}
-                          onClick={() => setCurrentPage(page)}
-                          className={`w-6 h-6 rounded-md text-[11px] font-bold transition-colors ${
-                            currentPage === page 
-                              ? 'bg-blue-600 text-white shadow-sm' 
-                              : 'text-slate-600 hover:bg-slate-50 hover:border hover:border-slate-200'
-                          }`}
-                        >
-                          {page}
-                        </button>
-                      );
-                    } else if (page === currentPage - 2 || page === currentPage + 2) {
-                      return <span key={page} className="text-slate-400 text-xs px-0.5">...</span>;
-                    }
-                    return null;
-                  })}
-                </div>
-                <button 
-                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                  disabled={currentPage === totalPages}
-                  className="p-1.5 rounded-md hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors border border-transparent hover:border-slate-200"
-                >
-                  <ChevronRight size={16} className="text-slate-600" />
-                </button>
-              </div>
-            </div>
+              )}
+            </>
           )}
-        </>
+        </div>
       )}
     </div>
   );
@@ -305,8 +327,7 @@ export default function ProspectList() {
   const handleCardClick = async (prospect: Prospect) => {
     if (prospect.status === 'EM_ATENDIMENTO') return; 
     
-    if (prospect.status === 'APROVADO' || prospect.status === 'REPROVADO' || prospect.status === 'POSSIBILIDADE') {
-      setSelectedProspect(prospect);
+    if (prospect.status === 'APROVADO' || prospect.status === 'REPROVADO' || prospect.status === 'POSSIBILIDADE' || prospect.status === 'RETORNAR') {      setSelectedProspect(prospect);
       setIsModalOpen(true);
       return;
     }
@@ -355,6 +376,8 @@ export default function ProspectList() {
   const prospectsPossibilidade = filteredProspects.filter(p => p.status === 'POSSIBILIDADE');
   const prospectsAprovados = filteredProspects.filter(p => p.status === 'APROVADO');
   const prospectsReprovados = filteredProspects.filter(p => p.status === 'REPROVADO');
+  const prospectsRetornar = filteredProspects.filter(p => p.status === 'RETORNAR');
+
 
   return (
       <div className="p-8 bg-[#f4f5f7] h-screen overflow-y-auto font-sans pb-24">
@@ -407,6 +430,13 @@ export default function ProspectList() {
           icon={<PlayCircle size={20} className="text-amber-500" />}
           data={prospectsEmAtendimento}
           emptyMessage="Nenhum cliente está sendo atendido neste momento."
+          onCardClick={handleCardClick}
+        />
+        <PaginatedSection 
+          title="Retornar contato" 
+          icon={<Clock size={20} className="text-purple-500" />} 
+          data={prospectsRetornar}
+          emptyMessage="Nenhum cliente para retornar na sua busca."
           onCardClick={handleCardClick}
         />
 

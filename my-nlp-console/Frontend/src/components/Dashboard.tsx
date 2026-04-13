@@ -1,8 +1,7 @@
 import React from 'react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
-import { useNavigate } from 'react-router-dom'; // <-- Novo import!
+import { useNavigate } from 'react-router-dom';
 
-// (Mantenha os Mocks iguais aos anteriores)
 const mockMetrics = { total: 142, criticos: 5, accuracy: 96.4 };
 const mockAnomaly = { active: true, title: "Pico de Reclamações", message: "A IA detectou 42 tickets relacionados a 'Falha no Checkout'.", type: "warning" };
 const mockChartData = [

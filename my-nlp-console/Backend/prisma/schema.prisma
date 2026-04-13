@@ -13,6 +13,7 @@ enum StatusAtendimento {
   APROVADO
   REPROVADO
   POSSIBILIDADE
+  RETORNAR
 }
 
 model Prospect {

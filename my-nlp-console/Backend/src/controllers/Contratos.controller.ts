@@ -34,7 +34,7 @@ export class ProspectController {
   travar = async (req: Request, res: Response): Promise<any> => {
     try {
       const { id } = req.params;
-      const { userName } = req.body; // Pegando o nome do usuário que veio do Front
+      const { userName } = req.body; 
       
       const prospectAtual = await prisma.prospect.findUnique({ where: { id } });
       

@@ -12,7 +12,6 @@ import {
   LogOut 
 } from 'lucide-react';
 
-// Importação com ?url para extrair o caminho correto do arquivo
 import logoSvg from '../assets/logo.svg?url';
 
 interface AppLayoutProps {
@@ -31,9 +30,9 @@ export default function AppLayout({ children, onLogout }: AppLayoutProps) {
   const navItems = [
     { path: '/', label: 'Briefing Gerencial', icon: LayoutDashboard },
     { path: '/fila', label: 'Fila de Tickets', icon: Inbox },
-    { path: '/relatorios', label: 'Geração de Relatórios', icon: SlidersHorizontal },
     { path: '/base', label: 'Base Interna', icon: BookOpen },
     { path: '/contratos', label: 'Contratos', icon: FileText }, 
+    { path: '/relatorios', label: 'Geração de Relatórios', icon: SlidersHorizontal },
   ];
 
   const userStr = localStorage.getItem('@CRM:user');
@@ -43,10 +42,8 @@ export default function AppLayout({ children, onLogout }: AppLayoutProps) {
   return (
     <div className="flex flex-col md:flex-row h-screen w-full bg-[#f4f5f7] overflow-hidden font-sans relative">
       
-      {/* TOP BAR MOBILE */}
       <div className="md:hidden flex items-center justify-between bg-[#0a1128] h-16 px-4 shrink-0 shadow-md z-30">
         <div className="flex items-center gap-3">
-          {/* Logo Mobile */}
           <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-md overflow-hidden">
             <img src={logoSvg as string} alt="AutoDesk Logo" className="w-5 h-5 object-contain" />
           </div>
@@ -60,7 +57,6 @@ export default function AppLayout({ children, onLogout }: AppLayoutProps) {
         </button>
       </div>
 
-      {/* OVERLAY ESCURO MOBILE */}
       {isMobileMenuOpen && (
         <div 
           className="fixed inset-0 bg-black/60 z-40 md:hidden backdrop-blur-sm transition-opacity"
@@ -83,9 +79,7 @@ export default function AppLayout({ children, onLogout }: AppLayoutProps) {
           <X size={24} />
         </button>
 
-        {/* Logo Area */}
         <div className="h-20 flex items-center px-5 shrink-0 border-b border-slate-800/60 whitespace-nowrap mt-4 md:mt-0">
-          {/* Logo Desktop */}
           <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center shrink-0 shadow-md overflow-hidden">
             <img src={logoSvg as string} alt="AutoDesk Logo" className="w-6 h-6 object-contain" />
           </div>
@@ -95,7 +89,6 @@ export default function AppLayout({ children, onLogout }: AppLayoutProps) {
           </div>
         </div>
 
-        {/* Navigation Links */}
         <nav className="flex-1 overflow-y-auto no-scrollbar py-6 flex flex-col gap-2 px-3 overflow-x-hidden">
           <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 mt-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300 px-3 whitespace-nowrap">
             Menu Principal
@@ -124,7 +117,6 @@ export default function AppLayout({ children, onLogout }: AppLayoutProps) {
           })}
         </nav>
 
-        {/* Footer Area / User */}
         <div className="p-4 border-t border-slate-800/60 shrink-0 whitespace-nowrap flex flex-col">
           <button className="w-full flex items-center gap-4 px-2 py-2 mb-2 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-white font-bold transition-all whitespace-nowrap cursor-pointer text-left">
             <Settings size={22} className="shrink-0" />
@@ -157,7 +149,6 @@ export default function AppLayout({ children, onLogout }: AppLayoutProps) {
         </div>
       </aside>
 
-      {/* ÁREA PRINCIPAL */}
       <main className="flex-1 flex flex-col h-full overflow-hidden bg-[#f4f5f7]">
         {children}
       </main>
