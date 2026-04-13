@@ -12,6 +12,7 @@ enum StatusAtendimento {
   EM_ATENDIMENTO
   APROVADO
   REPROVADO
+  POSSIBILIDADE
 }
 
 model Prospect {
@@ -34,7 +35,7 @@ model Prospect {
   
   lockedBy           String?           
   lockedAt           DateTime?
-    atendidoPor        String?           
+  atendidoPor        String?           
   dataAtendimento    DateTime?         
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @updatedAt

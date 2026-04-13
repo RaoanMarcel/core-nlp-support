@@ -36,8 +36,10 @@ export class ProspectController {
       const { id } = req.params;
       const prospectAtual = await prisma.prospect.findUnique({ where: { id } });
       
+      // Ajuste na mensagem de erro: POSSIBILIDADES não passam pelo travar, 
+      // mas se houver tentativa, ele bloqueia corretamente.
       if (prospectAtual?.status !== 'PENDENTE') {
-        return res.status(409).json({ error: 'Cliente já está em atendimento' });
+        return res.status(409).json({ error: 'Cliente já está em atendimento ou já foi triado' });
       }
 
       const atualizado = await prisma.prospect.update({
@@ -54,11 +56,12 @@ export class ProspectController {
   };
 
   // ==========================================
-  // FUNÇÃO ATUALIZADA: FINALIZAR
+  // FUNÇÃO MANTIDA: FINALIZAR
   // ==========================================
   finalizar = async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
+      // O campo 'acao' agora receberá também 'POSSIBILIDADE' do frontend
       const { acao, observacoes, novosModulos, atendidoPor } = req.body; 
 
       const atualizado = await prisma.prospect.update({
@@ -73,7 +76,7 @@ export class ProspectController {
       });
 
       req.app.get('io').emit('prospectUpdated', atualizado);
-      res.json({ message: 'Atendimento finalizado!', prospect: atualizado });
+      res.json({ message: `Atendimento finalizado como ${acao}!`, prospect: atualizado });
     } catch (error) {
       console.error(error);
       res.status(500).json({ error: 'Erro ao finalizar atendimento' });
@@ -81,18 +84,22 @@ export class ProspectController {
   };
 
   // ==========================================
-  // NOVA FUNÇÃO: ATUALIZAR (Apenas edita)
+  // FUNÇÃO ATUALIZADA: ATUALIZAR (Permite mudança de status)
   // ==========================================
   atualizar = async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      const { observacoes, novosModulos } = req.body;
+      // Adicionado 'status' no desestruturamento do body
+      const { observacoes, novosModulos, status } = req.body;
 
       const atualizado = await prisma.prospect.update({
         where: { id },
         data: {
           observacoes,
-          novosModulos
+          novosModulos,
+          // Atualiza o status APENAS se o frontend enviar um novo status 
+          // (ex: editando uma POSSIBILIDADE para virar APROVADO)
+          ...(status && { status }) 
         }
       });
 

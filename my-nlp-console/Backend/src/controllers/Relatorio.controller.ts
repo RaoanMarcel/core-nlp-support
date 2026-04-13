@@ -5,9 +5,39 @@ const prisma = new PrismaClient();
 
 export class RelatorioController {
   
+  // ==========================================
+  // NOVA FUNÇÃO: ESTATÍSTICAS PARA O DASHBOARD
+  // ==========================================
+  obterRelatorioStats = async (req: Request, res: Response) => {
+    try {
+      // Agrega os totais por status para alimentar os gráficos/cards do relatório
+      const stats = await prisma.prospect.groupBy({
+        by: ['status'],
+        _count: {
+          id: true
+        }
+      });
+
+      // Busca os últimos atendimentos convertidos em "Possibilidade" para uma tabela rápida
+      const ultimasPossibilidades = await prisma.prospect.findMany({
+        where: { status: 'POSSIBILIDADE' as StatusAtendimento }, 
+        take: 5,
+        orderBy: { dataAtendimento: 'desc' }
+      });
+
+      res.json({ stats, ultimasPossibilidades });
+    } catch (error) {
+      console.error('Erro ao gerar estatísticas do dashboard:', error);
+      res.status(500).json({ error: 'Erro ao gerar estatísticas' });
+    }
+  };
+
+  // ==========================================
+  // FUNÇÃO MANTIDA: CONSTRUTOR DE RELATÓRIOS (CSV/TABELA)
+  // ==========================================
   build = async (req: Request, res: Response): Promise<any> => {
     try {
-      // Adicionamos statusFilter para ele poder tirar relatórios só de aprovados, reprovados, etc.
+      // Adicionamos statusFilter para ele poder tirar relatórios só de aprovados, reprovados, possibilidades, etc.
       const { modulo, dataInicial, dataFinal, dimensoes, metricas, statusFilter } = req.body;
 
       if (!modulo || !dimensoes || dimensoes.length === 0) {
@@ -17,9 +47,6 @@ export class RelatorioController {
       const startDate = new Date(`${dataInicial}T00:00:00.000Z`);
       const endDate = new Date(`${dataFinal}T23:59:59.999Z`);
 
-      // ==========================================
-      // LÓGICA DO MÓDULO: PROSPECTS (CRM)
-      // ==========================================
       if (modulo === 'prospects') {
         
         // 1. Monta quais colunas o Prisma deve trazer (Select Dinâmico)
@@ -36,7 +63,7 @@ export class RelatorioController {
           }
         };
 
-        // Se o usuário mandou um status específico no filtro (ex: 'APROVADO'), aplicamos aqui
+        // Se o usuário mandou um status específico no filtro (ex: 'APROVADO' ou 'POSSIBILIDADE'), aplicamos aqui
         if (statusFilter && statusFilter !== 'TODOS') {
           whereOptions.status = statusFilter as StatusAtendimento;
         }
@@ -65,7 +92,6 @@ export class RelatorioController {
           }
 
           // Se o usuário pediu a métrica de volume, injeta o número 1
-          // (Isso faz com que cada linha da tabela exiba "1" na coluna de volume)
           if (metricas && metricas.includes('volume')) {
             row.volume = 1;
           }
