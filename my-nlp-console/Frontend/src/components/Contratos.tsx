@@ -12,7 +12,7 @@ export interface Prospect {
   modulosAtuais: string;
   telefone: string;
   status: 'PENDENTE' | 'EM_ATENDIMENTO' | 'APROVADO' | 'REPROVADO' | 'POSSIBILIDADE';
-  atendente?: string; 
+  lockedBy?: string; // Atualizado para bater com o Prisma
   
   simplesNacional?: string;
   situacaoCadastral?: string;
@@ -102,10 +102,14 @@ function PaginatedSection({ title, icon, data, emptyMessage, onCardClick }: Sect
                   <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${getBadgeStyle(prospect.status)}`}>
                     {prospect.status.replace('_', ' ')}
                   </span>
-                  {prospect.status === 'EM_ATENDIMENTO' && prospect.atendente && (
-                    <span className="flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">
-                      <RefreshCw size={10} className="animate-spin" />
-                      {prospect.atendente}
+                  {/* Badge de usuário em atendimento (Atualizado) */}
+                  {prospect.status === 'EM_ATENDIMENTO' && prospect.lockedBy && (
+                    <span 
+                      className="flex items-center gap-1.5 text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded max-w-[120px]"
+                      title={`Sendo atendido por: ${prospect.lockedBy}`}
+                    >
+                      <RefreshCw size={10} className="animate-spin shrink-0" />
+                      <span className="truncate">{prospect.lockedBy}</span>
                     </span>
                   )}
                 </div>
@@ -301,7 +305,6 @@ export default function ProspectList() {
   const handleCardClick = async (prospect: Prospect) => {
     if (prospect.status === 'EM_ATENDIMENTO') return; 
     
-    // Agora o POSSIBILIDADE também abre o modal como leitura/edição
     if (prospect.status === 'APROVADO' || prospect.status === 'REPROVADO' || prospect.status === 'POSSIBILIDADE') {
       setSelectedProspect(prospect);
       setIsModalOpen(true);
@@ -349,7 +352,7 @@ export default function ProspectList() {
 
   const prospectsPendentes = filteredProspects.filter(p => p.status === 'PENDENTE');
   const prospectsEmAtendimento = filteredProspects.filter(p => p.status === 'EM_ATENDIMENTO');
-  const prospectsPossibilidade = filteredProspects.filter(p => p.status === 'POSSIBILIDADE'); // Nova filtragem
+  const prospectsPossibilidade = filteredProspects.filter(p => p.status === 'POSSIBILIDADE');
   const prospectsAprovados = filteredProspects.filter(p => p.status === 'APROVADO');
   const prospectsReprovados = filteredProspects.filter(p => p.status === 'REPROVADO');
 
@@ -407,7 +410,6 @@ export default function ProspectList() {
           onCardClick={handleCardClick}
         />
 
-        {/* NOVA SEÇÃO AQUI */}
         <PaginatedSection 
           title="Possibilidades" 
           icon={<Target size={20} className="text-blue-500" />}

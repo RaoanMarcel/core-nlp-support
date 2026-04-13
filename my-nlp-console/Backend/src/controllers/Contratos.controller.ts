@@ -34,17 +34,20 @@ export class ProspectController {
   travar = async (req: Request, res: Response): Promise<any> => {
     try {
       const { id } = req.params;
+      const { userName } = req.body; // Pegando o nome do usuário que veio do Front
+      
       const prospectAtual = await prisma.prospect.findUnique({ where: { id } });
       
-      // Ajuste na mensagem de erro: POSSIBILIDADES não passam pelo travar, 
-      // mas se houver tentativa, ele bloqueia corretamente.
       if (prospectAtual?.status !== 'PENDENTE') {
         return res.status(409).json({ error: 'Cliente já está em atendimento ou já foi triado' });
       }
 
       const atualizado = await prisma.prospect.update({
         where: { id },
-        data: { status: 'EM_ATENDIMENTO' }
+        data: { 
+          status: 'EM_ATENDIMENTO',
+          lockedBy: userName 
+        }
       });
 
       req.app.get('io').emit('prospectUpdated', atualizado);
@@ -55,13 +58,9 @@ export class ProspectController {
     }
   };
 
-  // ==========================================
-  // FUNÇÃO MANTIDA: FINALIZAR
-  // ==========================================
   finalizar = async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      // O campo 'acao' agora receberá também 'POSSIBILIDADE' do frontend
       const { acao, observacoes, novosModulos, atendidoPor } = req.body; 
 
       const atualizado = await prisma.prospect.update({
@@ -70,8 +69,8 @@ export class ProspectController {
           status: acao,
           observacoes,
           novosModulos,
-          atendidoPor, // Salva o nome do usuário
-          dataAtendimento: new Date() // Salva a data atual
+          atendidoPor,
+          dataAtendimento: new Date() 
         }
       });
 
@@ -83,13 +82,10 @@ export class ProspectController {
     }
   };
 
-  // ==========================================
-  // FUNÇÃO ATUALIZADA: ATUALIZAR (Permite mudança de status)
-  // ==========================================
+
   atualizar = async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      // Adicionado 'status' no desestruturamento do body
       const { observacoes, novosModulos, status } = req.body;
 
       const atualizado = await prisma.prospect.update({
@@ -97,8 +93,6 @@ export class ProspectController {
         data: {
           observacoes,
           novosModulos,
-          // Atualiza o status APENAS se o frontend enviar um novo status 
-          // (ex: editando uma POSSIBILIDADE para virar APROVADO)
           ...(status && { status }) 
         }
       });
