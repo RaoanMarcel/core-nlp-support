@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Phone, Mail, Building, FileText, ArrowLeft, CheckCircle2, XCircle, Edit3, Save } from 'lucide-react';
+import { Phone, Mail, Building, FileText, ArrowLeft, CheckCircle2, XCircle, Edit3, Save, Target } from 'lucide-react';
 import { type Prospect } from './Contratos'; 
 
 const MODULOS_DISPONIVEIS = ['NFE', 'NFCE', 'MDFE', 'CTE', 'NFSE', 'FINANCEIRO', 'ESTOQUE'];
-
 
 const API_URL = 'https://core-nlp-support.onrender.com/prospects';
 
@@ -16,7 +15,8 @@ interface ModalProps {
 }
 
 export default function ProspectModal({ prospect, onClose, currentUserId, currentUserName }: ModalProps) {
-  const isFinished = prospect.status === 'APROVADO' || prospect.status === 'REPROVADO';
+  // Ajuste: Dependendo de como o backend salva "Possibilidade", você pode precisar adicionar 'POSSIBILIDADE' aqui
+  const isFinished = prospect.status === 'APROVADO' || prospect.status === 'REPROVADO' || prospect.status === 'POSSIBILIDADE';
   
   const [isEditing, setIsEditing] = useState(!isFinished);
 
@@ -47,7 +47,8 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
     );
   };
 
-  const handleSubmit = async (acao: 'APROVADO' | 'REPROVADO' | 'PENDENTE') => {
+  // Atualizado para aceitar 'POSSIBILIDADE'
+  const handleSubmit = async (acao: 'APROVADO' | 'REPROVADO' | 'PENDENTE' | 'POSSIBILIDADE') => {
     setIsSaving(true);
     const token = localStorage.getItem('@CRM:token');
 
@@ -74,7 +75,6 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
       
     } catch (error: any) {
       console.error('Erro ao salvar atendimento:', error);
-      // Você pode implementar uma notificação de UI (toast) aqui no futuro, se desejar.
     } finally {
       setIsSaving(false);
     }
@@ -138,6 +138,14 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
       return (
         <span className="bg-rose-100 text-rose-800 text-[10px] px-2 py-0.5 rounded uppercase font-bold tracking-wider border border-rose-200">
           Não Interessado
+        </span>
+      );
+    }
+    // Adicionado badge de Possibilidade
+    if (prospect.status === 'POSSIBILIDADE') {
+      return (
+        <span className="bg-blue-100 text-blue-800 text-[10px] px-2 py-0.5 rounded uppercase font-bold tracking-wider border border-blue-200">
+          Possibilidade
         </span>
       );
     }
@@ -357,7 +365,7 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
                 className="flex items-center gap-2 px-4 py-2 text-slate-600 font-semibold hover:bg-slate-100 rounded-lg transition-colors disabled:opacity-50"
               >
                 <ArrowLeft size={18} />
-                Desistir / Voltar para a Fila
+                Desistir / Voltar
               </button>
               
               <div className="flex gap-3">
@@ -369,6 +377,17 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
                   <XCircle size={18} />
                   Não interessado
                 </button>
+                
+                {/* NOVO BOTÃO DE POSSIBILIDADE AQUI */}
+                <button 
+                  onClick={() => handleSubmit('POSSIBILIDADE')}
+                  disabled={isSaving}
+                  className="flex items-center gap-2 px-6 py-2.5 bg-white border-2 border-blue-200 text-blue-600 font-bold rounded-xl hover:bg-blue-50 hover:border-blue-300 transition-all disabled:opacity-50 shadow-sm"
+                >
+                  <Target size={18} />
+                  {isSaving ? 'Salvando...' : 'Possibilidade'}
+                </button>
+
                 <button 
                   onClick={() => handleSubmit('APROVADO')}
                   disabled={isSaving}

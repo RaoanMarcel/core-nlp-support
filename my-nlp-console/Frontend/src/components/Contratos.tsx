@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import Papa from 'papaparse';
-import { UploadCloud, Search, Phone, RefreshCw, Inbox, PlayCircle, CheckCircle2, XCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { UploadCloud, Search, Phone, RefreshCw, Inbox, PlayCircle, CheckCircle2, XCircle, ChevronLeft, ChevronRight, Target } from 'lucide-react';
 import { io } from 'socket.io-client'; 
 import ProspectModal from './ContratosModal';
 
@@ -11,7 +11,7 @@ export interface Prospect {
   nome: string;
   modulosAtuais: string;
   telefone: string;
-  status: 'PENDENTE' | 'EM_ATENDIMENTO' | 'APROVADO' | 'REPROVADO';
+  status: 'PENDENTE' | 'EM_ATENDIMENTO' | 'APROVADO' | 'REPROVADO' | 'POSSIBILIDADE';
   atendente?: string; 
   
   simplesNacional?: string;
@@ -37,6 +37,7 @@ const getCardStyle = (status: string) => {
   switch (status) {
     case 'PENDENTE': return 'bg-white border-transparent hover:border-blue-300 hover:shadow-sm hover:ring-1 hover:ring-blue-100 cursor-pointer';
     case 'EM_ATENDIMENTO': return 'bg-amber-50/40 border-amber-200 opacity-90 cursor-not-allowed';
+    case 'POSSIBILIDADE': return 'bg-blue-50/40 border-blue-200 opacity-80 hover:opacity-100 hover:shadow-sm transition-all cursor-pointer';
     case 'APROVADO': return 'bg-emerald-50/40 border-emerald-200 opacity-80 hover:opacity-100 hover:shadow-sm transition-all cursor-pointer';
     case 'REPROVADO': return 'bg-rose-50/40 border-rose-200 opacity-80 hover:opacity-100 hover:shadow-sm transition-all cursor-pointer';
     default: return 'bg-white border-transparent';
@@ -47,6 +48,7 @@ const getBadgeStyle = (status: string) => {
   switch (status) {
     case 'PENDENTE': return 'bg-slate-100 text-slate-500 border-slate-200';
     case 'EM_ATENDIMENTO': return 'bg-amber-50 text-amber-700 border-amber-200 animate-pulse';
+    case 'POSSIBILIDADE': return 'bg-blue-50 text-blue-700 border-blue-200';
     case 'APROVADO': return 'bg-emerald-50 text-emerald-700 border-emerald-200';
     case 'REPROVADO': return 'bg-rose-50 text-rose-700 border-rose-200';
     default: return 'bg-slate-100 text-slate-500 border-slate-200';
@@ -298,11 +300,14 @@ export default function ProspectList() {
 
   const handleCardClick = async (prospect: Prospect) => {
     if (prospect.status === 'EM_ATENDIMENTO') return; 
-    if (prospect.status === 'APROVADO' || prospect.status === 'REPROVADO') {
+    
+    // Agora o POSSIBILIDADE também abre o modal como leitura/edição
+    if (prospect.status === 'APROVADO' || prospect.status === 'REPROVADO' || prospect.status === 'POSSIBILIDADE') {
       setSelectedProspect(prospect);
       setIsModalOpen(true);
       return;
     }
+    
     if (prospect.status === 'PENDENTE') {
       try {
         const response = await axios.put(`${API_URL}/${prospect.id}/travar`, 
@@ -344,6 +349,7 @@ export default function ProspectList() {
 
   const prospectsPendentes = filteredProspects.filter(p => p.status === 'PENDENTE');
   const prospectsEmAtendimento = filteredProspects.filter(p => p.status === 'EM_ATENDIMENTO');
+  const prospectsPossibilidade = filteredProspects.filter(p => p.status === 'POSSIBILIDADE'); // Nova filtragem
   const prospectsAprovados = filteredProspects.filter(p => p.status === 'APROVADO');
   const prospectsReprovados = filteredProspects.filter(p => p.status === 'REPROVADO');
 
@@ -398,6 +404,15 @@ export default function ProspectList() {
           icon={<PlayCircle size={20} className="text-amber-500" />}
           data={prospectsEmAtendimento}
           emptyMessage="Nenhum cliente está sendo atendido neste momento."
+          onCardClick={handleCardClick}
+        />
+
+        {/* NOVA SEÇÃO AQUI */}
+        <PaginatedSection 
+          title="Possibilidades" 
+          icon={<Target size={20} className="text-blue-500" />}
+          data={prospectsPossibilidade}
+          emptyMessage="Nenhuma possibilidade de venda registrada na sua busca."
           onCardClick={handleCardClick}
         />
 
