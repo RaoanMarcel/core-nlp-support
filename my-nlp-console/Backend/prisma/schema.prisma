@@ -29,6 +29,8 @@ model Prospect {
   email              String?
   atividadePrincipal String?
   telefoneBackup     String?
+  nomeFantasia String?
+  endereco     String?
 
   observacoes        String?           @db.Text
   novosModulos       String[]          

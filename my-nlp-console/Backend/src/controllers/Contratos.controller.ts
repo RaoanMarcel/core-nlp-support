@@ -85,15 +85,18 @@ export class ProspectController {
   finalizar = async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      const { acao, observacoes, novosModulos, atendidoPor } = req.body; 
+      // Adicionado nomeFantasia e endereco aqui
+      const { acao, observacoes, novosModulos, atendidoPor, nomeFantasia, endereco } = req.body; 
 
       const atualizado = await prisma.prospect.update({
         where: { id },
         data: { 
           status: acao,
-          observacoes, // No finalizar mantivemos no principal, caso queira a "última" observação visível na tabela externa
+          observacoes, 
           novosModulos,
           atendidoPor,
+          nomeFantasia, // Salva o nome fantasia se enviado
+          endereco,     // Salva o endereço se enviado
           dataAtendimento: new Date() 
         }
       });
@@ -120,24 +123,26 @@ export class ProspectController {
   atualizar = async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      const { observacoes, novosModulos, status, usuarioLogado } = req.body;
+      // Adicionado nomeFantasia e endereco aqui
+      const { observacoes, novosModulos, status, usuarioLogado, nomeFantasia, endereco } = req.body;
 
-      // 1. Atualiza apenas módulos e status no cadastro principal. 
-      // Não sobrescrevemos mais as 'observacoes' aqui.
+      // 1. Atualiza apenas módulos, status, nome fantasia e endereço no cadastro principal. 
       const atualizado = await prisma.prospect.update({
         where: { id },
         data: {
           novosModulos,
+          nomeFantasia, // Atualiza se enviado
+          endereco,     // Atualiza se enviado
           ...(status && { status }) 
         }
       });
 
-      // 2. Cria o log de interação na linha do tempo, apenas se tiver algum texto ou módulo atualizado
+      // 2. Cria o log de interação na linha do tempo
       if ((observacoes && observacoes.trim() !== '') || (novosModulos && novosModulos.length > 0)) {
         await prisma.historicoAtendimento.create({
           data: {
             prospectId: id,
-            acao: 'Nova Interação', // Alterado o nome da ação para algo mais "chat"
+            acao: 'Nova Interação', 
             observacoes: observacoes || null,
             novosModulos: novosModulos || [],
             usuario: usuarioLogado || 'Usuário Desconhecido'

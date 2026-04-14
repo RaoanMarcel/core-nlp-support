@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Phone, Mail, Building, FileText, ArrowLeft, CheckCircle2, XCircle, Edit3, Save, Target, History, Clock, User } from 'lucide-react';
+import { Phone, Mail, Building, FileText, ArrowLeft, CheckCircle2, XCircle, Edit3, Save, Target, History, Clock, User, MapPin } from 'lucide-react';
 import { type Prospect } from './Contratos'; 
 
 const MODULOS_DISPONIVEIS = ['NFE', 'NFCE', 'MDFE', 'CTE', 'NFSE', 'FINANCEIRO', 'ESTOQUE'];
@@ -215,6 +215,13 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
               </h2>
               {renderStatusBadge()}
             </div>
+            
+            {prospect.nomeFantasia && (
+              <p className="text-base font-semibold text-slate-500 mb-2">
+                {prospect.nomeFantasia}
+              </p>
+            )}
+
             <div className="flex items-center gap-3 mt-2">
               <span className="text-sm font-mono font-medium text-slate-500 bg-slate-50 px-2 py-0.5 rounded border border-slate-100">
                 {prospect.cnpj}
@@ -242,6 +249,15 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
                     {prospect.atividadePrincipal || 'Não informada'}
                   </p>
                 </div>
+
+                {/* === ADIÇÃO: ENDEREÇO === */}
+                <div>
+                  <span className="text-xs font-medium text-slate-500 block mb-1">Endereço</span>
+                  <p className="text-sm text-slate-900 font-semibold leading-snug">
+                    {prospect.endereco || 'Endereço não cadastrado'}
+                  </p>
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <span className="text-xs font-medium text-slate-500 block mb-1">Simples Nacional</span>

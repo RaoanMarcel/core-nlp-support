@@ -9,35 +9,62 @@ export const POST: APIRoute = async ({ request }) => {
     const { clientes } = body;
 
     let importados = 0;
+    let atualizados = 0;
 
     for (const cliente of clientes) {
-      // Ignora linhas que não tenham o CNPJ
       if (!cliente.CNPJ) continue;
 
-      // Verifica se a coluna "AR (Clientes WLE)" tem o valor "Sim" (case-insensitive)
       const wleStr = cliente['AR (Clientes WLE)'] ? String(cliente['AR (Clientes WLE)']) : '';
       const isWLE = wleStr.trim().toLowerCase() === 'sim';
 
+      const nomeFantasia = cliente['Nome Fantasia'] ? String(cliente['Nome Fantasia']) : null;
+
+      const logradouro = cliente['Logradouro'] || '';
+      const numero = cliente['Número'] || 'S/N';
+      const compRaw = cliente['Complemento'];
+      const complemento = compRaw && compRaw !== '-' ? ` - ${compRaw}` : '';
+      const bairro = cliente['Bairro'] || '';
+      const cidade = cliente['Cidade'] || '';
+      const estado = cliente['Estado'] || '';
+      const cep = cliente['CEP'] || '';
+
+      const enderecoCompleto = `${logradouro}, ${numero}${complemento} - ${bairro}, ${cidade} - ${estado}, CEP: ${cep}`
+        .replace(/^[,\s\-]+|[,\s\-]+$/g, '') 
+        .trim();
+
       try {
-        // Salva no banco de dados
-        await prisma.prospect.create({
-          data: {
+        const result = await prisma.prospect.upsert({
+          where: { 
+            cnpj: String(cliente.CNPJ) 
+          },
+          update: {
+            nomeFantasia: nomeFantasia,
+            endereco: enderecoCompleto !== '' ? enderecoCompleto : null,
+          },
+          create: {
             cnpj: String(cliente.CNPJ),
             nome: String(cliente['Razão Social'] || cliente['Nome Fantasia'] || 'Sem Nome'),
+            nomeFantasia: nomeFantasia,
+            endereco: enderecoCompleto !== '' ? enderecoCompleto : null,
             telefone: String(cliente['Telefone Principal'] || 'Sem Telefone'),
             modulosAtuais: 'Nenhum',
             status: 'PENDENTE',
-            clienteWLE: isWLE // <-- Salvando o novo campo
+            clienteWLE: isWLE
           }
         });
-        importados++;
+
+        if (result.createdAt.getTime() === result.updatedAt.getTime()) {
+          importados++;
+        } else {
+          atualizados++;
+        }
+
       } catch (err) {
-        // Se o CNPJ já existir ou der erro em um, ele pula pro próximo sem travar tudo
-        console.error(`Erro ao importar o CNPJ ${cliente.CNPJ}`);
+        console.error(`Erro ao processar o CNPJ ${cliente.CNPJ}`, err);
       }
     }
 
-    return new Response(JSON.stringify({ success: true, importados }), { 
+    return new Response(JSON.stringify({ success: true, importados, atualizados }), { 
       status: 200, 
       headers: { 'Content-Type': 'application/json' }
     });

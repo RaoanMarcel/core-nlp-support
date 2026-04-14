@@ -4,7 +4,7 @@ import Papa from 'papaparse';
 import { 
   UploadCloud, Search, Phone, RefreshCw, Inbox, PlayCircle, 
   CheckCircle2, XCircle, ChevronLeft, ChevronRight, Target, 
-  Clock, ChevronDown, ChevronUp 
+  Clock, ChevronDown, ChevronUp, MapPin 
 } from 'lucide-react';
 import { io } from 'socket.io-client'; 
 import ProspectModal from './ContratosModal';
@@ -12,7 +12,9 @@ import ProspectModal from './ContratosModal';
 export interface Prospect {
   id: string;
   cnpj: string;
-  nome: string;
+  nome: string; 
+  nomeFantasia?: string; 
+  endereco?: string;     
   modulosAtuais: string;
   telefone: string;
   status: 'PENDENTE' | 'EM_ATENDIMENTO' | 'APROVADO' | 'REPROVADO' | 'POSSIBILIDADE' | 'RETORNAR';
@@ -132,10 +134,16 @@ function PaginatedSection({ title, icon, data, emptyMessage, onCardClick }: Sect
                       )}
                     </div>
                     <div className="mb-4 flex-1">
-                      <h3 className="text-base font-bold text-slate-900 leading-tight mb-1 line-clamp-2">
-                        {prospect.nome}
+                      <h3 className="text-base font-bold text-slate-900 leading-tight mb-0.5 line-clamp-1" title={prospect.nomeFantasia || prospect.nome}>
+                        {prospect.nomeFantasia || prospect.nome}
                       </h3>
-                      <div className="flex items-center gap-2 mb-2">
+                      {prospect.nomeFantasia && (
+                         <p className="text-[10px] font-medium text-slate-400 mb-2 truncate uppercase" title={prospect.nome}>
+                           {prospect.nome}
+                         </p>
+                      )}
+                      
+                      <div className={`flex items-center gap-2 mb-2 ${!prospect.nomeFantasia ? 'mt-2' : ''}`}>
                         <p className="text-xs font-medium text-slate-500 font-mono">
                           {prospect.cnpj}
                         </p>
@@ -147,6 +155,15 @@ function PaginatedSection({ title, icon, data, emptyMessage, onCardClick }: Sect
                           WLE: {prospect.clienteWLE ? 'Sim' : 'Não'}
                         </span>
                       </div>
+
+                      {(prospect.endereco) && (
+                        <div className="flex items-start gap-1.5 mt-2 text-slate-500">
+                          <MapPin size={12} className="mt-0.5 shrink-0" />
+                          <span className="text-[11px] leading-tight line-clamp-2" title={prospect.endereco}>
+                            {prospect.endereco}
+                          </span>
+                        </div>
+                      )}
                     </div>
                     <div className="flex justify-between items-center pt-3 border-t border-slate-100/80 mt-auto">
                       <div className="flex items-center gap-1.5 text-slate-600">
@@ -284,40 +301,22 @@ export default function ProspectList() {
     try {
       const text = await file.text();
       const lines = text.split('\n');
+      
+      // Limpa a primeira linha se for resumo, mantendo os cabeçalhos das colunas na linha 1
       if (lines[0].includes('Estabelecimentos')) lines.shift(); 
       const cleanCsv = lines.join('\n');
 
+      // Modificado para usar header: true
       Papa.parse(cleanCsv, {
-        header: false, 
+        header: true, // Papa.parse agora lerá os nomes das colunas e criará objetos com elas
         skipEmptyLines: true,
         complete: async (results) => {
-          const dataRows = results.data.slice(1);
-
-          const novosProspects = dataRows
-            .filter((row: any) => row[0]) 
-            .map((row: any) => {
-              // Verifica se a coluna WLE (índice 43) está como "Sim"
-              const wleStr = String(row[43] || '').trim().toLowerCase();
-              const isWLE = wleStr === 'sim';
-
-              return {
-                cnpj:               String(row[0] || '').trim(), 
-                nome:               String(row[1] || 'Sem Nome').trim(), 
-                simplesNacional:    String(row[8] || '').trim(), 
-                situacaoCadastral:  String(row[16] || '').trim(), 
-                telefone:           String(row[23] || 'Sem Telefone').trim(), 
-                telefoneSecundario: String(row[24] || '').trim(), 
-                email:              String(row[25] || '').trim(), 
-                atividadePrincipal: String(row[37] || '').trim(), 
-                telefoneBackup:     String(row[41] || '').trim(), 
-                modulosAtuais:      String(row[42] || 'Nenhum').trim(),
-                clienteWLE:         isWLE // <--- Mapeamento adicionado aqui!
-              };
-            });
+          // Filtra linhas vazias ou sem CNPJ
+          const clientes = results.data.filter((row: any) => row.CNPJ && String(row.CNPJ).trim() !== '');
 
           try {
             await axios.post(`${API_URL}/importar`, 
-              { prospects: novosProspects },
+              { clientes }, // Enviando exatamente o que o seu Astro espera
               {
                 headers: { 
                   'Content-Type': 'application/json',
@@ -331,6 +330,7 @@ export default function ProspectList() {
           } finally {
             setIsImporting(false);
             if (fileInputRef.current) fileInputRef.current.value = '';
+            fetchProspects(); // Atualiza a tela após importar
           }
         }
       });
@@ -383,10 +383,13 @@ export default function ProspectList() {
 
   const filteredProspects = prospects.filter(prospect => {
     const termo = searchQuery.toLowerCase();
-    const matchBusca = prospect.nome.toLowerCase().includes(termo) || 
-           prospect.cnpj.includes(termo) || 
-           prospect.telefone.includes(termo);
     
+    const matchBusca = 
+      prospect.nome.toLowerCase().includes(termo) || 
+      (prospect.nomeFantasia && prospect.nomeFantasia.toLowerCase().includes(termo)) || 
+      prospect.cnpj.includes(termo) || 
+      prospect.telefone.includes(termo);
+
     if (filtroWLE) {
       return matchBusca && prospect.clienteWLE === true;
     }
@@ -413,7 +416,6 @@ export default function ProspectList() {
           
           <div className="flex flex-col sm:flex-row items-center bg-white border border-slate-200 rounded-xl shadow-sm p-1.5 gap-2 w-full xl:w-auto">
             
-            {/* Campo de Busca Integrado */}
             <div className="relative w-full sm:w-64 flex-shrink-0">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
               <input 
@@ -425,10 +427,8 @@ export default function ProspectList() {
               />
             </div>
 
-            {/* Divisor Visual (escondido no mobile) */}
             <div className="hidden sm:block w-px h-6 bg-slate-200"></div>
 
-            {/* Filtro WLE (Toggle Switch) */}
             <button
               onClick={() => setFiltroWLE(!filtroWLE)}
               className={`flex w-full sm:w-auto items-center justify-between sm:justify-center gap-3 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
@@ -445,10 +445,8 @@ export default function ProspectList() {
               </div>
             </button>
 
-            {/* Divisor Visual (escondido no mobile) */}
             <div className="hidden sm:block w-px h-6 bg-slate-200"></div>
 
-            {/* Botão de Importação */}
             <div className="w-full sm:w-auto">
               <input type="file" accept=".csv" className="hidden" ref={fileInputRef} onChange={handleFileUpload} />
               <button 
