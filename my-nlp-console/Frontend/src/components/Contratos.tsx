@@ -133,17 +133,15 @@ function PaginatedSection({ title, icon, data, emptyMessage, onCardClick }: Sect
                         </span>
                       )}
                     </div>
+                    
                     <div className="mb-4 flex-1">
-                      <h3 className="text-base font-bold text-slate-900 leading-tight mb-0.5 line-clamp-1" title={prospect.nomeFantasia || prospect.nome}>
-                        {prospect.nomeFantasia || prospect.nome}
+                      {/* Título com Nome da Empresa apenas */}
+                      <h3 className="text-base font-bold text-slate-900 leading-tight mb-0.5 line-clamp-1" title={prospect.nome}>
+                        {prospect.nome}
                       </h3>
-                      {prospect.nomeFantasia && (
-                         <p className="text-[10px] font-medium text-slate-400 mb-2 truncate uppercase" title={prospect.nome}>
-                           {prospect.nome}
-                         </p>
-                      )}
                       
-                      <div className={`flex items-center gap-2 mb-2 ${!prospect.nomeFantasia ? 'mt-2' : ''}`}>
+                      {/* CNPJ e TAG WLE */}
+                      <div className="flex items-center gap-2 mb-2 mt-2">
                         <p className="text-xs font-medium text-slate-500 font-mono">
                           {prospect.cnpj}
                         </p>
@@ -155,16 +153,8 @@ function PaginatedSection({ title, icon, data, emptyMessage, onCardClick }: Sect
                           WLE: {prospect.clienteWLE ? 'Sim' : 'Não'}
                         </span>
                       </div>
-
-                      {(prospect.endereco) && (
-                        <div className="flex items-start gap-1.5 mt-2 text-slate-500">
-                          <MapPin size={12} className="mt-0.5 shrink-0" />
-                          <span className="text-[11px] leading-tight line-clamp-2" title={prospect.endereco}>
-                            {prospect.endereco}
-                          </span>
-                        </div>
-                      )}
                     </div>
+                    
                     <div className="flex justify-between items-center pt-3 border-t border-slate-100/80 mt-auto">
                       <div className="flex items-center gap-1.5 text-slate-600">
                         <Phone size={14} className="text-slate-400" />
@@ -229,7 +219,6 @@ function PaginatedSection({ title, icon, data, emptyMessage, onCardClick }: Sect
     </div>
   );
 }
-
 export default function ProspectList() {
   const [prospects, setProspects] = useState<Prospect[]>([]); 
   const [selectedProspect, setSelectedProspect] = useState<Prospect | null>(null);
