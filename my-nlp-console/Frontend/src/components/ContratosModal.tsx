@@ -24,7 +24,6 @@ interface ModalProps {
 }
 
 export default function ProspectModal({ prospect, onClose, currentUserId, currentUserName }: ModalProps) {
-  // Adicionado o status RETORNAR como um status finalizado
   const isFinished = prospect.status === 'APROVADO' || prospect.status === 'REPROVADO' || prospect.status === 'POSSIBILIDADE' || prospect.status === 'RETORNAR';
   
   const [isEditing, setIsEditing] = useState(!isFinished);
@@ -40,11 +39,11 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
     return [];
   };
 
-  const [observacoes, setObservacoes] = useState(prospect.observacoes || '');
+  // Começa vazio quando não for edição do principal (como log de mensagens)
+  const [observacoes, setObservacoes] = useState('');
   const [modulosSelecionados, setModulosSelecionados] = useState<string[]>(inicializarModulos());
   const [isSaving, setIsSaving] = useState(false);
 
-  // Busca o histórico de atendimento no backend
   const carregarHistorico = async () => {
     try {
       setLoadingHistorico(true);
@@ -61,7 +60,6 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
   };
 
   useEffect(() => {
-    setObservacoes(prospect.observacoes || '');
     setModulosSelecionados(inicializarModulos());
     carregarHistorico();
   }, [prospect]);
@@ -75,7 +73,6 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
     );
   };
 
-  // Adicionado RETORNAR na tipagem do parâmetro
   const handleSubmit = async (acao: 'APROVADO' | 'REPROVADO' | 'PENDENTE' | 'POSSIBILIDADE' | 'RETORNAR') => {
     setIsSaving(true);
     const token = localStorage.getItem('@CRM:token');
@@ -109,6 +106,12 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
   };
 
   const handleUpdate = async () => {
+    // Evita chamadas vazias
+    if (!observacoes.trim() && modulosSelecionados.length === 0) {
+      setIsEditing(false);
+      return;
+    }
+
     setIsSaving(true);
     const token = localStorage.getItem('@CRM:token');
 
@@ -127,9 +130,16 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
         }
       );
 
-      await carregarHistorico(); 
+      // Limpa a observação e atualiza a timeline imediatamente!
       setObservacoes(''); 
-      setIsEditing(false); 
+      await carregarHistorico(); 
+      
+      // Mantivemos o setIsEditing(true) comentado/removido.
+      // Deixamos a edição aberta para que ele possa enviar novas notas caso queira
+      // sem ter que clicar em "Nova Interação" de novo. 
+      // Se quiser que feche automaticamente, basta descomentar a linha abaixo:
+      // setIsEditing(false); 
+
     } catch (error: any) {
       console.error('Erro ao atualizar informações:', error);
     } finally {
@@ -139,12 +149,10 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
 
   const handleOutsideClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) {
+      // Bloqueio Total: Só permite clique fora fechar se for leitura.
+      // Assim o modal NUNCA "salvará" acidentalmente no fundo.
       if (isFinished && !isEditing) {
         onClose();
-      } else if (!isFinished) {
-        handleSubmit('PENDENTE'); 
-      } else {
-        if(window.confirm('Existem alterações não salvas. Deseja sair mesmo assim?')) onClose();
       }
     }
   };
@@ -158,18 +166,10 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
   };
 
   const renderStatusBadge = () => {
-    if (prospect.status === 'APROVADO') {
-      return <span className="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded uppercase font-bold tracking-wider border border-emerald-200">Interessado</span>;
-    }
-    if (prospect.status === 'REPROVADO') {
-      return <span className="bg-rose-100 text-rose-800 text-[10px] px-2 py-0.5 rounded uppercase font-bold tracking-wider border border-rose-200">Não Interessado</span>;
-    }
-    if (prospect.status === 'POSSIBILIDADE') {
-      return <span className="bg-blue-100 text-blue-800 text-[10px] px-2 py-0.5 rounded uppercase font-bold tracking-wider border border-blue-200">Possibilidade</span>;
-    }
-    if (prospect.status === 'RETORNAR') {
-      return <span className="bg-purple-100 text-purple-800 text-[10px] px-2 py-0.5 rounded uppercase font-bold tracking-wider border border-purple-200">Retornar</span>;
-    }
+    if (prospect.status === 'APROVADO') return <span className="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded uppercase font-bold tracking-wider border border-emerald-200">Interessado</span>;
+    if (prospect.status === 'REPROVADO') return <span className="bg-rose-100 text-rose-800 text-[10px] px-2 py-0.5 rounded uppercase font-bold tracking-wider border border-rose-200">Não Interessado</span>;
+    if (prospect.status === 'POSSIBILIDADE') return <span className="bg-blue-100 text-blue-800 text-[10px] px-2 py-0.5 rounded uppercase font-bold tracking-wider border border-blue-200">Possibilidade</span>;
+    if (prospect.status === 'RETORNAR') return <span className="bg-purple-100 text-purple-800 text-[10px] px-2 py-0.5 rounded uppercase font-bold tracking-wider border border-purple-200">Retornar</span>;
     return <span className="bg-amber-100 text-amber-800 text-[10px] px-2 py-0.5 rounded uppercase font-bold tracking-wider animate-pulse border border-amber-200">Em Atendimento</span>;
   };
 
@@ -386,7 +386,7 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
           </div>
         </div>
 
-        {/* Footer com Botões Reduzidos */}
+        {/* Footer com Botões */}
         <div className="px-8 py-5 border-t border-slate-200 bg-white shrink-0">
           {isFinished ? (
             <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
@@ -457,7 +457,6 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
                   Não interessado
                 </button>
                 
-                {/* NOVO BOTÃO RETORNAR */}
                 <button 
                   onClick={() => handleSubmit('RETORNAR')}
                   disabled={isSaving}

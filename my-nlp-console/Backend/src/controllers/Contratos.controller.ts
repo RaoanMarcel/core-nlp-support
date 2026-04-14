@@ -31,7 +31,6 @@ export class ProspectController {
     }
   };
 
-  // NOVA FUNÇÃO: Buscar o histórico de um prospect específico
   buscarHistorico = async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
@@ -92,7 +91,7 @@ export class ProspectController {
         where: { id },
         data: { 
           status: acao,
-          observacoes,
+          observacoes, // No finalizar mantivemos no principal, caso queira a "última" observação visível na tabela externa
           novosModulos,
           atendidoPor,
           dataAtendimento: new Date() 
@@ -118,32 +117,33 @@ export class ProspectController {
     }
   };
 
-
   atualizar = async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      // ATENÇÃO: Receber 'usuarioLogado' do body agora
       const { observacoes, novosModulos, status, usuarioLogado } = req.body;
 
+      // 1. Atualiza apenas módulos e status no cadastro principal. 
+      // Não sobrescrevemos mais as 'observacoes' aqui.
       const atualizado = await prisma.prospect.update({
         where: { id },
         data: {
-          observacoes,
           novosModulos,
           ...(status && { status }) 
         }
       });
 
-      // Salvar no histórico
-      await prisma.historicoAtendimento.create({
-        data: {
-          prospectId: id,
-          acao: 'Atualizou as Informações',
-          observacoes,
-          novosModulos: novosModulos || [],
-          usuario: usuarioLogado || 'Usuário Desconhecido'
-        }
-      });
+      // 2. Cria o log de interação na linha do tempo, apenas se tiver algum texto ou módulo atualizado
+      if ((observacoes && observacoes.trim() !== '') || (novosModulos && novosModulos.length > 0)) {
+        await prisma.historicoAtendimento.create({
+          data: {
+            prospectId: id,
+            acao: 'Nova Interação', // Alterado o nome da ação para algo mais "chat"
+            observacoes: observacoes || null,
+            novosModulos: novosModulos || [],
+            usuario: usuarioLogado || 'Usuário Desconhecido'
+          }
+        });
+      }
 
       req.app.get('io').emit('prospectUpdated', atualizado);
       res.json({ message: 'Informações atualizadas com sucesso!', prospect: atualizado });
