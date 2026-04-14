@@ -5,9 +5,6 @@ import {
   Copy, CheckCircle2
 } from 'lucide-react';
 
-// ==========================================
-// 1. TIPAGENS
-// ==========================================
 interface Macro {
   id: string;
   command: string;
@@ -23,9 +20,6 @@ interface Guide {
   content: string;
 }
 
-// ==========================================
-// 2. DADOS MOCKADOS
-// ==========================================
 const mockData: { macros: Macro[], guides: Guide[] } = {
   macros: [
     { id: 'm1', command: 'reset_senha', title: 'Reset de Senha', category: 'Acesso', content: 'Olá! Entendo que você está com problemas de acesso. Enviamos um link de redefinição de senha para o seu e-mail cadastrado. Por favor, verifique sua caixa de entrada e a pasta de spam.' },
@@ -68,9 +62,6 @@ export default function KnowledgeBase() {
   return (
     <div className="flex h-full w-full bg-[#f4f5f7] overflow-hidden font-sans">
       
-      {/* ========================================================
-        1. COLUNA ESQUERDA (Navegação de Categorias)
-        ======================================================== */}
       <div className="w-[240px] bg-white border-r border-slate-200 flex flex-col shrink-0">
         <div className="p-5 h-[80px] flex items-center border-b border-slate-100 shrink-0">
           <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">

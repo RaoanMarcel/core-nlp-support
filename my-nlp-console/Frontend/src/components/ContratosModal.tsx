@@ -24,7 +24,8 @@ interface ModalProps {
 }
 
 export default function ProspectModal({ prospect, onClose, currentUserId, currentUserName }: ModalProps) {
-  const isFinished = prospect.status === 'APROVADO' || prospect.status === 'REPROVADO' || prospect.status === 'POSSIBILIDADE';
+  // Adicionado o status RETORNAR como um status finalizado
+  const isFinished = prospect.status === 'APROVADO' || prospect.status === 'REPROVADO' || prospect.status === 'POSSIBILIDADE' || prospect.status === 'RETORNAR';
   
   const [isEditing, setIsEditing] = useState(!isFinished);
   const [historico, setHistorico] = useState<Historico[]>([]);
@@ -74,12 +75,12 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
     );
   };
 
-  const handleSubmit = async (acao: 'APROVADO' | 'REPROVADO' | 'PENDENTE' | 'POSSIBILIDADE') => {
+  // Adicionado RETORNAR na tipagem do parâmetro
+  const handleSubmit = async (acao: 'APROVADO' | 'REPROVADO' | 'PENDENTE' | 'POSSIBILIDADE' | 'RETORNAR') => {
     setIsSaving(true);
     const token = localStorage.getItem('@CRM:token');
 
     try {
-      // O endpoint para finalizar atendimento
       const endpoint = 'finish'; 
       
       await axios.post(`${API_URL}/${prospect.id}/${endpoint}`, 
@@ -116,7 +117,7 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
         {
           observacoes,
           novosModulos: modulosSelecionados,
-          usuarioLogado: currentUserName // Garantindo envio do usuário para o histórico
+          usuarioLogado: currentUserName 
         },
         {
           headers: { 
@@ -126,8 +127,8 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
         }
       );
 
-      await carregarHistorico(); // Recarrega a timeline após salvar
-      setObservacoes(''); // Limpa o campo para uma nova observação futura
+      await carregarHistorico(); 
+      setObservacoes(''); 
       setIsEditing(false); 
     } catch (error: any) {
       console.error('Erro ao atualizar informações:', error);
@@ -158,31 +159,18 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
 
   const renderStatusBadge = () => {
     if (prospect.status === 'APROVADO') {
-      return (
-        <span className="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded uppercase font-bold tracking-wider border border-emerald-200">
-          Interessado
-        </span>
-      );
+      return <span className="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded uppercase font-bold tracking-wider border border-emerald-200">Interessado</span>;
     }
     if (prospect.status === 'REPROVADO') {
-      return (
-        <span className="bg-rose-100 text-rose-800 text-[10px] px-2 py-0.5 rounded uppercase font-bold tracking-wider border border-rose-200">
-          Não Interessado
-        </span>
-      );
+      return <span className="bg-rose-100 text-rose-800 text-[10px] px-2 py-0.5 rounded uppercase font-bold tracking-wider border border-rose-200">Não Interessado</span>;
     }
     if (prospect.status === 'POSSIBILIDADE') {
-      return (
-        <span className="bg-blue-100 text-blue-800 text-[10px] px-2 py-0.5 rounded uppercase font-bold tracking-wider border border-blue-200">
-          Possibilidade
-        </span>
-      );
+      return <span className="bg-blue-100 text-blue-800 text-[10px] px-2 py-0.5 rounded uppercase font-bold tracking-wider border border-blue-200">Possibilidade</span>;
     }
-    return (
-      <span className="bg-amber-100 text-amber-800 text-[10px] px-2 py-0.5 rounded uppercase font-bold tracking-wider animate-pulse border border-amber-200">
-        Em Atendimento
-      </span>
-    );
+    if (prospect.status === 'RETORNAR') {
+      return <span className="bg-purple-100 text-purple-800 text-[10px] px-2 py-0.5 rounded uppercase font-bold tracking-wider border border-purple-200">Retornar</span>;
+    }
+    return <span className="bg-amber-100 text-amber-800 text-[10px] px-2 py-0.5 rounded uppercase font-bold tracking-wider animate-pulse border border-amber-200">Em Atendimento</span>;
   };
 
   const formatarData = (dataStr?: string) => {
@@ -289,7 +277,6 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
           {/* Grid de Atendimento e Timeline */}
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
             
-            {/* Coluna Esquerda: Formulário de Atendimento (Ocupa 3 colunas) */}
             <div className="lg:col-span-3 bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col">
               <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2 mb-5">
                 <FileText size={14} /> Registro de Atendimento {isFinished && !isEditing && '(Modo Leitura)'}
@@ -344,7 +331,6 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
               </div>
             </div>
 
-            {/* Coluna Direita: Linha do Tempo (Ocupa 2 colunas) */}
             <div className="lg:col-span-2 bg-slate-50 rounded-xl border border-slate-200 p-6 overflow-y-auto max-h-[400px]">
               <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2 mb-6">
                 <History size={14} /> Linha do Tempo
@@ -400,7 +386,7 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
           </div>
         </div>
 
-        {/* Footer com Botões */}
+        {/* Footer com Botões Reduzidos */}
         <div className="px-8 py-5 border-t border-slate-200 bg-white shrink-0">
           {isFinished ? (
             <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
@@ -417,14 +403,14 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
                   <>
                     <button 
                       onClick={() => setIsEditing(true)}
-                      className="flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-50 text-blue-700 font-bold rounded-xl hover:bg-blue-100 transition-all border border-blue-200 w-full sm:w-auto"
+                      className="flex items-center justify-center gap-1.5 px-4 py-2 bg-blue-50 text-blue-700 text-sm font-bold rounded-lg hover:bg-blue-100 transition-all border border-blue-200 w-full sm:w-auto"
                     >
-                      <Edit3 size={18} />
+                      <Edit3 size={16} />
                       Nova Interação / Editar
                     </button>
                     <button 
                       onClick={onClose}
-                      className="flex justify-center items-center gap-2 px-6 py-2.5 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200 transition-all w-full sm:w-auto"
+                      className="flex justify-center items-center gap-1.5 px-4 py-2 bg-slate-100 text-slate-700 text-sm font-bold rounded-lg hover:bg-slate-200 transition-all w-full sm:w-auto"
                     >
                       Fechar
                     </button>
@@ -434,16 +420,16 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
                     <button 
                       onClick={() => { setIsEditing(false); setObservacoes(''); }}
                       disabled={isSaving}
-                      className="flex items-center justify-center gap-2 px-5 py-2.5 text-slate-600 font-bold rounded-xl hover:bg-slate-100 transition-all w-full sm:w-auto"
+                      className="flex items-center justify-center gap-1.5 px-4 py-2 text-slate-600 text-sm font-bold rounded-lg hover:bg-slate-100 transition-all w-full sm:w-auto"
                     >
                       Cancelar
                     </button>
                     <button 
                       onClick={handleUpdate}
                       disabled={isSaving}
-                      className="flex justify-center items-center gap-2 px-6 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all shadow-sm shadow-blue-600/20 w-full sm:w-auto"
+                      className="flex justify-center items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-blue-700 transition-all shadow-sm shadow-blue-600/20 w-full sm:w-auto"
                     >
-                      <Save size={18} />
+                      <Save size={16} />
                       {isSaving ? 'Salvando...' : 'Salvar Alterações'}
                     </button>
                   </>
@@ -455,38 +441,48 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
               <button 
                 onClick={() => handleSubmit('PENDENTE')}
                 disabled={isSaving}
-                className="flex items-center gap-2 px-4 py-2 text-slate-600 font-semibold hover:bg-slate-100 rounded-lg transition-colors disabled:opacity-50 w-full sm:w-auto justify-center"
+                className="flex items-center gap-1.5 px-3 py-2 text-sm text-slate-600 font-semibold hover:bg-slate-100 rounded-lg transition-colors disabled:opacity-50 w-full sm:w-auto justify-center"
               >
-                <ArrowLeft size={18} />
+                <ArrowLeft size={16} />
                 Desistir / Voltar
               </button>
               
-              <div className="flex flex-wrap sm:flex-nowrap gap-3 w-full sm:w-auto justify-center">
+              <div className="flex flex-wrap sm:flex-nowrap gap-2 w-full sm:w-auto justify-center">
                 <button 
                   onClick={() => handleSubmit('REPROVADO')}
                   disabled={isSaving}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-white border-2 border-rose-200 text-rose-600 font-bold rounded-xl hover:bg-rose-50 hover:border-rose-300 transition-all disabled:opacity-50 shadow-sm"
+                  className="flex items-center gap-1.5 px-3 py-2 text-sm bg-white border border-rose-200 text-rose-600 font-bold rounded-lg hover:bg-rose-50 hover:border-rose-300 transition-all disabled:opacity-50 shadow-sm"
                 >
-                  <XCircle size={18} />
+                  <XCircle size={16} />
                   Não interessado
+                </button>
+                
+                {/* NOVO BOTÃO RETORNAR */}
+                <button 
+                  onClick={() => handleSubmit('RETORNAR')}
+                  disabled={isSaving}
+                  className="flex items-center gap-1.5 px-3 py-2 text-sm bg-white border border-purple-200 text-purple-600 font-bold rounded-lg hover:bg-purple-50 hover:border-purple-300 transition-all disabled:opacity-50 shadow-sm"
+                >
+                  <Clock size={16} />
+                  {isSaving ? '...' : 'Retornar'}
                 </button>
                 
                 <button 
                   onClick={() => handleSubmit('POSSIBILIDADE')}
                   disabled={isSaving}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-white border-2 border-blue-200 text-blue-600 font-bold rounded-xl hover:bg-blue-50 hover:border-blue-300 transition-all disabled:opacity-50 shadow-sm"
+                  className="flex items-center gap-1.5 px-3 py-2 text-sm bg-white border border-blue-200 text-blue-600 font-bold rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-all disabled:opacity-50 shadow-sm"
                 >
-                  <Target size={18} />
-                  {isSaving ? 'Salvando...' : 'Possibilidade'}
+                  <Target size={16} />
+                  {isSaving ? '...' : 'Possibilidade'}
                 </button>
 
                 <button 
                   onClick={() => handleSubmit('APROVADO')}
                   disabled={isSaving}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition-all disabled:opacity-50 shadow-sm shadow-emerald-600/20"
+                  className="flex items-center gap-1.5 px-3 py-2 text-sm bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 transition-all disabled:opacity-50 shadow-sm shadow-emerald-600/20"
                 >
-                  <CheckCircle2 size={18} />
-                  {isSaving ? 'Salvando...' : 'Interessado'}
+                  <CheckCircle2 size={16} />
+                  {isSaving ? '...' : 'Interessado'}
                 </button>
               </div>
             </div>
