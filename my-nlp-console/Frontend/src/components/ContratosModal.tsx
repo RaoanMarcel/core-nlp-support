@@ -39,7 +39,6 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
     return [];
   };
 
-  // Começa vazio quando não for edição do principal (como log de mensagens)
   const [observacoes, setObservacoes] = useState('');
   const [modulosSelecionados, setModulosSelecionados] = useState<string[]>(inicializarModulos());
   const [isSaving, setIsSaving] = useState(false);
@@ -71,6 +70,38 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
         ? prev.filter(m => m !== modulo) 
         : [...prev, modulo]
     );
+  };
+
+  // Função: Atualização Rápida de Status (1-Click)
+  const handleQuickUpdate = async (novoStatus: 'APROVADO' | 'REPROVADO' | 'POSSIBILIDADE') => {
+    setIsSaving(true);
+    const token = localStorage.getItem('@CRM:token');
+
+    try {
+      await axios.patch(`${API_URL}/${prospect.id}/update`, 
+        {
+          observacoes: observacoes.trim() || `Alterou o status rapidamente para: ${novoStatus}`,
+          novosModulos: modulosSelecionados,
+          status: novoStatus,
+          usuarioLogado: currentUserName 
+        },
+        {
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+
+      setObservacoes(''); 
+      setIsEditing(false); // Encerra a edição
+      await carregarHistorico(); // Atualiza a timeline
+
+    } catch (error: any) {
+      console.error('Erro na atualização rápida:', error);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleSubmit = async (acao: 'APROVADO' | 'REPROVADO' | 'PENDENTE' | 'POSSIBILIDADE' | 'RETORNAR') => {
@@ -106,7 +137,6 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
   };
 
   const handleUpdate = async () => {
-    // Evita chamadas vazias
     if (!observacoes.trim() && modulosSelecionados.length === 0) {
       setIsEditing(false);
       return;
@@ -130,15 +160,8 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
         }
       );
 
-      // Limpa a observação e atualiza a timeline imediatamente!
       setObservacoes(''); 
       await carregarHistorico(); 
-      
-      // Mantivemos o setIsEditing(true) comentado/removido.
-      // Deixamos a edição aberta para que ele possa enviar novas notas caso queira
-      // sem ter que clicar em "Nova Interação" de novo. 
-      // Se quiser que feche automaticamente, basta descomentar a linha abaixo:
-      // setIsEditing(false); 
 
     } catch (error: any) {
       console.error('Erro ao atualizar informações:', error);
@@ -149,8 +172,6 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
 
   const handleOutsideClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) {
-      // Bloqueio Total: Só permite clique fora fechar se for leitura.
-      // Assim o modal NUNCA "salvará" acidentalmente no fundo.
       if (isFinished && !isEditing) {
         onClose();
       }
@@ -328,6 +349,40 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
                   disabled={isSaving || !isEditing}
                   readOnly={!isEditing}
                 />
+
+                {/* --- AÇÃO DE TROCA RÁPIDA (SOMENTE SE JÁ FOI FINALIZADO E ESTÁ EDITANDO) --- */}
+                {isFinished && isEditing && (
+                  <div className="mt-4 pt-4 border-t border-slate-100">
+                    <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">
+                      Ação Rápida: Salvar e Alterar Status para
+                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        onClick={() => handleQuickUpdate('APROVADO')}
+                        disabled={isSaving}
+                        className="flex items-center gap-1.5 px-4 py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-xs font-bold hover:bg-emerald-600 hover:text-white hover:border-emerald-600 transition-all shadow-sm disabled:opacity-50"
+                      >
+                        <CheckCircle2 size={14} /> Interessado
+                      </button>
+
+                      <button
+                        onClick={() => handleQuickUpdate('POSSIBILIDADE')}
+                        disabled={isSaving}
+                        className="flex items-center gap-1.5 px-4 py-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-full text-xs font-bold hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all shadow-sm disabled:opacity-50"
+                      >
+                        <Target size={14} /> Possibilidade
+                      </button>
+
+                      <button
+                        onClick={() => handleQuickUpdate('REPROVADO')}
+                        disabled={isSaving}
+                        className="flex items-center gap-1.5 px-4 py-2 bg-rose-50 text-rose-700 border border-rose-200 rounded-full text-xs font-bold hover:bg-rose-600 hover:text-white hover:border-rose-600 transition-all shadow-sm disabled:opacity-50"
+                      >
+                        <XCircle size={14} /> Não Interessado
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -430,7 +485,7 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
                       className="flex justify-center items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-blue-700 transition-all shadow-sm shadow-blue-600/20 w-full sm:w-auto"
                     >
                       <Save size={16} />
-                      {isSaving ? 'Salvando...' : 'Salvar Alterações'}
+                      {isSaving ? 'Salvando...' : 'Apenas Salvar Nota'}
                     </button>
                   </>
                 )}
