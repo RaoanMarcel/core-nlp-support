@@ -8,7 +8,7 @@ router.get('/', prospectController.buscarTodos);
 router.post('/importar', prospectController.importar);
 router.put('/:id/travar', prospectController.travar);
 router.post('/:id/finish', prospectController.finalizar);
-
+router.get('/:id/historico', prospectController.buscarHistorico);
 router.patch('/:id/update', prospectController.atualizar);
 
 export default router;
