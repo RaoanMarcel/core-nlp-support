@@ -43,6 +43,14 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
   const [modulosSelecionados, setModulosSelecionados] = useState<string[]>(inicializarModulos());
   const [isSaving, setIsSaving] = useState(false);
 
+  // --- NOVOS ESTADOS PARA INLINE EDITING DE CONTATOS ---
+  const [isEditingContatos, setIsEditingContatos] = useState(false);
+  const [isSavingContatos, setIsSavingContatos] = useState(false);
+  
+  const [telefoneEdit, setTelefoneEdit] = useState(prospect.telefone || '');
+  const [telefoneSecEdit, setTelefoneSecEdit] = useState(prospect.telefoneSecundario || '');
+  const [emailEdit, setEmailEdit] = useState(prospect.email || '');
+
   const carregarHistorico = async () => {
     try {
       setLoadingHistorico(true);
@@ -60,6 +68,10 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
 
   useEffect(() => {
     setModulosSelecionados(inicializarModulos());
+    // Sincroniza os contatos com as props atuais
+    setTelefoneEdit(prospect.telefone || '');
+    setTelefoneSecEdit(prospect.telefoneSecundario || '');
+    setEmailEdit(prospect.email || '');
     carregarHistorico();
   }, [prospect]);
 
@@ -70,6 +82,47 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
         ? prev.filter(m => m !== modulo) 
         : [...prev, modulo]
     );
+  };
+
+  // --- FUNÇÕES DE INLINE EDITING DE CONTATOS ---
+  const handleSalvarContatos = async () => {
+    setIsSavingContatos(true);
+    const token = localStorage.getItem('@CRM:token');
+
+    try {
+      await axios.patch(`${API_URL}/${prospect.id}/update`, 
+        {
+          telefone: telefoneEdit,
+          telefoneSecundario: telefoneSecEdit,
+          email: emailEdit,
+          observacoes: "Atualizou os dados de contato.", // Registro automático no histórico
+          usuarioLogado: currentUserName 
+        },
+        {
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+
+      // Encerra a edição e atualiza a timeline
+      setIsEditingContatos(false);
+      await carregarHistorico();
+
+    } catch (error: any) {
+      console.error('Erro ao atualizar contatos:', error);
+    } finally {
+      setIsSavingContatos(false);
+    }
+  };
+
+  const handleCancelarEdicaoContatos = () => {
+    // Reseta para os valores originais da prop
+    setTelefoneEdit(prospect.telefone || '');
+    setTelefoneSecEdit(prospect.telefoneSecundario || '');
+    setEmailEdit(prospect.email || '');
+    setIsEditingContatos(false);
   };
 
   // Função: Atualização Rápida de Status (1-Click)
@@ -271,43 +324,116 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
               </div>
             </div>
             
-            <div className="space-y-5 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                <Phone size={14} /> Contatos
-              </h3>
+            {/* Card de Contatos com Inline Editing */}
+            <div className="space-y-5 bg-white p-6 rounded-xl border border-slate-200 shadow-sm relative transition-all">
+              <div className="flex justify-between items-center">
+                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                  <Phone size={14} /> Contatos
+                </h3>
+                
+                {/* Botão de Editar (some quando ativo) */}
+                {!isEditingContatos && (
+                  <button
+                    onClick={() => setIsEditingContatos(true)}
+                    className="text-[10px] flex items-center gap-1 px-2 py-1 bg-slate-50 text-slate-600 border border-slate-200 rounded hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-colors font-bold uppercase tracking-wider"
+                  >
+                    <Edit3 size={12} /> Editar
+                  </button>
+                )}
+              </div>
+
               <div className="space-y-3">
+                {/* Telefone Principal */}
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
                     <Phone size={16} className="text-blue-600" />
                   </div>
-                  <div>
+                  <div className="flex-1 min-w-0">
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Principal</span>
-                    <p className="text-sm font-semibold text-slate-900">{prospect.telefone}</p>
+                    {isEditingContatos ? (
+                      <input
+                        type="text"
+                        value={telefoneEdit}
+                        onChange={(e) => setTelefoneEdit(e.target.value)}
+                        placeholder="Telefone principal..."
+                        className="w-full mt-0.5 text-sm font-semibold text-slate-900 bg-blue-50/60 border-b-2 border-blue-400 focus:outline-none focus:border-blue-600 focus:bg-blue-50 px-2 py-1 rounded-t transition-all"
+                        disabled={isSavingContatos}
+                      />
+                    ) : (
+                      <p className="text-sm font-semibold text-slate-900 truncate">{telefoneEdit || 'Não informado'}</p>
+                    )}
                   </div>
                 </div>
-                {prospect.telefoneSecundario && (
+
+                {/* Telefone Secundário */}
+                {(prospect.telefoneSecundario || isEditingContatos) && (
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center shrink-0">
                       <Phone size={16} className="text-slate-500" />
                     </div>
-                    <div>
+                    <div className="flex-1 min-w-0">
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Secundário</span>
-                      <p className="text-sm font-semibold text-slate-900">{prospect.telefoneSecundario}</p>
+                      {isEditingContatos ? (
+                        <input
+                          type="text"
+                          value={telefoneSecEdit}
+                          onChange={(e) => setTelefoneSecEdit(e.target.value)}
+                          placeholder="Telefone secundário (opcional)..."
+                          className="w-full mt-0.5 text-sm font-semibold text-slate-900 bg-blue-50/60 border-b-2 border-blue-400 focus:outline-none focus:border-blue-600 focus:bg-blue-50 px-2 py-1 rounded-t transition-all"
+                          disabled={isSavingContatos}
+                        />
+                      ) : (
+                        <p className="text-sm font-semibold text-slate-900 truncate">{telefoneSecEdit || 'Não informado'}</p>
+                      )}
                     </div>
                   </div>
                 )}
-                {prospect.email && (
+
+                {/* E-mail */}
+                {(prospect.email || isEditingContatos) && (
                   <div className="flex items-center gap-3 mt-4 pt-4 border-t border-slate-100">
                     <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center shrink-0">
                       <Mail size={16} className="text-indigo-600" />
                     </div>
-                    <div className="min-w-0">
+                    <div className="flex-1 min-w-0">
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">E-mail</span>
-                      <p className="text-sm font-semibold text-slate-900 truncate">{prospect.email}</p>
+                      {isEditingContatos ? (
+                        <input
+                          type="email"
+                          value={emailEdit}
+                          onChange={(e) => setEmailEdit(e.target.value)}
+                          placeholder="Endereço de e-mail..."
+                          className="w-full mt-0.5 text-sm font-semibold text-slate-900 bg-indigo-50/60 border-b-2 border-indigo-400 focus:outline-none focus:border-indigo-600 focus:bg-indigo-50 px-2 py-1 rounded-t transition-all"
+                          disabled={isSavingContatos}
+                        />
+                      ) : (
+                        <p className="text-sm font-semibold text-slate-900 truncate">{emailEdit || 'Não informado'}</p>
+                      )}
                     </div>
                   </div>
                 )}
               </div>
+
+              {/* Ações (Cancelar e Salvar) - Exibidas apenas em modo de edição */}
+              {isEditingContatos && (
+                <div className="mt-4 pt-4 border-t border-slate-100 flex justify-end gap-2">
+                  <button
+                    onClick={handleCancelarEdicaoContatos}
+                    disabled={isSavingContatos}
+                    className="px-3 py-1.5 text-xs font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded transition-colors disabled:opacity-50"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleSalvarContatos}
+                    disabled={isSavingContatos}
+                    className="flex items-center gap-1.5 px-4 py-1.5 bg-blue-600 text-white text-xs font-bold rounded hover:bg-blue-700 transition-colors shadow-sm shadow-blue-600/20 disabled:opacity-75 disabled:cursor-not-allowed"
+                  >
+                    <Save size={14} />
+                    {isSavingContatos ? 'Salvando...' : 'Salvar Contatos'}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
