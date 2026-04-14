@@ -31,6 +31,21 @@ export class ProspectController {
     }
   };
 
+  // NOVA FUNÇÃO: Buscar o histórico de um prospect específico
+  buscarHistorico = async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const historico = await prisma.historicoAtendimento.findMany({
+        where: { prospectId: id },
+        orderBy: { createdAt: 'desc' } // Ordena do mais recente pro mais antigo
+      });
+      res.json(historico);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'Erro ao buscar histórico' });
+    }
+  };
+
   travar = async (req: Request, res: Response): Promise<any> => {
     try {
       const { id } = req.params;
@@ -47,6 +62,16 @@ export class ProspectController {
         data: { 
           status: 'EM_ATENDIMENTO',
           lockedBy: userName 
+        }
+      });
+
+      // Salvar no histórico
+      await prisma.historicoAtendimento.create({
+        data: {
+          prospectId: id,
+          acao: 'Iniciou o Atendimento',
+          usuario: userName,
+          novosModulos: [],
         }
       });
 
@@ -74,6 +99,17 @@ export class ProspectController {
         }
       });
 
+      // Salvar no histórico
+      await prisma.historicoAtendimento.create({
+        data: {
+          prospectId: id,
+          acao: `Finalizou como ${acao}`,
+          observacoes,
+          novosModulos: novosModulos || [],
+          usuario: atendidoPor || 'Sistema'
+        }
+      });
+
       req.app.get('io').emit('prospectUpdated', atualizado);
       res.json({ message: `Atendimento finalizado como ${acao}!`, prospect: atualizado });
     } catch (error) {
@@ -86,7 +122,8 @@ export class ProspectController {
   atualizar = async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      const { observacoes, novosModulos, status } = req.body;
+      // ATENÇÃO: Receber 'usuarioLogado' do body agora
+      const { observacoes, novosModulos, status, usuarioLogado } = req.body;
 
       const atualizado = await prisma.prospect.update({
         where: { id },
@@ -94,6 +131,17 @@ export class ProspectController {
           observacoes,
           novosModulos,
           ...(status && { status }) 
+        }
+      });
+
+      // Salvar no histórico
+      await prisma.historicoAtendimento.create({
+        data: {
+          prospectId: id,
+          acao: 'Atualizou as Informações',
+          observacoes,
+          novosModulos: novosModulos || [],
+          usuario: usuarioLogado || 'Usuário Desconhecido'
         }
       });
 

@@ -1,11 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Phone, Mail, Building, FileText, ArrowLeft, CheckCircle2, XCircle, Edit3, Save, Target } from 'lucide-react';
+import { Phone, Mail, Building, FileText, ArrowLeft, CheckCircle2, XCircle, Edit3, Save, Target, History, Clock, User } from 'lucide-react';
 import { type Prospect } from './Contratos'; 
 
 const MODULOS_DISPONIVEIS = ['NFE', 'NFCE', 'MDFE', 'CTE', 'NFSE', 'FINANCEIRO', 'ESTOQUE'];
 
 const API_URL = 'https://core-nlp-support.onrender.com/prospects';
+
+interface Historico {
+  id: string;
+  acao: string;
+  observacoes: string | null;
+  novosModulos: string[];
+  usuario: string;
+  createdAt: string;
+}
 
 interface ModalProps {
   prospect: Prospect;
@@ -15,16 +24,17 @@ interface ModalProps {
 }
 
 export default function ProspectModal({ prospect, onClose, currentUserId, currentUserName }: ModalProps) {
-  // Ajuste: Dependendo de como o backend salva "Possibilidade", você pode precisar adicionar 'POSSIBILIDADE' aqui
   const isFinished = prospect.status === 'APROVADO' || prospect.status === 'REPROVADO' || prospect.status === 'POSSIBILIDADE';
   
   const [isEditing, setIsEditing] = useState(!isFinished);
+  const [historico, setHistorico] = useState<Historico[]>([]);
+  const [loadingHistorico, setLoadingHistorico] = useState(true);
 
   const inicializarModulos = () => {
     if (!prospect.novosModulos) return [];
     if (Array.isArray(prospect.novosModulos)) return prospect.novosModulos;
     if (typeof prospect.novosModulos === 'string') {
-      return prospect.novosModulos.split(',').map(m => m.trim()).filter(m => m !== '');
+      return (prospect.novosModulos as string).split(',').map(m => m.trim()).filter(m => m !== '');
     }
     return [];
   };
@@ -33,13 +43,30 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
   const [modulosSelecionados, setModulosSelecionados] = useState<string[]>(inicializarModulos());
   const [isSaving, setIsSaving] = useState(false);
 
+  // Busca o histórico de atendimento no backend
+  const carregarHistorico = async () => {
+    try {
+      setLoadingHistorico(true);
+      const token = localStorage.getItem('@CRM:token');
+      const response = await axios.get(`${API_URL}/${prospect.id}/historico`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      setHistorico(response.data);
+    } catch (error) {
+      console.error("Erro ao carregar histórico:", error);
+    } finally {
+      setLoadingHistorico(false);
+    }
+  };
+
   useEffect(() => {
     setObservacoes(prospect.observacoes || '');
     setModulosSelecionados(inicializarModulos());
+    carregarHistorico();
   }, [prospect]);
 
   const handleCheck = (modulo: string) => {
-    if (!isEditing) return; // Só permite checar se estiver editando
+    if (!isEditing) return; 
     setModulosSelecionados(prev => 
       prev.includes(modulo) 
         ? prev.filter(m => m !== modulo) 
@@ -47,13 +74,13 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
     );
   };
 
-  // Atualizado para aceitar 'POSSIBILIDADE'
   const handleSubmit = async (acao: 'APROVADO' | 'REPROVADO' | 'PENDENTE' | 'POSSIBILIDADE') => {
     setIsSaving(true);
     const token = localStorage.getItem('@CRM:token');
 
     try {
-      const endpoint = acao === 'PENDENTE' ? 'finish' : 'finish'; 
+      // O endpoint para finalizar atendimento
+      const endpoint = 'finish'; 
       
       await axios.post(`${API_URL}/${prospect.id}/${endpoint}`, 
         {
@@ -88,7 +115,8 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
       await axios.patch(`${API_URL}/${prospect.id}/update`, 
         {
           observacoes,
-          novosModulos: modulosSelecionados, 
+          novosModulos: modulosSelecionados,
+          usuarioLogado: currentUserName // Garantindo envio do usuário para o histórico
         },
         {
           headers: { 
@@ -98,6 +126,8 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
         }
       );
 
+      await carregarHistorico(); // Recarrega a timeline após salvar
+      setObservacoes(''); // Limpa o campo para uma nova observação futura
       setIsEditing(false); 
     } catch (error: any) {
       console.error('Erro ao atualizar informações:', error);
@@ -141,7 +171,6 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
         </span>
       );
     }
-    // Adicionado badge de Possibilidade
     if (prospect.status === 'POSSIBILIDADE') {
       return (
         <span className="bg-blue-100 text-blue-800 text-[10px] px-2 py-0.5 rounded uppercase font-bold tracking-wider border border-blue-200">
@@ -156,7 +185,6 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
     );
   };
 
-  // Formatação de Data
   const formatarData = (dataStr?: string) => {
     if (!dataStr) return '';
     return new Date(dataStr).toLocaleString('pt-BR', {
@@ -167,7 +195,9 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
 
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 sm:p-6 font-sans" onClick={handleOutsideClick}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[95vh] ring-1 ring-slate-900/5">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl overflow-hidden flex flex-col max-h-[95vh] ring-1 ring-slate-900/5">
+        
+        {/* Header */}
         <div className="px-8 py-6 border-b border-slate-100 bg-white flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shrink-0">
           <div>
             <div className="flex items-center gap-3 mb-1">
@@ -187,7 +217,10 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
           </div>
         </div>
         
+        {/* Body */}
         <div className="p-8 overflow-y-auto flex-1 bg-slate-50/50">
+          
+          {/* Card Detalhes e Contatos */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
             <div className="space-y-5 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
               <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
@@ -253,62 +286,122 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2 mb-5">
-              <FileText size={14} /> Registro de Atendimento {isFinished && !isEditing && '(Modo Leitura)'}
-            </h3>
-            <div className="mb-6">
-              <label className="block text-sm font-bold text-slate-700 mb-3">
-                {!isEditing ? 'Módulos que o cliente demonstrou interesse:' : 'Quais módulos o cliente demonstrou interesse?'}
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {MODULOS_DISPONIVEIS.map(modulo => {
-                  const isChecked = modulosSelecionados.includes(modulo);
-                  return (
-                    <label 
-                      key={modulo} 
-                      className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-semibold transition-all ${
-                        isChecked 
-                          ? 'bg-blue-50 border-blue-200 text-blue-700 shadow-sm' 
-                          : 'bg-white border-slate-200 text-slate-600'
-                      } ${isEditing ? 'cursor-pointer hover:border-slate-300 hover:bg-slate-50' : 'cursor-default opacity-90'}`}
-                    >
-                      <input 
-                        type="checkbox" 
-                        className="hidden"
-                        checked={isChecked}
-                        onChange={() => handleCheck(modulo)}
-                        disabled={!isEditing}
-                      />
-                      {modulo}
-                    </label>
-                  );
-                })}
+          {/* Grid de Atendimento e Timeline */}
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+            
+            {/* Coluna Esquerda: Formulário de Atendimento (Ocupa 3 colunas) */}
+            <div className="lg:col-span-3 bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2 mb-5">
+                <FileText size={14} /> Registro de Atendimento {isFinished && !isEditing && '(Modo Leitura)'}
+              </h3>
+              
+              <div className="mb-6">
+                <label className="block text-sm font-bold text-slate-700 mb-3">
+                  {!isEditing ? 'Módulos que o cliente demonstrou interesse:' : 'Quais módulos o cliente demonstrou interesse?'}
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {MODULOS_DISPONIVEIS.map(modulo => {
+                    const isChecked = modulosSelecionados.includes(modulo);
+                    return (
+                      <label 
+                        key={modulo} 
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all ${
+                          isChecked 
+                            ? 'bg-blue-50 border-blue-200 text-blue-700 shadow-sm' 
+                            : 'bg-white border-slate-200 text-slate-600'
+                        } ${isEditing ? 'cursor-pointer hover:border-slate-300 hover:bg-slate-50' : 'cursor-default opacity-90'}`}
+                      >
+                        <input 
+                          type="checkbox" 
+                          className="hidden"
+                          checked={isChecked}
+                          onChange={() => handleCheck(modulo)}
+                          disabled={!isEditing}
+                        />
+                        {modulo}
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+              
+              <div className="flex-1 flex flex-col">
+                <label className="block text-sm font-bold text-slate-700 mb-2">
+                  Nova Observação / Interação
+                </label>
+                <textarea 
+                  className={`w-full flex-1 min-h-[120px] border rounded-xl p-4 text-sm text-slate-700 focus:outline-none transition-all resize-none shadow-sm ${
+                    !isEditing 
+                      ? 'bg-slate-50 border-slate-200 cursor-not-allowed' 
+                      : 'border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white placeholder:text-slate-400'
+                  }`}
+                  value={observacoes}
+                  onChange={(e) => setObservacoes(e.target.value)}
+                  placeholder="Descreva aqui os principais pontos desta interação para salvar no histórico..."
+                  disabled={isSaving || !isEditing}
+                  readOnly={!isEditing}
+                />
               </div>
             </div>
-            <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2">
-                Observações da Ligação / Reunião
-              </label>
-              <textarea 
-                className={`w-full border rounded-xl p-4 text-sm text-slate-700 focus:outline-none transition-all resize-none shadow-sm ${
-                  !isEditing 
-                    ? 'bg-slate-50 border-slate-200 cursor-not-allowed' 
-                    : 'border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white placeholder:text-slate-400'
-                }`}
-                rows={4}
-                value={observacoes}
-                onChange={(e) => setObservacoes(e.target.value)}
-                placeholder="Descreva aqui os principais pontos conversados com o cliente..."
-                disabled={isSaving || !isEditing}
-                readOnly={!isEditing}
-              />
+
+            {/* Coluna Direita: Linha do Tempo (Ocupa 2 colunas) */}
+            <div className="lg:col-span-2 bg-slate-50 rounded-xl border border-slate-200 p-6 overflow-y-auto max-h-[400px]">
+              <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2 mb-6">
+                <History size={14} /> Linha do Tempo
+              </h3>
+
+              <div className="relative border-l-2 border-slate-200 ml-2 space-y-6">
+                {loadingHistorico ? (
+                  <p className="pl-6 text-sm text-slate-400 animate-pulse">Carregando histórico...</p>
+                ) : historico.length === 0 ? (
+                  <p className="pl-6 text-sm text-slate-400 italic">Nenhum histórico registrado ainda.</p>
+                ) : (
+                  historico.map((item) => (
+                    <div key={item.id} className="relative pl-6">
+                      <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-white border-2 border-blue-500 shadow-sm" />
+                      
+                      <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+                        <div className="flex flex-col sm:flex-row justify-between items-start gap-2 mb-2">
+                          <span className="text-[10px] font-bold text-blue-600 uppercase bg-blue-50 px-2 py-0.5 rounded">
+                            {item.acao}
+                          </span>
+                          <span className="text-[10px] text-slate-400 flex items-center gap-1 shrink-0">
+                            <Clock size={10} /> {new Date(item.createdAt).toLocaleDateString('pt-BR')} às {new Date(item.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                        
+                        {item.observacoes ? (
+                          <p className="text-sm text-slate-600 leading-relaxed mb-3 break-words">
+                            "{item.observacoes}"
+                          </p>
+                        ) : (
+                          <p className="text-xs italic text-slate-400 mb-3">Sem observações descritivas.</p>
+                        )}
+
+                        <div className="flex items-center justify-between pt-3 border-t border-slate-50">
+                          <span className="text-[10px] font-semibold text-slate-500 flex items-center gap-1 truncate max-w-[120px]">
+                            <User size={10} /> {item.usuario}
+                          </span>
+                          <div className="flex gap-1 flex-wrap justify-end pl-2">
+                            {item.novosModulos?.map(m => (
+                              <span key={m} className="text-[9px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-medium">
+                                {m}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
+
           </div>
         </div>
 
+        {/* Footer com Botões */}
         <div className="px-8 py-5 border-t border-slate-200 bg-white shrink-0">
-          
           {isFinished ? (
             <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
               <div className="text-sm text-slate-600">
@@ -324,14 +417,14 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
                   <>
                     <button 
                       onClick={() => setIsEditing(true)}
-                      className="flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-50 text-blue-700 font-bold rounded-xl hover:bg-blue-100 transition-all border border-blue-200"
+                      className="flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-50 text-blue-700 font-bold rounded-xl hover:bg-blue-100 transition-all border border-blue-200 w-full sm:w-auto"
                     >
                       <Edit3 size={18} />
-                      Editar Informações
+                      Nova Interação / Editar
                     </button>
                     <button 
                       onClick={onClose}
-                      className="flex justify-center items-center gap-2 px-6 py-2.5 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200 transition-all"
+                      className="flex justify-center items-center gap-2 px-6 py-2.5 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200 transition-all w-full sm:w-auto"
                     >
                       Fechar
                     </button>
@@ -339,16 +432,16 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
                 ) : (
                   <>
                     <button 
-                      onClick={() => setIsEditing(false)}
+                      onClick={() => { setIsEditing(false); setObservacoes(''); }}
                       disabled={isSaving}
-                      className="flex items-center justify-center gap-2 px-5 py-2.5 text-slate-600 font-bold rounded-xl hover:bg-slate-100 transition-all"
+                      className="flex items-center justify-center gap-2 px-5 py-2.5 text-slate-600 font-bold rounded-xl hover:bg-slate-100 transition-all w-full sm:w-auto"
                     >
                       Cancelar
                     </button>
                     <button 
                       onClick={handleUpdate}
                       disabled={isSaving}
-                      className="flex justify-center items-center gap-2 px-6 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all shadow-sm shadow-blue-600/20"
+                      className="flex justify-center items-center gap-2 px-6 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all shadow-sm shadow-blue-600/20 w-full sm:w-auto"
                     >
                       <Save size={18} />
                       {isSaving ? 'Salvando...' : 'Salvar Alterações'}
@@ -358,31 +451,30 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
               </div>
             </div>
           ) : (
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
               <button 
                 onClick={() => handleSubmit('PENDENTE')}
                 disabled={isSaving}
-                className="flex items-center gap-2 px-4 py-2 text-slate-600 font-semibold hover:bg-slate-100 rounded-lg transition-colors disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-2 text-slate-600 font-semibold hover:bg-slate-100 rounded-lg transition-colors disabled:opacity-50 w-full sm:w-auto justify-center"
               >
                 <ArrowLeft size={18} />
                 Desistir / Voltar
               </button>
               
-              <div className="flex gap-3">
+              <div className="flex flex-wrap sm:flex-nowrap gap-3 w-full sm:w-auto justify-center">
                 <button 
                   onClick={() => handleSubmit('REPROVADO')}
                   disabled={isSaving}
-                  className="flex items-center gap-2 px-6 py-2.5 bg-white border-2 border-rose-200 text-rose-600 font-bold rounded-xl hover:bg-rose-50 hover:border-rose-300 transition-all disabled:opacity-50 shadow-sm"
+                  className="flex items-center gap-2 px-5 py-2.5 bg-white border-2 border-rose-200 text-rose-600 font-bold rounded-xl hover:bg-rose-50 hover:border-rose-300 transition-all disabled:opacity-50 shadow-sm"
                 >
                   <XCircle size={18} />
                   Não interessado
                 </button>
                 
-                {/* NOVO BOTÃO DE POSSIBILIDADE AQUI */}
                 <button 
                   onClick={() => handleSubmit('POSSIBILIDADE')}
                   disabled={isSaving}
-                  className="flex items-center gap-2 px-6 py-2.5 bg-white border-2 border-blue-200 text-blue-600 font-bold rounded-xl hover:bg-blue-50 hover:border-blue-300 transition-all disabled:opacity-50 shadow-sm"
+                  className="flex items-center gap-2 px-5 py-2.5 bg-white border-2 border-blue-200 text-blue-600 font-bold rounded-xl hover:bg-blue-50 hover:border-blue-300 transition-all disabled:opacity-50 shadow-sm"
                 >
                   <Target size={18} />
                   {isSaving ? 'Salvando...' : 'Possibilidade'}
@@ -391,7 +483,7 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
                 <button 
                   onClick={() => handleSubmit('APROVADO')}
                   disabled={isSaving}
-                  className="flex items-center gap-2 px-6 py-2.5 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition-all disabled:opacity-50 shadow-sm shadow-emerald-600/20"
+                  className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition-all disabled:opacity-50 shadow-sm shadow-emerald-600/20"
                 >
                   <CheckCircle2 size={18} />
                   {isSaving ? 'Salvando...' : 'Interessado'}
@@ -399,7 +491,6 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
               </div>
             </div>
           )}
-
         </div>
       </div>
     </div>

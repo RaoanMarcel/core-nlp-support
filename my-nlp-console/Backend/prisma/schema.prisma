@@ -42,6 +42,8 @@ model Prospect {
   dataAtendimento    DateTime?         
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @updatedAt
+
+  historicos         HistoricoAtendimento[]
 }
 
 model User {
@@ -52,4 +54,17 @@ model User {
   primeiroAcesso  Boolean  @default(true)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt 
+}
+
+model HistoricoAtendimento {
+  id            String   @id @default(uuid())
+  prospectId    String
+  prospect      Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  
+  acao          String   // Ex: "Em Atendimento", "Atualizado", "Aprovado"
+  observacoes   String?  @db.Text
+  novosModulos  String[]
+  usuario       String   // Nome do usuário que fez a alteração
+  
+  createdAt     DateTime @default(now())
 }
