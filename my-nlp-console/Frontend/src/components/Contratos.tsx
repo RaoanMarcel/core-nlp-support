@@ -295,18 +295,25 @@ export default function ProspectList() {
 
           const novosProspects = dataRows
             .filter((row: any) => row[0]) 
-            .map((row: any) => ({
-              cnpj:               String(row[0] || '').trim(), 
-              nome:               String(row[1] || 'Sem Nome').trim(), 
-              simplesNacional:    String(row[8] || '').trim(), 
-              situacaoCadastral:  String(row[16] || '').trim(), 
-              telefone:           String(row[23] || 'Sem Telefone').trim(), 
-              telefoneSecundario: String(row[24] || '').trim(), 
-              email:              String(row[25] || '').trim(), 
-              atividadePrincipal: String(row[37] || '').trim(), 
-              telefoneBackup:     String(row[41] || '').trim(), 
-              modulosAtuais:      String(row[42] || 'Nenhum').trim() 
-            }));
+            .map((row: any) => {
+              // Verifica se a coluna WLE (índice 43) está como "Sim"
+              const wleStr = String(row[43] || '').trim().toLowerCase();
+              const isWLE = wleStr === 'sim';
+
+              return {
+                cnpj:               String(row[0] || '').trim(), 
+                nome:               String(row[1] || 'Sem Nome').trim(), 
+                simplesNacional:    String(row[8] || '').trim(), 
+                situacaoCadastral:  String(row[16] || '').trim(), 
+                telefone:           String(row[23] || 'Sem Telefone').trim(), 
+                telefoneSecundario: String(row[24] || '').trim(), 
+                email:              String(row[25] || '').trim(), 
+                atividadePrincipal: String(row[37] || '').trim(), 
+                telefoneBackup:     String(row[41] || '').trim(), 
+                modulosAtuais:      String(row[42] || 'Nenhum').trim(),
+                clienteWLE:         isWLE // <--- Mapeamento adicionado aqui!
+              };
+            });
 
           try {
             await axios.post(`${API_URL}/importar`, 
