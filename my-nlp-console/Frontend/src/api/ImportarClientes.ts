@@ -1,4 +1,3 @@
-// src/pages/api/importar-clientes.ts
 import type { APIRoute } from 'astro';
 import { PrismaClient } from '@prisma/client';
 
@@ -15,6 +14,10 @@ export const POST: APIRoute = async ({ request }) => {
       // Ignora linhas que não tenham o CNPJ
       if (!cliente.CNPJ) continue;
 
+      // Verifica se a coluna "AR (Clientes WLE)" tem o valor "Sim" (case-insensitive)
+      const wleStr = cliente['AR (Clientes WLE)'] ? String(cliente['AR (Clientes WLE)']) : '';
+      const isWLE = wleStr.trim().toLowerCase() === 'sim';
+
       try {
         // Salva no banco de dados
         await prisma.prospect.create({
@@ -23,7 +26,8 @@ export const POST: APIRoute = async ({ request }) => {
             nome: String(cliente['Razão Social'] || cliente['Nome Fantasia'] || 'Sem Nome'),
             telefone: String(cliente['Telefone Principal'] || 'Sem Telefone'),
             modulosAtuais: 'Nenhum',
-            status: 'PENDENTE'
+            status: 'PENDENTE',
+            clienteWLE: isWLE // <-- Salvando o novo campo
           }
         });
         importados++;

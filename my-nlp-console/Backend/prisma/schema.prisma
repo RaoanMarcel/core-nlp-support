@@ -34,6 +34,8 @@ model Prospect {
   novosModulos       String[]          
   status             StatusAtendimento @default(PENDENTE)
   
+  clienteWLE         Boolean           @default(false)
+  
   lockedBy           String?           
   lockedAt           DateTime?
   atendidoPor        String?           
@@ -49,5 +51,5 @@ model User {
   senha           String   
   primeiroAcesso  Boolean  @default(true)
   createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  updatedAt       DateTime @updatedAt 
 }

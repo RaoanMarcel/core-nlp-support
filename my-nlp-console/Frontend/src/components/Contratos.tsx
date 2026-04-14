@@ -27,6 +27,7 @@ export interface Prospect {
 
   observacoes?: string;
   novosModulos?: string[] | string;
+  clienteWLE?: boolean; 
   
   atendidoPor?: string;
   dataAtendimento?: string | Date;
@@ -84,7 +85,6 @@ function PaginatedSection({ title, icon, data, emptyMessage, onCardClick }: Sect
 
   return (
     <div className="mb-8 bg-white/40 p-2 rounded-2xl border border-transparent hover:border-slate-200 transition-colors">
-      {/* Cabeçalho Clicável (Sanfona) */}
       <div 
         className="flex items-center justify-between p-2 cursor-pointer rounded-xl hover:bg-slate-100/80 transition-all select-none"
         onClick={() => setIsExpanded(!isExpanded)}
@@ -97,13 +97,11 @@ function PaginatedSection({ title, icon, data, emptyMessage, onCardClick }: Sect
           </span>
         </div>
         
-        {/* Flechinha indicadora */}
         <div className="text-slate-400 bg-white rounded-lg p-1 shadow-sm border border-slate-100">
           {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
         </div>
       </div>
 
-      {/* Conteúdo Recolhível */}
       {isExpanded && (
         <div className="mt-4 px-2 pb-2 animate-in fade-in duration-300">
           {data.length === 0 ? (
@@ -137,9 +135,18 @@ function PaginatedSection({ title, icon, data, emptyMessage, onCardClick }: Sect
                       <h3 className="text-base font-bold text-slate-900 leading-tight mb-1 line-clamp-2">
                         {prospect.nome}
                       </h3>
-                      <p className="text-xs font-medium text-slate-500 font-mono">
-                        {prospect.cnpj}
-                      </p>
+                      <div className="flex items-center gap-2 mb-2">
+                        <p className="text-xs font-medium text-slate-500 font-mono">
+                          {prospect.cnpj}
+                        </p>
+                        <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider border ${
+                          prospect.clienteWLE 
+                            ? 'bg-blue-100 text-blue-700 border-blue-200' 
+                            : 'bg-slate-100 text-slate-500 border-slate-200'
+                        }`}>
+                          WLE: {prospect.clienteWLE ? 'Sim' : 'Não'}
+                        </span>
+                      </div>
                     </div>
                     <div className="flex justify-between items-center pt-3 border-t border-slate-100/80 mt-auto">
                       <div className="flex items-center gap-1.5 text-slate-600">
@@ -213,6 +220,8 @@ export default function ProspectList() {
   const [isImporting, setIsImporting] = useState(false);
   
   const [searchQuery, setSearchQuery] = useState('');
+  const [filtroWLE, setFiltroWLE] = useState(false); 
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const token = localStorage.getItem('@CRM:token');
@@ -327,7 +336,8 @@ export default function ProspectList() {
   const handleCardClick = async (prospect: Prospect) => {
     if (prospect.status === 'EM_ATENDIMENTO') return; 
     
-    if (prospect.status === 'APROVADO' || prospect.status === 'REPROVADO' || prospect.status === 'POSSIBILIDADE' || prospect.status === 'RETORNAR') {      setSelectedProspect(prospect);
+    if (prospect.status === 'APROVADO' || prospect.status === 'REPROVADO' || prospect.status === 'POSSIBILIDADE' || prospect.status === 'RETORNAR') {      
+      setSelectedProspect(prospect);
       setIsModalOpen(true);
       return;
     }
@@ -366,9 +376,15 @@ export default function ProspectList() {
 
   const filteredProspects = prospects.filter(prospect => {
     const termo = searchQuery.toLowerCase();
-    return prospect.nome.toLowerCase().includes(termo) || 
+    const matchBusca = prospect.nome.toLowerCase().includes(termo) || 
            prospect.cnpj.includes(termo) || 
            prospect.telefone.includes(termo);
+    
+    if (filtroWLE) {
+      return matchBusca && prospect.clienteWLE === true;
+    }
+    
+    return matchBusca;
   });
 
   const prospectsPendentes = filteredProspects.filter(p => p.status === 'PENDENTE');
@@ -378,40 +394,66 @@ export default function ProspectList() {
   const prospectsReprovados = filteredProspects.filter(p => p.status === 'REPROVADO');
   const prospectsRetornar = filteredProspects.filter(p => p.status === 'RETORNAR');
 
-
   return (
-      <div className="p-8 bg-[#f4f5f7] h-screen overflow-y-auto font-sans pb-24">
-        <div className="max-w-7xl mx-auto space-y-6">
+    <div className="p-8 bg-[#f4f5f7] h-screen overflow-y-auto font-sans pb-24">
+      <div className="max-w-7xl mx-auto space-y-6">
         
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 gap-4">
+        <div className="flex flex-col xl:flex-row justify-between items-start xl:items-end mb-6 gap-4">
           <div>
             <h1 className="text-3xl font-black text-slate-900 tracking-tight">Fila de Prospecção</h1>
             <p className="text-slate-500 text-sm mt-1">Gerencie e inicie atendimentos com seus clientes B2B.</p>
           </div>
           
-          <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
-            <div className="relative w-full sm:w-72">
+          <div className="flex flex-col sm:flex-row items-center bg-white border border-slate-200 rounded-xl shadow-sm p-1.5 gap-2 w-full xl:w-auto">
+            
+            {/* Campo de Busca Integrado */}
+            <div className="relative w-full sm:w-64 flex-shrink-0">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
               <input 
                 type="text" 
                 placeholder="Buscar cliente..." 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                className="w-full pl-9 pr-4 py-2 bg-transparent text-sm focus:outline-none text-slate-700 placeholder:text-slate-400"
               />
             </div>
 
+            {/* Divisor Visual (escondido no mobile) */}
+            <div className="hidden sm:block w-px h-6 bg-slate-200"></div>
+
+            {/* Filtro WLE (Toggle Switch) */}
+            <button
+              onClick={() => setFiltroWLE(!filtroWLE)}
+              className={`flex w-full sm:w-auto items-center justify-between sm:justify-center gap-3 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                filtroWLE ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              <span>Apenas WLE</span>
+              <div className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${filtroWLE ? 'bg-blue-600' : 'bg-slate-300'}`}>
+                <span 
+                  className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform duration-200 ease-in-out ${
+                    filtroWLE ? 'translate-x-[20px]' : 'translate-x-[3px]'
+                  }`} 
+                />
+              </div>
+            </button>
+
+            {/* Divisor Visual (escondido no mobile) */}
+            <div className="hidden sm:block w-px h-6 bg-slate-200"></div>
+
+            {/* Botão de Importação */}
             <div className="w-full sm:w-auto">
               <input type="file" accept=".csv" className="hidden" ref={fileInputRef} onChange={handleFileUpload} />
               <button 
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isImporting}
-                className="w-full flex justify-center items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-bold transition-all shadow-sm disabled:opacity-50"
+                className="w-full sm:w-auto flex justify-center items-center gap-2 bg-blue-900 hover:bg-blue-800 text-white px-5 py-2 rounded-lg text-sm font-bold transition-all disabled:opacity-50"
               >
-                <UploadCloud size={18} />
+                {isImporting ? <RefreshCw size={18} className="animate-spin" /> : <UploadCloud size={18} />}
                 {isImporting ? 'Enviando...' : 'Importar CSV'}
               </button>
             </div>
+
           </div>
         </div>
 
@@ -432,6 +474,7 @@ export default function ProspectList() {
           emptyMessage="Nenhum cliente está sendo atendido neste momento."
           onCardClick={handleCardClick}
         />
+        
         <PaginatedSection 
           title="Retornar contato" 
           icon={<Clock size={20} className="text-purple-500" />} 
@@ -466,7 +509,7 @@ export default function ProspectList() {
 
       </div>
 
-       {isModalOpen && selectedProspect && (
+      {isModalOpen && selectedProspect && (
         <ProspectModal 
           prospect={selectedProspect} 
           onClose={() => setIsModalOpen(false)} 
