@@ -17,16 +17,69 @@ export class ProspectController {
 
   importar = async (req: Request, res: Response) => {
     try {
-      const { prospects } = req.body;
-      await prisma.prospect.createMany({
-        data: prospects,
-        skipDuplicates: true 
-      });
+      // 1. Corrige o nome da variável para bater com o frontend
+      const { clientes } = req.body;
+
+      if (!clientes || !Array.isArray(clientes)) {
+        return res.status(400).json({ error: 'Nenhum cliente enviado pelo CSV.' });
+      }
+
+      let importados = 0;
+
+      // 2. Traz a sua lógica de formatação do Astro para o Express
+      for (const cliente of clientes) {
+        if (!cliente.CNPJ) continue;
+
+        const wleStr = cliente['AR (Clientes WLE)'] ? String(cliente['AR (Clientes WLE)']) : '';
+        const isWLE = wleStr.trim().toLowerCase() === 'sim';
+
+        const nomeFantasia = cliente['Nome Fantasia'] ? String(cliente['Nome Fantasia']) : null;
+        const logradouro = cliente['Logradouro'] || '';
+        const numero = cliente['Número'] || 'S/N';
+        const compRaw = cliente['Complemento'];
+        const complemento = compRaw && compRaw !== '-' ? ` - ${compRaw}` : '';
+        const bairro = cliente['Bairro'] || '';
+        const cidade = cliente['Cidade'] || '';
+        const estado = cliente['Estado'] || '';
+        const cep = cliente['CEP'] || '';
+
+        const enderecoCompleto = `${logradouro}, ${numero}${complemento} - ${bairro}, ${cidade} - ${estado}, CEP: ${cep}`
+          .replace(/^[,\s\-]+|[,\s\-]+$/g, '') 
+          .trim();
+
+        try {
+          // Usa o UPSERT: Atualiza se existir, cria se não existir
+          await prisma.prospect.upsert({
+            where: { 
+              cnpj: String(cliente.CNPJ) 
+            },
+            update: {
+              nomeFantasia: nomeFantasia,
+              endereco: enderecoCompleto !== '' ? enderecoCompleto : null,
+            },
+            create: {
+              cnpj: String(cliente.CNPJ),
+              nome: String(cliente['Razão Social'] || cliente['Nome Fantasia'] || 'Sem Nome'),
+              nomeFantasia: nomeFantasia,
+              endereco: enderecoCompleto !== '' ? enderecoCompleto : null,
+              telefone: String(cliente['Telefone Principal'] || 'Sem Telefone'),
+              modulosAtuais: 'Nenhum',
+              status: 'PENDENTE',
+              clienteWLE: isWLE
+            }
+          });
+          importados++;
+        } catch (err) {
+          console.error(`Erro ao processar o CNPJ ${cliente.CNPJ}:`, err);
+        }
+      }
       
+      // Atualiza as telas de todos os usuários logados
       req.app.get('io').emit('prospectsRefresh');
-      res.status(201).json({ message: 'Planilha importada com sucesso!' });
+      res.status(201).json({ message: `Sucesso! Foram processados ${importados} clientes.` });
+      
     } catch (error) {
-      console.error(error);
+      console.error("Erro crítico na função importar:", error);
       res.status(500).json({ error: 'Erro ao salvar a planilha' });
     }
   };
