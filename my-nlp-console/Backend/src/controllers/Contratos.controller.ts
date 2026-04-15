@@ -210,7 +210,7 @@ export class ProspectController {
           novosModulos,
           nomeFantasia,
           endereco,
-          valor: valor ? parseFloat(valor) : null, // Conversão para Float
+          valor: valor ? parseFloat(valor) : null, 
           ...(status && { status }) 
         }
       });

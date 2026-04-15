@@ -258,7 +258,7 @@ const {
               )}
             </div>
 
-            {/* Timeline Abstraída */}
+            {/* Timeline */}
             <Timeline historico={historico} loading={loading.historico} />
           </div>
         </div>

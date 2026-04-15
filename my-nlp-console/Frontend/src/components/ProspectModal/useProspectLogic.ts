@@ -36,6 +36,23 @@ export const useProspectLogic = (
     modulos: parseModulos(prospect.novosModulos)
   });
 
+
+  useEffect(() => {
+    setContactForm({
+      telefone: prospect.telefone || '',
+      telefoneSecundario: prospect.telefoneSecundario || '',
+      email: prospect.email || '',
+      valor: prospect.valor ? prospect.valor.toString() : '' 
+    });
+    
+    setInteractionForm({
+      observacoes: '',
+      modulos: parseModulos(prospect.novosModulos)
+    });
+
+    setUi(prev => ({ ...prev, isEditing: !isFinished }));
+  }, [prospect, isFinished]); 
+
   const requestApi = useCallback(async (method: 'get' | 'patch' | 'post', endpoint: string, data?: unknown) => {
     const token = localStorage.getItem('@CRM:token');
     if (!token) throw new Error("Usuário não autenticado");
@@ -135,27 +152,27 @@ export const useProspectLogic = (
     }
   };
 
- const handleVoltar = async () => {
-  setLoading(prev => ({ ...prev, saving: true }));
-  try {
-    await requestApi('patch', 'update', {
-      status: 'PENDENTE',
-      usuarioLogado: currentUserName,
-      observacoes: 'Atendimento devolvido para a fila.',
-      novosModulos: []
-    });
+  const handleVoltar = async () => {
+    setLoading(prev => ({ ...prev, saving: true }));
+    try {
+      await requestApi('patch', 'update', {
+        status: 'PENDENTE',
+        usuarioLogado: currentUserName,
+        observacoes: 'Atendimento devolvido para a fila.',
+        novosModulos: []
+      });
 
-    onClose(); 
-  } catch (error) {
-    console.error(error);
-  } finally {
-    setLoading(prev => ({ ...prev, saving: false }));
-  }
-};
+      onClose(); 
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(prev => ({ ...prev, saving: false }));
+    }
+  };
 
   return {
     isFinished, ui, setUi, loading, historico, contactForm, interactionForm,
     handleContactChange, toggleModulo, setInteractionForm,
-    saveContatos, saveInteracao, finishAtendimento, handleVoltar // ✅ exportando handleVoltar
+    saveContatos, saveInteracao, finishAtendimento, handleVoltar
   };
 };
