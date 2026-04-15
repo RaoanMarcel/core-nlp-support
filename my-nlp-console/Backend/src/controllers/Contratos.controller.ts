@@ -202,7 +202,18 @@ export class ProspectController {
   atualizar = async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      const { observacoes, novosModulos, status, usuarioLogado, nomeFantasia, endereco, valor } = req.body;
+      const { 
+        observacoes, 
+        novosModulos, 
+        status, 
+        usuarioLogado, 
+        nomeFantasia, 
+        endereco, 
+        valor,
+        telefone,           // <-- ADICIONADO
+        telefoneSecundario, // <-- ADICIONADO
+        email               // <-- ADICIONADO
+      } = req.body;
 
       const atualizado = await prisma.prospect.update({
         where: { id },
@@ -210,6 +221,9 @@ export class ProspectController {
           novosModulos,
           nomeFantasia,
           endereco,
+          telefone,          
+          telefoneSecundario,
+          email,              
           valor: valor ? parseFloat(valor) : null, 
           ...(status && { status }) 
         }

@@ -1,52 +1,85 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, Search, FileText, Filter, X, Calendar } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { 
+  Plus, 
+  Search, 
+  FileText, 
+  Filter, 
+  X, 
+  Calendar, 
+  RefreshCw, 
+  AlertCircle 
+} from 'lucide-react';
 import QuoteModal from './QuoteModal';
 import type { IQuote } from './types';
+import { api } from '../../services/api';
+import { formatarMoeda } from '../ProspectModal/prospectUtils';
 
 export default function QuotesPage() {
+  // Estados do Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [quoteEditando, setQuoteEditando] = useState<IQuote | null>(null);
 
-  // --- Estados de Filtro ---
+  // Estados dos Filtros
   const [termo, setTermo] = useState('');
   const [statusFiltro, setStatusFiltro] = useState('TODOS');
   const [dataInicio, setDataInicio] = useState('');
   const [dataFim, setDataFim] = useState('');
   
-  // --- Estados de Dados ---
+  // Estados de Dados e UI
   const [quotesList, setQuotesList] = useState<IQuote[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Função para buscar dados no backend (Integração com o QuoteController.consultar)
-  const fetchQuotes = async () => {
+  // Helper para as cores do Status
+  const getStatusBadge = (status: string) => {
+    const configs: Record<string, string> = {
+      APROVADO: "bg-emerald-100 text-emerald-700 border-emerald-200",
+      ENVIADO: "bg-blue-100 text-blue-700 border-blue-200",
+      REPROVADO: "bg-rose-100 text-rose-700 border-rose-200",
+      RASCUNHO: "bg-slate-100 text-slate-600 border-slate-200"
+    };
+    const cls = configs[status] || configs.RASCUNHO;
+    return (
+      <span className={`${cls} px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider border`}>
+        {status.toLowerCase()}
+      </span>
+    );
+  };
+
+  // FUNÇÃO PRINCIPAL DE BUSCA
+  const fetchQuotes = useCallback(async () => {
     setIsLoading(true);
+    setError(null);
     try {
-      // Ajuste a URL base da sua API conforme necessário
-      const queryParams = new URLSearchParams();
-      if (termo) queryParams.append('termo', termo);
-      if (statusFiltro !== 'TODOS') queryParams.append('status', statusFiltro);
-      if (dataInicio) queryParams.append('dataInicio', dataInicio);
-      if (dataFim) queryParams.append('dataFim', dataFim);
-
-      // Exemplo: const response = await api.get(`/quotes/consultar?${queryParams.toString()}`);
-      // const data = response.data;
-      // setQuotesList(data);
-      
-      console.log("Buscando com filtros:", queryParams.toString());
-    } catch (error) {
-      console.error("Erro ao buscar orçamentos:", error);
+      const response = await api.get('/quotes/consultar', {
+        params: {
+          termo: termo.trim() || undefined,
+          status: statusFiltro !== 'TODOS' ? statusFiltro : undefined,
+          dataInicio: dataInicio || undefined,
+          dataFim: dataFim || undefined,
+        }
+      });
+      setQuotesList(response.data);
+    } catch (err: any) {
+      console.error("Erro ao buscar orçamentos:", err);
+      setError("Erro ao carregar dados do servidor.");
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [termo, statusFiltro, dataInicio, dataFim]);
 
-  // Busca inicial
+  // Dispara busca automática apenas quando mudar Status ou Datas
   useEffect(() => {
     fetchQuotes();
-  }, []);
+  }, [statusFiltro, dataInicio, dataFim]);
 
   const handleOpenNewQuote = () => {
     setQuoteEditando(null);
+    setIsModalOpen(true);
+  };
+
+  const handleEditQuote = (quote: IQuote) => {
+    setQuoteEditando(quote);
     setIsModalOpen(true);
   };
 
@@ -55,132 +88,191 @@ export default function QuotesPage() {
     setStatusFiltro('TODOS');
     setDataInicio('');
     setDataFim('');
-    // O fetchQuotes precisaria ser chamado aqui novamente sem parâmetros, 
-    // ou você pode colocar um useEffect escutando essas mudanças.
   };
 
   return (
-    <div className="p-8 h-full flex flex-col animate-in fade-in duration-300">
+    <div className="p-8 h-screen flex flex-col bg-slate-50/30 animate-in fade-in duration-300">
       
-      {/* Cabeçalho */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Orçamentos</h1>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Orçamentos</h1>
           <p className="text-slate-500 text-sm font-medium mt-1">Gerencie propostas e negociações comerciais.</p>
         </div>
         
         <button 
           onClick={handleOpenNewQuote}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-blue-600/20 transition-all active:scale-95 shrink-0"
+          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-blue-600/20 transition-all active:scale-95"
         >
           <Plus size={20} />
           Novo Orçamento
         </button>
       </div>
 
-      {/* Container Principal */}
       <div className="flex-1 bg-white border border-slate-200 rounded-2xl flex flex-col overflow-hidden shadow-sm">
         
-        {/* Painel de Filtros */}
-        <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex flex-col gap-4">
-          
-          {/* Barra de Busca Principal */}
-          <div className="flex gap-3">
-            <div className="relative flex-1">
-              <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input 
-                type="text" 
-                value={termo}
-                onChange={(e) => setTermo(e.target.value)}
-                placeholder="Buscar por ID, cliente, CNPJ ou endereço..." 
-                className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/20 transition-shadow"
-              />
+        {/* Barra de Filtros */}
+        <div className="p-5 border-b border-slate-100 bg-white flex flex-col gap-4">
+          <div className="flex flex-col lg:flex-row gap-4">
+            
+            {/* Campo de Busca Texto */}
+            <div className="relative flex-1 flex gap-2">
+              <div className="relative flex-1">
+                <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input 
+                  type="text" 
+                  value={termo}
+                  onChange={(e) => setTermo(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && fetchQuotes()}
+                  placeholder="Buscar por cliente, CNPJ ou ID..." 
+                  className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-blue-500 transition-all"
+                />
+              </div>
+              <button 
+                onClick={fetchQuotes}
+                className="bg-slate-900 hover:bg-slate-800 text-white px-6 py-2.5 rounded-xl font-bold text-sm transition-all active:scale-95"
+              >
+                Pesquisar
+              </button>
             </div>
-            <button 
-              onClick={fetchQuotes}
-              className="bg-slate-900 hover:bg-slate-800 text-white px-6 py-2.5 rounded-xl text-sm font-bold transition-colors"
-            >
-              Pesquisar
-            </button>
+
+            {/* Outros Filtros */}
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
+                <Filter size={16} className="text-slate-400" />
+                <select 
+                  value={statusFiltro}
+                  onChange={(e) => setStatusFiltro(e.target.value)}
+                  className="bg-transparent text-sm text-slate-700 outline-none font-bold cursor-pointer min-w-[120px]"
+                >
+                  <option value="TODOS">Todos Status</option>
+                  <option value="RASCUNHO">Rascunho</option>
+                  <option value="ENVIADO">Enviado</option>
+                  <option value="APROVADO">Aprovado</option>
+                  <option value="REPROVADO">Reprovado</option>
+                </select>
+              </div>
+
+              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
+                <Calendar size={16} className="text-slate-400" />
+                <input 
+                  type="date" 
+                  value={dataInicio}
+                  onChange={(e) => setDataInicio(e.target.value)}
+                  className="bg-transparent text-xs font-bold outline-none text-slate-600"
+                />
+                <span className="text-slate-300">-</span>
+                <input 
+                  type="date" 
+                  value={dataFim}
+                  onChange={(e) => setDataFim(e.target.value)}
+                  className="bg-transparent text-xs font-bold outline-none text-slate-600"
+                />
+              </div>
+
+              <button 
+                onClick={fetchQuotes}
+                className="bg-slate-100 hover:bg-slate-200 text-slate-600 p-2.5 rounded-xl transition-colors"
+                title="Atualizar lista"
+              >
+                <RefreshCw size={18} className={isLoading ? 'animate-spin' : ''} />
+              </button>
+            </div>
           </div>
 
-          {/* Filtros Secundários */}
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-3 py-2">
-              <Filter size={16} className="text-slate-400" />
-              <select 
-                value={statusFiltro}
-                onChange={(e) => setStatusFiltro(e.target.value)}
-                className="bg-transparent text-sm text-slate-700 outline-none font-medium cursor-pointer"
-              >
-                <option value="TODOS">Todos os Status</option>
-                <option value="RASCUNHO">Rascunho</option>
-                <option value="ENVIADO">Enviado</option>
-                <option value="APROVADO">Aprovado</option>
-                <option value="REPROVADO">Reprovado</option>
-              </select>
-            </div>
-
-            <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-3 py-2">
-              <Calendar size={16} className="text-slate-400" />
-              <input 
-                type="date" 
-                value={dataInicio}
-                onChange={(e) => setDataInicio(e.target.value)}
-                className="bg-transparent text-sm text-slate-700 outline-none"
-              />
-              <span className="text-slate-300">-</span>
-              <input 
-                type="date" 
-                value={dataFim}
-                onChange={(e) => setDataFim(e.target.value)}
-                className="bg-transparent text-sm text-slate-700 outline-none"
-              />
-            </div>
-
-            {(termo || statusFiltro !== 'TODOS' || dataInicio || dataFim) && (
+          {/* Botão Limpar (aparece se houver filtro ativo) */}
+          {(termo || statusFiltro !== 'TODOS' || dataInicio || dataFim) && (
+            <div className="flex justify-end">
               <button 
                 onClick={limparFiltros}
-                className="flex items-center gap-1 text-sm font-medium text-rose-500 hover:text-rose-600 px-2 py-1 ml-auto"
+                className="flex items-center gap-1.5 text-xs font-bold text-rose-500 hover:bg-rose-50 px-3 py-1.5 rounded-lg transition-colors"
               >
-                <X size={16} /> Limpar Filtros
+                <X size={14} /> LIMPAR FILTROS
               </button>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
-        {/* Área de Listagem / Empty State */}
-        {isLoading ? (
-          <div className="flex-1 flex items-center justify-center">
-            <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-          </div>
-        ) : quotesList.length === 0 ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
-            <div className="w-16 h-16 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-center mb-4">
-              <FileText size={32} className="text-slate-300" />
+        {/* Listagem / Tabela */}
+        <div className="flex-1 overflow-auto relative">
+          {isLoading && quotesList.length === 0 ? (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/50 z-20">
+              <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
             </div>
-            <h3 className="text-lg font-bold text-slate-800">Nenhum orçamento encontrado</h3>
-            <p className="text-slate-500 text-sm max-w-sm mt-2 leading-relaxed">
-              Não encontramos nenhum registro com os filtros aplicados ou sua base está vazia.
-            </p>
-          </div>
-        ) : (
-          <div className="flex-1 overflow-auto p-4">
-            <p className="text-slate-400 text-sm">Tabela em construção...</p>
-          </div>
-        )}
+          ) : quotesList.length === 0 ? (
+            <div className="flex flex-col items-center justify-center p-16 text-center">
+              <div className="bg-slate-50 p-6 rounded-full mb-4">
+                <FileText size={40} className="text-slate-200" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-800">Nenhum orçamento encontrado</h3>
+              <p className="text-slate-500 text-sm max-w-xs mt-2">
+                Não encontramos registros com os filtros aplicados ou sua base está vazia.
+              </p>
+            </div>
+          ) : (
+            <table className="w-full text-left border-collapse">
+              <thead className="bg-slate-50/50 sticky top-0 backdrop-blur-md z-10 border-b border-slate-100">
+                <tr>
+                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">ID</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Cliente / Empresa</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Valor Final</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Ações</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50 bg-white">
+                {quotesList.map((quote) => (
+                  <tr key={quote.id} className="hover:bg-blue-50/30 transition-colors group">
+                    <td className="px-6 py-5">
+                      <span className="text-xs font-mono font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded">
+                        #{String(quote.id).padStart(4, '0')}
+                      </span>
+                    </td>
+                    <td className="px-6 py-5">
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-slate-800">{quote.nomeCliente}</span>
+                        <span className="text-[11px] font-medium text-slate-400">{quote.cnpj || 'Sem CNPJ'}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-5 text-center">
+                      <span className="text-sm font-black text-slate-900">
+                        {formatarMoeda(quote.valorNegociado || quote.valorBase)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-5">{getStatusBadge(quote.status)}</td>
+                    <td className="px-6 py-5 text-right">
+                      <button 
+                        onClick={() => handleEditQuote(quote)}
+                        className="px-4 py-1.5 text-xs font-bold text-blue-600 hover:bg-blue-600 hover:text-white border border-blue-200 rounded-lg transition-all"
+                      >
+                        Visualizar
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+
+        {/* Rodapé da Tabela */}
+        <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-between items-center">
+          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
+            TOTAL DE {quotesList.length} ORÇAMENTOS ENCONTRADOS
+          </p>
+        </div>
       </div>
 
+      {/* Modal de Criação/Edição */}
       {isModalOpen && (
         <QuoteModal 
           quote={quoteEditando} 
           onClose={() => {
             setIsModalOpen(false);
-            fetchQuotes(); // Atualiza a lista quando fechar o modal
+            fetchQuotes(); 
           }} 
         />
       )}
-      
     </div>
   );
 }

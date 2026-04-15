@@ -6,7 +6,7 @@ const quoteController = new QuoteController();
 
 // Rotas de GET
 router.get('/', quoteController.list);
-router.get('/buscar', quoteController.consultar);
+router.get('/consultar', quoteController.consultar);
 
 // Rota de POST (Novo Orçamento/Pedido)
 router.post('/', quoteController.create);

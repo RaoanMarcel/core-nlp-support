@@ -24,9 +24,6 @@ export const formatarData = (dataStr?: string): string => {
   });
 };
 
-/**
- * Retorna classes utilitárias do Tailwind baseadas no status/situação cadastral.
- */
 export const getSituacaoColor = (status?: string): string => {
   if (!status) return 'bg-slate-100 text-slate-600 border-slate-200';
   

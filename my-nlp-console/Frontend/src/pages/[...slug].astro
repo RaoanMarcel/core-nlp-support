@@ -3,14 +3,13 @@
 import AppRouter from '../components/AppRouter';
 import '../styles/global.css'; 
 
-// 1. Adicionamos esta função para avisar ao Astro quais URLs existem no seu React Router
 export function getStaticPaths() {
   return [
     { params: { slug: 'fila' } },
     { params: { slug: 'relatorios' } },
     { params: { slug: 'base' } },
     { params: { slug: 'contratos' } },
-    { params: { slug: 'pedidos' } },
+    { params: { slug: 'orcamentos' } },
   ];
 }
 ---

@@ -1,4 +1,3 @@
-import React from 'react';
 import { Phone, Mail, Building, FileText, ArrowLeft, CheckCircle2, XCircle, Edit3, Save, Target, History, Clock, User, DollarSign } from 'lucide-react';
 
 import { type Prospect } from '../Contratos';
@@ -107,7 +106,6 @@ const {
         <div className="p-8 overflow-y-auto flex-1 bg-slate-50/50">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
             
-            {/* Bloco Empresa */}
             <div className="space-y-5 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
               <div className="flex justify-between items-center">
                 <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
@@ -134,7 +132,6 @@ const {
                   </div>
                 </div>
 
-                {/* NOVO CAMPO: VALOR */}
                 <div className="mt-4 pt-4 border-t border-slate-100">
                   <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider flex items-center gap-1 mb-2">
                     <DollarSign size={12} /> Valor no Sistema Atual
@@ -162,7 +159,6 @@ const {
               </div>
             </div>
 
-            {/* Bloco Contatos */}
             <div className="space-y-5 bg-white p-6 rounded-xl border border-slate-200 shadow-sm relative">
               <div className="flex justify-between items-center">
                 <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
@@ -215,7 +211,6 @@ const {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-            {/* Bloco Interação */}
             <div className="lg:col-span-3 bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col">
               <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2 mb-5">
                 <FileText size={14} /> Registro de Atendimento {isFinished && !ui.isEditing && '(Modo Leitura)'}
@@ -258,7 +253,6 @@ const {
               )}
             </div>
 
-            {/* Timeline */}
             <Timeline historico={historico} loading={loading.historico} />
           </div>
         </div>

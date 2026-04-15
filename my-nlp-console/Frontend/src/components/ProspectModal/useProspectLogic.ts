@@ -12,7 +12,8 @@ export const useProspectLogic = (
   prospect: Prospect, 
   currentUserId: string, 
   currentUserName: string, 
-  onClose: () => void
+  onClose: () => void,
+  onUpdate?: (updated: Prospect) => void
 ) => {
   const isFinished = ['APROVADO', 'REPROVADO', 'POSSIBILIDADE', 'RETORNAR'].includes(prospect.status);
 
@@ -48,11 +49,10 @@ export const useProspectLogic = (
     setUi(prev => ({ ...prev, isEditing: !isFinished }));
   }, [prospect, isFinished]); 
 
-
   const requestApi = useCallback(async (method: 'get' | 'patch' | 'post', endpoint: string, data?: unknown) => {
     return api({
       method,
-      url: `/prospects/${prospect.id}/${endpoint}`, // Caminho relativo limpo
+      url: `/prospects/${prospect.id}/${endpoint}`,
       data
     });
   }, [prospect.id]);
@@ -89,17 +89,39 @@ export const useProspectLogic = (
 
   const saveContatos = async () => {
     setLoading(prev => ({ ...prev, savingContatos: true }));
+
     try {
-      await requestApi('patch', 'update', {
+      const payload = {
         ...contactForm,
         valor: contactForm.valor ? parseFloat(contactForm.valor) : null,
         observacoes: "Atualizou dados cadastrais/financeiros.",
         usuarioLogado: currentUserName
+      };
+
+      const { data } = await requestApi('patch', 'update', payload);
+
+      // Correção Arquitetural: O backend retorna { message: string, prospect: Prospect }
+      const prospectAtualizado = data.prospect;
+
+      // Dispara o update para a lista-pai (Always Sync UI)
+      if (onUpdate && prospectAtualizado) {
+        onUpdate(prospectAtualizado);
+      }
+
+      // Atualiza o estado local do formulário com os dados persistidos no banco
+      setContactForm({
+        telefone: prospectAtualizado?.telefone ?? '',
+        telefoneSecundario: prospectAtualizado?.telefoneSecundario ?? '',
+        email: prospectAtualizado?.email ?? '',
+        valor: prospectAtualizado?.valor ? prospectAtualizado.valor.toString() : ''
       });
+
       setUi(prev => ({ ...prev, isEditingContatos: false }));
+
       await loadHistorico();
     } catch (error) {
-      console.error(error);
+      console.error("Erro ao salvar contatos:", error);
+      // TODO: Padrão Rose (toast alert) para notificar falha ao usuário aqui
     } finally {
       setLoading(prev => ({ ...prev, savingContatos: false }));
     }
@@ -110,14 +132,21 @@ export const useProspectLogic = (
     
     setLoading(prev => ({ ...prev, saving: true }));
     try {
-      await requestApi('patch', 'update', {
+      const { data } = await requestApi('patch', 'update', {
         observacoes: interactionForm.observacoes,
         novosModulos: interactionForm.modulos,
         usuarioLogado: currentUserName,
         ...extraData
       });
+
+      // Correção: Extrai o prospect do data wrapper
+      if (onUpdate && data.prospect) {
+        onUpdate(data.prospect);
+      }
+
       setInteractionForm(p => ({ ...p, observacoes: '' }));
       setUi(p => ({ ...p, isEditing: false }));
+
       if (Object.keys(extraData).length > 0) onClose();
       else await loadHistorico();
     } catch (error) {
@@ -130,12 +159,18 @@ export const useProspectLogic = (
   const finishAtendimento = async (acao: string) => {
     setLoading(prev => ({ ...prev, saving: true }));
     try {
-      await requestApi('post', 'finish', {
+      const { data } = await requestApi('post', 'finish', {
         acao,
         observacoes: interactionForm.observacoes,
         novosModulos: interactionForm.modulos,
         atendidoPor: currentUserName
       });
+
+      // Correção: Extrai o prospect do data wrapper
+      if (onUpdate && data.prospect) {
+        onUpdate(data.prospect);
+      }
+
       onClose();
     } catch (error) {
       console.error(error);
@@ -147,12 +182,17 @@ export const useProspectLogic = (
   const handleVoltar = async () => {
     setLoading(prev => ({ ...prev, saving: true }));
     try {
-      await requestApi('patch', 'update', {
+      const { data } = await requestApi('patch', 'update', {
         status: 'PENDENTE',
         usuarioLogado: currentUserName,
         observacoes: 'Atendimento devolvido para a fila.',
         novosModulos: []
       });
+
+      // Correção: Extrai o prospect do data wrapper
+      if (onUpdate && data.prospect) {
+        onUpdate(data.prospect);
+      }
 
       onClose(); 
     } catch (error) {

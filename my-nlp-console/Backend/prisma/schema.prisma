@@ -84,15 +84,12 @@ model Quote {
   modulos            String[]
   plano              String
   
-  // Novos campos de Valores
   valorBase          Float
   valorNegociado     Float
   
-  // Novos campos de CRM/Briefing
   interesses         String?  @db.Text
   observacoes        String?  @db.Text
   
-  // Status atualizado
   status             String   @default("RASCUNHO")
   
   createdAt          DateTime @default(now())

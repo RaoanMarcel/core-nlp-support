@@ -14,6 +14,7 @@ export interface ModalProps {
   onClose: () => void;
   currentUserId: string;
   currentUserName: string;
+  onUpdate?: (updated: Prospect) => void; 
 }
 
 export interface ContactFormState {

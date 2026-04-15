@@ -232,9 +232,13 @@ export default function ProspectList() {
   const currentUser = userStr ? JSON.parse(userStr) : null;
   const currentUserId = currentUser?.id || '';
 
-  // ==========================================
-  // ESTA FUNÇÃO PODE MORRER EM BREVE SE COLOCARMOS ISSO NO INTERCEPTOR
-  // ==========================================
+  const handleUpdateProspect = (updated: Prospect) => {
+    setProspects(prev =>
+      prev.map(p => p.id === updated.id ? updated : p)
+    );
+
+    setSelectedProspect(updated);
+  };
   const handleAuthError = (error: any) => {
     if (error.response && error.response.status === 401) {
       localStorage.removeItem('@CRM:token');
@@ -493,6 +497,7 @@ export default function ProspectList() {
           onClose={() => setIsModalOpen(false)} 
           currentUserId={currentUserId}
           currentUserName={currentUser?.nome || 'Usuário'} 
+          onUpdate={handleUpdateProspect}
         />
       )}
     </div>

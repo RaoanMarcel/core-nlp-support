@@ -9,23 +9,40 @@ export class QuoteController {
     try {
       const { termo, dataInicio, dataFim, status } = req.query;
       
+      console.log('Filtros recebidos:', { termo, status, dataInicio, dataFim });
+
       let whereOptions: Prisma.QuoteWhereInput = {};
 
       if (termo && typeof termo === 'string' && termo.trim() !== '') {
         const cleanTerm = termo.trim();
-        const numTerm = parseInt(cleanTerm, 10);
+        const onlyNumbers = cleanTerm.replace(/\D/g, ''); // Remove tudo que não é número
         
-        whereOptions.OR = [
+        // Criamos as condições básicas (Nome e Email sempre)
+        const orConditions: Prisma.QuoteWhereInput[] = [
           { nomeCliente: { contains: cleanTerm, mode: 'insensitive' } },
-          { cnpj: { contains: cleanTerm.replace(/\D/g, '') } },
-          { endereco: { contains: cleanTerm, mode: 'insensitive' } }
+          { email: { contains: cleanTerm, mode: 'insensitive' } }
         ];
 
-        if (!isNaN(numTerm)) {
-          whereOptions.OR.push({ id: numTerm });
+        // SÓ busca por CNPJ se o usuário digitou algum número
+        if (onlyNumbers.length > 0) {
+          orConditions.push({ cnpj: { contains: onlyNumbers } });
         }
+
+        // SÓ busca por ID se for um número válido e não muito longo
+        const numTerm = parseInt(onlyNumbers, 10);
+        if (!isNaN(numTerm) && onlyNumbers.length < 10) {
+          orConditions.push({ id: numTerm });
+        }
+
+        whereOptions.OR = orConditions;
       }
 
+      // Filtro de Status
+      if (status && status !== 'TODOS') {
+        whereOptions.status = String(status);
+      }
+
+      // Filtro de Data
       if (dataInicio && dataFim) {
         whereOptions.createdAt = {
           gte: new Date(`${dataInicio}T00:00:00.000Z`),
@@ -33,20 +50,15 @@ export class QuoteController {
         };
       }
 
-      if (status && status !== 'TODOS') {
-        whereOptions.status = String(status);
-      }
-
       const quotes = await prisma.quote.findMany({
         where: whereOptions,
         orderBy: { createdAt: 'desc' },
-        take: 100 
       });
 
       return res.json(quotes);
     } catch (error) {
-      console.error('Erro na consulta de orçamentos:', error);
-      return res.status(500).json({ error: 'Erro ao consultar orçamentos' });
+      console.error('Erro na consulta:', error);
+      return res.status(500).json({ error: 'Erro ao consultar' });
     }
   }
   
