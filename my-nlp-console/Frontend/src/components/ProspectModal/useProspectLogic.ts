@@ -121,7 +121,7 @@ export const useProspectLogic = (
   const finishAtendimento = async (acao: string) => {
     setLoading(prev => ({ ...prev, saving: true }));
     try {
-      await requestApi('post', 'finalizar', {
+      await requestApi('post', 'finish', {
         acao,
         observacoes: interactionForm.observacoes,
         novosModulos: interactionForm.modulos,
@@ -135,9 +135,27 @@ export const useProspectLogic = (
     }
   };
 
+ const handleVoltar = async () => {
+  setLoading(prev => ({ ...prev, saving: true }));
+  try {
+    await requestApi('patch', 'update', {
+      status: 'PENDENTE',
+      usuarioLogado: currentUserName,
+      observacoes: 'Atendimento devolvido para a fila.',
+      novosModulos: []
+    });
+
+    onClose(); 
+  } catch (error) {
+    console.error(error);
+  } finally {
+    setLoading(prev => ({ ...prev, saving: false }));
+  }
+};
+
   return {
     isFinished, ui, setUi, loading, historico, contactForm, interactionForm,
     handleContactChange, toggleModulo, setInteractionForm,
-    saveContatos, saveInteracao, finishAtendimento
+    saveContatos, saveInteracao, finishAtendimento, handleVoltar // ✅ exportando handleVoltar
   };
 };

@@ -7,6 +7,7 @@ import type { ModalProps, Historico, ContactFormState } from './types';
 import { getSituacaoColor, formatarData, formatarMoeda } from './prospectUtils';
 import { useProspectLogic } from './useProspectLogic';
 
+
 const MODULOS_DISPONIVEIS = ['NFE', 'NFCE', 'MDFE', 'CTE', 'NFSE', 'FINANCEIRO', 'ESTOQUE'];
 
 const StatusBadge = ({ status }: { status: string }) => {
@@ -89,11 +90,11 @@ const Timeline = ({ historico, loading }: { historico: Historico[], loading: boo
 );
 
 export default function ProspectModal({ prospect, onClose, currentUserId, currentUserName }: ModalProps) {
-  const { 
-    isFinished, ui, setUi, loading, historico, contactForm, interactionForm,
-    handleContactChange, toggleModulo, setInteractionForm,
-    saveContatos, saveInteracao, finishAtendimento 
-  } = useProspectLogic(prospect, currentUserId, currentUserName, onClose);
+const { 
+  isFinished, ui, setUi, loading, historico, contactForm, interactionForm,
+  handleContactChange, toggleModulo, setInteractionForm,
+  saveContatos, saveInteracao, finishAtendimento, handleVoltar
+} = useProspectLogic(prospect, currentUserId, currentUserName, onClose);
 
   return (
     <div 
@@ -289,7 +290,11 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
             </div>
           ) : (
             <div className="flex justify-between items-center gap-4">
-              <button onClick={() => finishAtendimento('PENDENTE')} disabled={loading.saving} className="flex items-center gap-1.5 px-3 py-2 text-sm text-slate-600 font-semibold hover:bg-slate-100 rounded-lg">
+              <button 
+                onClick={handleVoltar} 
+                disabled={loading.saving}
+                className="flex items-center gap-1.5 px-3 py-2 text-sm text-slate-600 font-semibold hover:bg-slate-100 rounded-lg"
+              >
                 <ArrowLeft size={16} /> Voltar
               </button>
               <div className="flex gap-2">
