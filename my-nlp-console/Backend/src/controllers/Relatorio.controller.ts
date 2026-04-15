@@ -32,12 +32,8 @@ export class RelatorioController {
     }
   };
 
-  // ==========================================
-  // FUNÇÃO MANTIDA: CONSTRUTOR DE RELATÓRIOS (CSV/TABELA)
-  // ==========================================
   build = async (req: Request, res: Response): Promise<any> => {
     try {
-      // Adicionamos statusFilter para ele poder tirar relatórios só de aprovados, reprovados, possibilidades, etc.
       const { modulo, dataInicial, dataFinal, dimensoes, metricas, statusFilter } = req.body;
 
       if (!modulo || !dimensoes || dimensoes.length === 0) {
@@ -49,13 +45,11 @@ export class RelatorioController {
 
       if (modulo === 'prospects') {
         
-        // 1. Monta quais colunas o Prisma deve trazer (Select Dinâmico)
         const selectOptions: any = {};
         dimensoes.forEach((dim: string) => {
           selectOptions[dim] = true;
         });
 
-        // 2. Monta os filtros da query (Where)
         const whereOptions: any = {
           createdAt: {
             gte: startDate,
@@ -63,12 +57,10 @@ export class RelatorioController {
           }
         };
 
-        // Se o usuário mandou um status específico no filtro (ex: 'APROVADO' ou 'POSSIBILIDADE'), aplicamos aqui
         if (statusFilter && statusFilter !== 'TODOS') {
           whereOptions.status = statusFilter as StatusAtendimento;
         }
 
-        // 3. Executa a busca no banco
         const prospects = await prisma.prospect.findMany({
           where: whereOptions,
           select: selectOptions,
@@ -77,21 +69,27 @@ export class RelatorioController {
           }
         });
 
-        // 4. Formata a resposta
         const dadosFormatados = prospects.map((item: any) => {
           const row: any = { ...item };
           
-          // Trata os arrays (novosModulos) para virar uma string legível na tabela/CSV
           if (row.novosModulos && Array.isArray(row.novosModulos)) {
             row.novosModulos = row.novosModulos.join(', ');
           }
 
-          // Trata datas para o formato local (se o usuário escolheu ver a data)
+          if (row.clienteWLE !== undefined && row.clienteWLE !== null) {
+            row.clienteWLE = row.clienteWLE ? 'Sim' : 'Não';
+          }
+
           if (row.createdAt) {
             row.createdAt = new Date(row.createdAt).toLocaleDateString('pt-BR');
           }
+          if (row.dataAtendimento) {
+            row.dataAtendimento = new Date(row.dataAtendimento).toLocaleDateString('pt-BR');
+          }
+          if (row.updatedAt) {
+            row.updatedAt = new Date(row.updatedAt).toLocaleDateString('pt-BR');
+          }
 
-          // Se o usuário pediu a métrica de volume, injeta o número 1
           if (metricas && metricas.includes('volume')) {
             row.volume = 1;
           }

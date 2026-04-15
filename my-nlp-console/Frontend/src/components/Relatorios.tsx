@@ -7,9 +7,7 @@ import {
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
-
 const BASE_URL = import.meta.env?.PUBLIC_API_URL || import.meta.env?.VITE_API_URL || 'https://core-nlp-support.onrender.com';
-
 
 const getFormattedDate = (date: Date) => {
   const year = date.getFullYear();
@@ -29,22 +27,33 @@ const getInitialDates = () => {
   };
 };
 
-
+// --- MÓDULOS ATUALIZADOS COM NOVAS COLUNAS DO PRISMA SCHEMA ---
 const REPORT_MODULES = {
   prospects: {
     label: 'Prospecção e Vendas',
     dimensions: [
       { id: 'status', label: 'Status do Atendimento' },
-      { id: 'nome', label: 'Nome da Empresa' },
+      { id: 'nome', label: 'Razão Social' },
+      { id: 'nomeFantasia', label: 'Nome Fantasia' },
       { id: 'cnpj', label: 'CNPJ' },
       { id: 'telefone', label: 'Telefone Principal' },
+      { id: 'telefoneSecundario', label: 'Telefone Secundário' },
+      { id: 'telefoneBackup', label: 'Telefone Backup' },
       { id: 'email', label: 'E-mail' },
       { id: 'atividadePrincipal', label: 'Atividade Principal' },
       { id: 'simplesNacional', label: 'Simples Nacional?' },
+      { id: 'situacaoCadastral', label: 'Situação Cadastral' },
+      { id: 'endereco', label: 'Endereço' },
+      { id: 'valor', label: 'Valor' },
+      { id: 'clienteWLE', label: 'Cliente WLE?' },
       { id: 'modulosAtuais', label: 'Módulos Atuais' },
       { id: 'novosModulos', label: 'Módulos de Interesse (Novos)' },
-      { id: 'lockedBy', label: 'Atendente Responsável' },
-      { id: 'createdAt', label: 'Data de Entrada' }
+      { id: 'observacoes', label: 'Observações' },
+      { id: 'lockedBy', label: 'Em Atendimento Por (Travado)' },
+      { id: 'atendidoPor', label: 'Finalizado Por' },
+      { id: 'dataAtendimento', label: 'Data de Atendimento' },
+      { id: 'createdAt', label: 'Data de Entrada' },
+      { id: 'updatedAt', label: 'Última Atualização' }
     ],
     metrics: [
       { id: 'volume', label: 'Quantidade (1 por linha)' }
@@ -53,7 +62,6 @@ const REPORT_MODULES = {
 };
 type ModuleKey = keyof typeof REPORT_MODULES;
 
-// Constante para itens por página
 const ITEMS_PER_PAGE = 15;
 
 export default function Relatorios() {
@@ -62,12 +70,10 @@ export default function Relatorios() {
   const [selectedDimensions, setSelectedDimensions] = useState<string[]>([]);
   const [selectedMetrics, setSelectedMetrics] = useState<string[]>([]);
   
-  // Inicializa as datas com as funções dinâmicas
   const initialDates = getInitialDates();
   const [startDate, setStartDate] = useState(initialDates.start);
   const [endDate, setEndDate] = useState(initialDates.end);
 
-  // Estados de Dados, Loading e Paginação
   const [reportData, setReportData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasPreview, setHasPreview] = useState(false);
@@ -95,6 +101,16 @@ export default function Relatorios() {
 
   const moduleConfig = REPORT_MODULES[selectedModule];
   const canGenerate = selectedDimensions.length > 0 && selectedMetrics.length > 0;
+
+  // --- FUNÇÃO PARA SELECIONAR TODOS ---
+  const handleToggleAllDimensions = () => {
+    const allDimIds = moduleConfig.dimensions.map(d => d.id);
+    if (selectedDimensions.length === allDimIds.length) {
+      setSelectedDimensions([]); // Desmarcar todos
+    } else {
+      setSelectedDimensions(allDimIds); // Marcar todos
+    }
+  };
 
   const handleGerarPrevia = async () => {
     if (!canGenerate) return;
@@ -135,7 +151,6 @@ export default function Relatorios() {
     }
   };
 
-  // EXPORTAR XLSX
   const handleDownloadXLSX = () => {
     if (reportData.length === 0) return;
 
@@ -182,7 +197,7 @@ export default function Relatorios() {
         
         <div className="bg-white border border-[#d8dcde] rounded-xl shadow-sm flex flex-col md:flex-row min-h-[500px] overflow-hidden">
           
-          <div className="w-full md:w-[320px] bg-[#fafafa] border-r border-[#d8dcde] p-6 flex flex-col shrink-0">
+          <div className="w-full md:w-[320px] bg-[#fafafa] border-r border-[#d8dcde] p-6 flex flex-col shrink-0 h-[600px] overflow-y-auto">
             
             <div className="mb-6">
               <label className="text-sm font-bold text-slate-900 block mb-2">Base de Dados</label>
@@ -222,21 +237,29 @@ export default function Relatorios() {
             <hr className="border-[#d8dcde] mb-6" />
 
             <div className="mb-6">
-              <h3 className="text-sm font-bold text-slate-900 mb-3">Agrupar por <span className="text-[10px] font-normal text-slate-500">(Dimensões)</span></h3>
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="text-sm font-bold text-slate-900">Agrupar por <span className="text-[10px] font-normal text-slate-500">(Dimensões)</span></h3>
+                {/* BOTÃO DE SELECIONAR TODOS */}
+                <button 
+                  onClick={handleToggleAllDimensions}
+                  className="text-[11px] font-bold text-blue-600 hover:text-blue-800 transition-colors bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded"
+                >
+                  {selectedDimensions.length === moduleConfig.dimensions.length ? 'Desmarcar Todos' : 'Selecionar Todos'}
+                </button>
+              </div>
               <div className="space-y-2.5">
                 {moduleConfig.dimensions.map(dim => (
                   <label key={dim.id} className="flex items-center gap-3 cursor-pointer group">
                     <input 
                       type="checkbox" checked={selectedDimensions.includes(dim.id)} onChange={() => toggleDimension(dim.id)}
-                      className="w-4 h-4 text-blue-600 bg-white border-slate-300 rounded focus:ring-blue-500 transition-all"
+                      className="w-4 h-4 text-blue-600 bg-white border-slate-300 rounded focus:ring-blue-500 transition-all shrink-0"
                     />
-                    <span className="text-sm font-medium text-slate-700 group-hover:text-slate-900">{dim.label}</span>
+                    <span className="text-sm font-medium text-slate-700 group-hover:text-slate-900 truncate">{dim.label}</span>
                   </label>
                 ))}
               </div>
             </div>
 
-            {/* 4. Métricas Dinâmicas */}
             <div className="flex-1 mb-6">
               <h3 className="text-sm font-bold text-slate-900 mb-3">Calcular <span className="text-[10px] font-normal text-slate-500">(Métricas)</span></h3>
               <div className="space-y-2.5">
@@ -244,7 +267,7 @@ export default function Relatorios() {
                   <label key={metric.id} className="flex items-center gap-3 cursor-pointer group">
                     <input 
                       type="checkbox" checked={selectedMetrics.includes(metric.id)} onChange={() => toggleMetric(metric.id)}
-                      className="w-4 h-4 text-blue-600 bg-white border-slate-300 rounded focus:ring-blue-500 transition-all"
+                      className="w-4 h-4 text-blue-600 bg-white border-slate-300 rounded focus:ring-blue-500 transition-all shrink-0"
                     />
                     <span className="text-sm font-medium text-slate-700 group-hover:text-slate-900">{metric.label}</span>
                   </label>
@@ -255,7 +278,7 @@ export default function Relatorios() {
             <button 
               onClick={handleGerarPrevia}
               disabled={!canGenerate || isLoading}
-              className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
             >
               {isLoading ? <Loader2 className="animate-spin" size={18} /> : <><Play size={16} fill="currentColor"/> Gerar Prévia</>}
             </button>
