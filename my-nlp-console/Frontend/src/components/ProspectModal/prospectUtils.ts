@@ -1,5 +1,3 @@
-// utils.ts
-
 /**
  * Converte um valor bruto de módulos em um array de strings válido.
  */
@@ -43,4 +41,14 @@ export const getSituacaoColor = (status?: string): string => {
   }
   
   return 'bg-amber-50 text-amber-700 border-amber-200';
+};
+
+/**
+ * Formata número para moeda brasileira (R$)
+ */
+export const formatarMoeda = (valor?: number | null | string): string => {
+  if (!valor) return 'Não informado';
+  const num = typeof valor === 'string' ? parseFloat(valor) : valor;
+  if (isNaN(num)) return 'Não informado';
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(num);
 };

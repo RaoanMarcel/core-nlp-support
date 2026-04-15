@@ -26,7 +26,8 @@ export const useProspectLogic = (
   const [contactForm, setContactForm] = useState<ContactFormState>({
     telefone: prospect.telefone || '',
     telefoneSecundario: prospect.telefoneSecundario || '',
-    email: prospect.email || ''
+    email: prospect.email || '',
+    valor: prospect.valor ? prospect.valor.toString() : '' // Inicializa o valor
   });
 
   const [interactionForm, setInteractionForm] = useState<InteractionFormState>({
@@ -34,7 +35,6 @@ export const useProspectLogic = (
     modulos: parseModulos(prospect.novosModulos)
   });
 
-  // Client de API Abstraído
   const requestApi = useCallback(async (method: 'get' | 'patch' | 'post', endpoint: string, data?: unknown) => {
     const token = localStorage.getItem('@CRM:token');
     if (!token) throw new Error("Usuário não autenticado");
@@ -63,7 +63,6 @@ export const useProspectLogic = (
     loadHistorico();
   }, [loadHistorico]);
 
-  // Handlers de Ação
   const handleContactChange = (field: keyof ContactFormState, value: string) => {
     setContactForm(prev => ({ ...prev, [field]: value }));
   };
@@ -83,32 +82,36 @@ export const useProspectLogic = (
     try {
       await requestApi('patch', 'update', {
         ...contactForm,
-        observacoes: "Atualizou os dados de contato.",
+        valor: contactForm.valor ? parseFloat(contactForm.valor) : null, // Envia como número
+        observacoes: "Atualizou dados cadastrais/financeiros.",
         usuarioLogado: currentUserName
       });
       setUi(prev => ({ ...prev, isEditingContatos: false }));
       await loadHistorico();
     } catch (error) {
-      console.error('Erro ao atualizar contatos:', error);
+      console.error(error);
     } finally {
       setLoading(prev => ({ ...prev, savingContatos: false }));
     }
   };
 
-  const saveInteracao = async (extraPayload = {}) => {
+  const saveInteracao = async (extraData = {}) => {
+    if (!interactionForm.observacoes && interactionForm.modulos.length === 0 && Object.keys(extraData).length === 0) return;
+    
     setLoading(prev => ({ ...prev, saving: true }));
     try {
       await requestApi('patch', 'update', {
-        observacoes: interactionForm.observacoes.trim(),
+        observacoes: interactionForm.observacoes,
         novosModulos: interactionForm.modulos,
         usuarioLogado: currentUserName,
-        ...extraPayload
+        ...extraData
       });
-      setInteractionForm(prev => ({ ...prev, observacoes: '' }));
-      setUi(prev => ({ ...prev, isEditing: false }));
-      await loadHistorico();
+      setInteractionForm(p => ({ ...p, observacoes: '' }));
+      setUi(p => ({ ...p, isEditing: false }));
+      if (Object.keys(extraData).length > 0) onClose();
+      else await loadHistorico();
     } catch (error) {
-      console.error('Erro na atualização:', error);
+      console.error(error);
     } finally {
       setLoading(prev => ({ ...prev, saving: false }));
     }
@@ -117,16 +120,16 @@ export const useProspectLogic = (
   const finishAtendimento = async (acao: string) => {
     setLoading(prev => ({ ...prev, saving: true }));
     try {
-      await requestApi('post', 'finish', {
-        userId: currentUserId,
-        atendidoPor: currentUserName,
+      await requestApi('post', 'finalizar', {
+        acao,
         observacoes: interactionForm.observacoes,
         novosModulos: interactionForm.modulos,
-        acao
+        atendidoPor: currentUserName
       });
       onClose();
     } catch (error) {
-      console.error('Erro ao finalizar atendimento:', error);
+      console.error(error);
+    } finally {
       setLoading(prev => ({ ...prev, saving: false }));
     }
   };

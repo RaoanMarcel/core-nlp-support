@@ -1,18 +1,14 @@
 import React from 'react';
-import { Phone, Mail, Building, FileText, ArrowLeft, CheckCircle2, XCircle, Edit3, Save, Target, History, Clock, User } from 'lucide-react';
+import { Phone, Mail, Building, FileText, ArrowLeft, CheckCircle2, XCircle, Edit3, Save, Target, History, Clock, User, DollarSign } from 'lucide-react';
 
 import { type Prospect } from '../Contratos';
 
-// Importações dos nossos arquivos fatiados
 import type { ModalProps, Historico, ContactFormState } from './types';
-import { getSituacaoColor, formatarData } from './prospectUtils';
+import { getSituacaoColor, formatarData, formatarMoeda } from './prospectUtils';
 import { useProspectLogic } from './useProspectLogic';
 
 const MODULOS_DISPONIVEIS = ['NFE', 'NFCE', 'MDFE', 'CTE', 'NFSE', 'FINANCEIRO', 'ESTOQUE'];
 
-// ==========================================
-// MINI-COMPONENTES VISUAIS (Stateless)
-// ==========================================
 const StatusBadge = ({ status }: { status: string }) => {
   const configs: Record<string, { cls: string, label: string }> = {
     APROVADO: { cls: 'bg-emerald-100 text-emerald-800 border-emerald-200', label: 'Interessado' },
@@ -92,11 +88,7 @@ const Timeline = ({ historico, loading }: { historico: Historico[], loading: boo
   </div>
 );
 
-// ==========================================
-// O COMPONENTE PRINCIPAL (Orquestrador)
-// ==========================================
 export default function ProspectModal({ prospect, onClose, currentUserId, currentUserName }: ModalProps) {
-  // Puxando tudo do nosso Cérebro (Hook)
   const { 
     isFinished, ui, setUi, loading, historico, contactForm, interactionForm,
     handleContactChange, toggleModulo, setInteractionForm,
@@ -116,9 +108,11 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
             
             {/* Bloco Empresa */}
             <div className="space-y-5 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                <Building size={14} /> Detalhes da Empresa
-              </h3>
+              <div className="flex justify-between items-center">
+                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                  <Building size={14} /> Detalhes da Empresa
+                </h3>
+              </div>
               <div className="space-y-4">
                 <div>
                   <span className="text-xs font-medium text-slate-500 block mb-1">Atividade Principal</span>
@@ -138,6 +132,32 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
                     <p className="text-sm text-slate-900 font-semibold">{prospect.modulosAtuais}</p>
                   </div>
                 </div>
+
+                {/* NOVO CAMPO: VALOR */}
+                <div className="mt-4 pt-4 border-t border-slate-100">
+                  <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider flex items-center gap-1 mb-2">
+                    <DollarSign size={12} /> Valor no Sistema Atual
+                  </span>
+                  {ui.isEditingContatos ? (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold text-slate-400">R$</span>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={contactForm.valor}
+                        onChange={(e) => handleContactChange('valor', e.target.value)}
+                        placeholder="0.00"
+                        className="w-full text-sm font-semibold text-slate-900 bg-emerald-50/50 border-b-2 border-emerald-400 focus:outline-none px-2 py-1 rounded-t"
+                        disabled={loading.savingContatos}
+                      />
+                    </div>
+                  ) : (
+                    <p className="text-lg text-slate-900 font-black">
+                      {formatarMoeda(prospect.valor)}
+                    </p>
+                  )}
+                </div>
+
               </div>
             </div>
 
@@ -149,7 +169,7 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
                 </h3>
                 {!ui.isEditingContatos && (
                   <button onClick={() => setUi(p => ({ ...p, isEditingContatos: true }))} className="text-[10px] flex items-center gap-1 px-2 py-1 bg-slate-50 text-slate-600 border border-slate-200 rounded hover:bg-blue-50 hover:text-blue-600 font-bold uppercase">
-                    <Edit3 size={12} /> Editar
+                    <Edit3 size={12} /> Editar Dados
                   </button>
                 )}
               </div>
@@ -186,7 +206,7 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
                 <div className="mt-4 pt-4 border-t border-slate-100 flex justify-end gap-2">
                   <button onClick={() => setUi(p => ({ ...p, isEditingContatos: false }))} disabled={loading.savingContatos} className="px-3 py-1.5 text-xs font-bold text-slate-500 hover:bg-slate-100 rounded">Cancelar</button>
                   <button onClick={saveContatos} disabled={loading.savingContatos} className="flex items-center gap-1.5 px-4 py-1.5 bg-blue-600 text-white text-xs font-bold rounded hover:bg-blue-700">
-                    <Save size={14} /> {loading.savingContatos ? 'Salvando...' : 'Salvar Contatos'}
+                    <Save size={14} /> {loading.savingContatos ? 'Salvando...' : 'Salvar'}
                   </button>
                 </div>
               )}
