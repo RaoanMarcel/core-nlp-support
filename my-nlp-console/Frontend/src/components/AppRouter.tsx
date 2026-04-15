@@ -8,7 +8,8 @@ import Dashboard from './Dashboard';
 import TicketQueue from './TicketQueue';
 import Relatorios from './Relatorios';
 import KnowledgeBase from './KnowledgeBase';
-import Contratos from './Contratos'; 
+import Contratos from './Contratos';
+import Quotes from './Quotes';
 
 export default function AppRouter() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
@@ -32,33 +33,29 @@ export default function AppRouter() {
     setIsAuthenticated(false);
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-[#f4f5f7] flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return <Login onLoginSuccess={handleLoginSuccess} />;
-  }
-
   return (
     <BrowserRouter>
-      {/* Passamos o handleLogout como propriedade para o Menu Lateral */}
-      <AppLayout onLogout={handleLogout}>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/fila" element={<TicketQueue />} />
-          <Route path="/relatorios" element={<Relatorios />} />
-          <Route path="/base" element={<KnowledgeBase />} />
-          <Route path="/contratos" element={<Contratos />} />
-          
-          {/* Se digitar uma URL que não existe, joga pro Dashboard */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </AppLayout>
+      {isLoading ? (
+        <div className="min-h-screen bg-[#f4f5f7] flex items-center justify-center">
+          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      ) : !isAuthenticated ? (
+        <Login onLoginSuccess={handleLoginSuccess} />
+      ) : (
+        <AppLayout onLogout={handleLogout}>
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/fila" element={<TicketQueue />} />
+            <Route path="/relatorios" element={<Relatorios />} />
+            <Route path="/base" element={<KnowledgeBase />} />
+            <Route path="/contratos" element={<Contratos />} />
+            <Route path="/orcamentos" element={<Quotes />} />
+            
+            {/* Rota de fallback: se digitar URL errada, volta pro Dashboard */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </AppLayout>
+      )}
     </BrowserRouter>
   );
 }

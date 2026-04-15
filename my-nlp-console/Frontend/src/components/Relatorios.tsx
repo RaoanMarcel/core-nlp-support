@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { 
   Calendar, Zap, BarChart2, Bot, Download, 
   LayoutDashboard, TableProperties, Info, FileSpreadsheet,
   Loader2, Play, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
-
-const BASE_URL = import.meta.env?.PUBLIC_API_URL || import.meta.env?.VITE_API_URL || 'https://core-nlp-support.onrender.com';
+import { api } from '../services/api';
 
 const getFormattedDate = (date: Date) => {
   const year = date.getFullYear();
@@ -27,7 +25,6 @@ const getInitialDates = () => {
   };
 };
 
-// --- MÓDULOS ATUALIZADOS COM NOVAS COLUNAS DO PRISMA SCHEMA ---
 const REPORT_MODULES = {
   prospects: {
     label: 'Prospecção e Vendas',
@@ -125,14 +122,9 @@ export default function Relatorios() {
         metrics: selectedMetrics 
       };
 
-      const token = localStorage.getItem('@CRM:token');
-
-      const response = await axios.post(`${BASE_URL}/relatorios/build`, payload, {
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      // Adeus axios manual, adeus pegar token na mão! 
+      // O nosso api.ts faz tudo isso por baixo dos panos.
+      const response = await api.post('/relatorios/build', payload);
 
       setReportData(response.data);
       setCurrentPage(1); 

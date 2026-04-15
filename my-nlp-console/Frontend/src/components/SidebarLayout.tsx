@@ -9,7 +9,8 @@ import {
   X,
   BookOpen,
   FileText,
-  LogOut 
+  LogOut, 
+  Calculator 
 } from 'lucide-react';
 
 import logoSvg from '../assets/logo.svg?url';
@@ -32,6 +33,7 @@ export default function AppLayout({ children, onLogout }: AppLayoutProps) {
     { path: '/fila', label: 'Fila de Tickets', icon: Inbox },
     { path: '/base', label: 'Base Interna', icon: BookOpen },
     { path: '/contratos', label: 'Contratos', icon: FileText }, 
+    { path: '/orcamentos', label: 'Orçamentos', icon: Calculator },
     { path: '/relatorios', label: 'Geração de Relatórios', icon: SlidersHorizontal },
   ];
 
@@ -95,7 +97,7 @@ export default function AppLayout({ children, onLogout }: AppLayoutProps) {
           </p>
 
           {navItems.map((item) => {
-            const isActive = location.pathname === item.path;
+            const isActive = location.pathname.startsWith(item.path) && (item.path !== '/' || location.pathname === '/');
             const Icon = item.icon;
             
             return (

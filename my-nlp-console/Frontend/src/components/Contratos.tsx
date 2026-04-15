@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
 import Papa from 'papaparse';
 import { 
   UploadCloud, Search, Phone, RefreshCw, Inbox, PlayCircle, 
   CheckCircle2, XCircle, ChevronLeft, ChevronRight, Target, 
-  Clock, ChevronDown, ChevronUp, MapPin 
+  Clock, ChevronDown, ChevronUp 
 } from 'lucide-react';
 import { io } from 'socket.io-client'; 
 import ProspectModal from './ProspectModal/index';
+import { api } from '../services/api'; // <-- IMPORTANDO NOSSA API INTELIGENTE
 
 export interface Prospect {
   id: string;
@@ -33,17 +33,11 @@ export interface Prospect {
   
   atendidoPor?: string;
   dataAtendimento?: string | Date;
-  
-  // --- NOVO CAMPO ADICIONADO ---
-  // Apenas tipado aqui. O visual será feito apenas no modal.
   valor?: number | null; 
-  // -----------------------------
 }
 
-const BASE_URL = import.meta.env?.PUBLIC_API_URL || import.meta.env?.VITE_API_URL || 'https://core-nlp-support.onrender.com';
-
-const API_URL = `${BASE_URL}/prospects`;
-const SOCKET_URL = BASE_URL; 
+// O Socket ainda precisa de uma URL base pura, então pegamos direto do env
+const SOCKET_URL = import.meta.env?.VITE_API_URL || 'https://core-nlp-support.onrender.com';
 
 const getCardStyle = (status: string) => {
   switch (status) {
@@ -140,12 +134,10 @@ function PaginatedSection({ title, icon, data, emptyMessage, onCardClick }: Sect
                     </div>
                     
                     <div className="mb-4 flex-1">
-                      {/* Título com Nome da Empresa apenas */}
                       <h3 className="text-base font-bold text-slate-900 leading-tight mb-0.5 line-clamp-1" title={prospect.nome}>
                         {prospect.nome}
                       </h3>
                       
-                      {/* CNPJ e TAG WLE */}
                       <div className="flex items-center gap-2 mb-2 mt-2">
                         <p className="text-xs font-medium text-slate-500 font-mono">
                           {prospect.cnpj}
@@ -236,11 +228,13 @@ export default function ProspectList() {
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const token = localStorage.getItem('@CRM:token');
   const userStr = localStorage.getItem('@CRM:user');
   const currentUser = userStr ? JSON.parse(userStr) : null;
   const currentUserId = currentUser?.id || '';
 
+  // ==========================================
+  // ESTA FUNÇÃO PODE MORRER EM BREVE SE COLOCARMOS ISSO NO INTERCEPTOR
+  // ==========================================
   const handleAuthError = (error: any) => {
     if (error.response && error.response.status === 401) {
       localStorage.removeItem('@CRM:token');
@@ -253,9 +247,10 @@ export default function ProspectList() {
 
   const fetchProspects = async () => {
     try {
-      const response = await axios.get(`${API_URL}?t=${new Date().getTime()}`, {
+      // Adeus axios e headers manuais!
+      const response = await api.get('/prospects', {
+        params: { t: new Date().getTime() },
         headers: {
-          'Authorization': `Bearer ${token}`, 
           'Cache-Control': 'no-cache, no-store, must-revalidate',
           'Pragma': 'no-cache',
           'Expires': '0'
@@ -297,35 +292,25 @@ export default function ProspectList() {
       const text = await file.text();
       const lines = text.split('\n');
       
-      // Limpa a primeira linha se for resumo, mantendo os cabeçalhos das colunas na linha 1
       if (lines[0].includes('Estabelecimentos')) lines.shift(); 
       const cleanCsv = lines.join('\n');
 
-      // Modificado para usar header: true
       Papa.parse(cleanCsv, {
-        header: true, // Papa.parse agora lerá os nomes das colunas e criará objetos com elas
+        header: true,
         skipEmptyLines: true,
         complete: async (results) => {
-          // Filtra linhas vazias ou sem CNPJ
           const clientes = results.data.filter((row: any) => row.CNPJ && String(row.CNPJ).trim() !== '');
 
           try {
-            await axios.post(`${API_URL}/importar`, 
-              { clientes }, // Enviando exatamente o que o seu Astro espera
-              {
-                headers: { 
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${token}` 
-                }
-              }
-            );
+            // Adeus axios e headers manuais!
+            await api.post('/prospects/importar', { clientes });
           } catch (apiError: any) {
             if (handleAuthError(apiError)) return;
             console.error('Erro na API:', apiError);
           } finally {
             setIsImporting(false);
             if (fileInputRef.current) fileInputRef.current.value = '';
-            fetchProspects(); // Atualiza a tela após importar
+            fetchProspects(); 
           }
         }
       });
@@ -346,18 +331,11 @@ export default function ProspectList() {
     
     if (prospect.status === 'PENDENTE') {
       try {
-        const response = await axios.put(`${API_URL}/${prospect.id}/travar`, 
-          { 
-            userId: currentUserId,
-            userName: currentUser?.nome 
-          },
-          {
-            headers: { 
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-            }
-          }
-        );
+        // Adeus axios e headers manuais!
+        const response = await api.put(`/prospects/${prospect.id}/travar`, { 
+          userId: currentUserId,
+          userName: currentUser?.nome 
+        });
 
         const updatedProspect = response.data;
         setSelectedProspect(updatedProspect);

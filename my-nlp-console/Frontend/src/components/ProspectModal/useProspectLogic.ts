@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
 import { type Prospect } from '../Contratos';
 import type { 
   Historico, 
@@ -7,9 +6,7 @@ import type {
   InteractionFormState 
 } from './types';
 import { parseModulos } from './prospectUtils';
-
-const API_BASE_URL = import.meta.env?.PUBLIC_API_URL || process.env?.PUBLIC_API_URL || 'https://core-nlp-support.onrender.com';
-const API_URL = `${API_BASE_URL}/prospects`;
+import { api } from '../../services/api'; 
 
 export const useProspectLogic = (
   prospect: Prospect, 
@@ -19,7 +16,6 @@ export const useProspectLogic = (
 ) => {
   const isFinished = ['APROVADO', 'REPROVADO', 'POSSIBILIDADE', 'RETORNAR'].includes(prospect.status);
 
-  // Estados Unificados
   const [ui, setUi] = useState({ isEditing: !isFinished, isEditingContatos: false });
   const [loading, setLoading] = useState({ historico: true, saving: false, savingContatos: false });
   const [historico, setHistorico] = useState<Historico[]>([]);
@@ -35,7 +31,6 @@ export const useProspectLogic = (
     observacoes: '',
     modulos: parseModulos(prospect.novosModulos)
   });
-
 
   useEffect(() => {
     setContactForm({
@@ -53,15 +48,12 @@ export const useProspectLogic = (
     setUi(prev => ({ ...prev, isEditing: !isFinished }));
   }, [prospect, isFinished]); 
 
+
   const requestApi = useCallback(async (method: 'get' | 'patch' | 'post', endpoint: string, data?: unknown) => {
-    const token = localStorage.getItem('@CRM:token');
-    if (!token) throw new Error("Usuário não autenticado");
-    
-    return axios({
+    return api({
       method,
-      url: `${API_URL}/${prospect.id}/${endpoint}`,
-      data,
-      headers: { Authorization: `Bearer ${token}` }
+      url: `/prospects/${prospect.id}/${endpoint}`, // Caminho relativo limpo
+      data
     });
   }, [prospect.id]);
 
