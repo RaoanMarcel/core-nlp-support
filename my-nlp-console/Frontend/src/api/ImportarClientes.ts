@@ -14,6 +14,16 @@ export const POST: APIRoute = async ({ request }) => {
     for (const cliente of clientes) {
       if (!cliente.CNPJ) continue;
 
+      // --- Tratamento do Valor ---
+      // Captura a coluna "Valor pago" e converte "378,04" para 378.04
+      const valorRaw = cliente['Valor pago'];
+      let valorNumerico: number | null = null;
+      
+      if (valorRaw) {
+        const valorLimpo = String(valorRaw).replace('R$', '').replace('.', '').replace(',', '.').trim();
+        valorNumerico = parseFloat(valorLimpo);
+      }
+
       const wleStr = cliente['AR (Clientes WLE)'] ? String(cliente['AR (Clientes WLE)']) : '';
       const isWLE = wleStr.trim().toLowerCase() === 'sim';
 
@@ -40,6 +50,7 @@ export const POST: APIRoute = async ({ request }) => {
           update: {
             nomeFantasia: nomeFantasia,
             endereco: enderecoCompleto !== '' ? enderecoCompleto : null,
+            valor: valorNumerico, // Atualiza o valor se o cliente já existir
           },
           create: {
             cnpj: String(cliente.CNPJ),
@@ -49,7 +60,8 @@ export const POST: APIRoute = async ({ request }) => {
             telefone: String(cliente['Telefone Principal'] || 'Sem Telefone'),
             modulosAtuais: 'Nenhum',
             status: 'PENDENTE',
-            clienteWLE: isWLE
+            clienteWLE: isWLE,
+            valor: valorNumerico // Define o valor para novos registros
           }
         });
 
