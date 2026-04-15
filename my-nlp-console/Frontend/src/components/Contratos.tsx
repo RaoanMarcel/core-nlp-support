@@ -7,7 +7,7 @@ import {
   Clock, ChevronDown, ChevronUp, MapPin 
 } from 'lucide-react';
 import { io } from 'socket.io-client'; 
-import ProspectModal from './ContratosModal';
+import ProspectModal from './ProspectModal/index';
 
 export interface Prospect {
   id: string;

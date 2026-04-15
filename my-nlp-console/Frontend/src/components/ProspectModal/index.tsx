@@ -1,197 +1,17 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import axios, { AxiosError } from 'axios';
+import React from 'react';
 import { Phone, Mail, Building, FileText, ArrowLeft, CheckCircle2, XCircle, Edit3, Save, Target, History, Clock, User } from 'lucide-react';
-import { type Prospect } from './Contratos';
+
+import { type Prospect } from '../Contratos';
+
+// Importações dos nossos arquivos fatiados
+import type { ModalProps, Historico, ContactFormState } from './types';
+import { getSituacaoColor, formatarData } from './prospectUtils';
+import { useProspectLogic } from './useProspectLogic';
 
 const MODULOS_DISPONIVEIS = ['NFE', 'NFCE', 'MDFE', 'CTE', 'NFSE', 'FINANCEIRO', 'ESTOQUE'];
-const API_URL = 'https://core-nlp-support.onrender.com/prospects';
 
 // ==========================================
-// 1. TIPAGENS (Fim do "any")
-// ==========================================
-interface Historico {
-  id: string;
-  acao: string;
-  observacoes: string | null;
-  novosModulos: string[];
-  usuario: string;
-  createdAt: string;
-}
-
-interface ModalProps {
-  prospect: Prospect;
-  onClose: () => void;
-  currentUserId: string;
-  currentUserName: string;
-}
-
-interface ContactFormState {
-  telefone: string;
-  telefoneSecundario: string;
-  email: string;
-}
-
-interface InteractionFormState {
-  observacoes: string;
-  modulos: string[];
-}
-
-// ==========================================
-// 2. FUNÇÕES PURAS & UTILITÁRIOS
-// ==========================================
-const parseModulos = (modulosRaw: unknown): string[] => {
-  if (!modulosRaw) return [];
-  if (Array.isArray(modulosRaw)) return modulosRaw;
-  if (typeof modulosRaw === 'string') {
-    return modulosRaw.split(',').map(m => m.trim()).filter(Boolean);
-  }
-  return [];
-};
-
-const formatarData = (dataStr?: string) => {
-  if (!dataStr) return '';
-  return new Date(dataStr).toLocaleString('pt-BR', {
-    day: '2-digit', month: '2-digit', year: 'numeric',
-    hour: '2-digit', minute: '2-digit'
-  });
-};
-
-const getSituacaoColor = (status?: string) => {
-  if (!status) return 'bg-slate-100 text-slate-600 border-slate-200';
-  const text = status.toLowerCase();
-  if (text.includes('ativa')) return 'bg-emerald-50 text-emerald-700 border-emerald-200';
-  if (text.includes('baixa') || text.includes('inapta')) return 'bg-rose-50 text-rose-700 border-rose-200';
-  return 'bg-amber-50 text-amber-700 border-amber-200';
-};
-
-// ==========================================
-// 3. O "CÉREBRO" (Custom Hook Interno)
-// ==========================================
-const useProspectLogic = (prospect: Prospect, currentUserId: string, currentUserName: string, onClose: () => void) => {
-  const isFinished = ['APROVADO', 'REPROVADO', 'POSSIBILIDADE', 'RETORNAR'].includes(prospect.status);
-
-  // Estados Unificados
-  const [ui, setUi] = useState({ isEditing: !isFinished, isEditingContatos: false });
-  const [loading, setLoading] = useState({ historico: true, saving: false, savingContatos: false });
-  const [historico, setHistorico] = useState<Historico[]>([]);
-  
-  const [contactForm, setContactForm] = useState<ContactFormState>({
-    telefone: prospect.telefone || '',
-    telefoneSecundario: prospect.telefoneSecundario || '',
-    email: prospect.email || ''
-  });
-
-  const [interactionForm, setInteractionForm] = useState<InteractionFormState>({
-    observacoes: '',
-    modulos: parseModulos(prospect.novosModulos)
-  });
-
-  // Client de API Abstraído
-  const requestApi = useCallback(async (method: 'get' | 'patch' | 'post', endpoint: string, data?: unknown) => {
-    const token = localStorage.getItem('@CRM:token');
-    if (!token) throw new Error("Usuário não autenticado");
-    
-    return axios({
-      method,
-      url: `${API_URL}/${prospect.id}/${endpoint}`,
-      data,
-      headers: { Authorization: `Bearer ${token}` }
-    });
-  }, [prospect.id]);
-
-  const loadHistorico = useCallback(async () => {
-    try {
-      setLoading(prev => ({ ...prev, historico: true }));
-      const { data } = await requestApi('get', 'historico');
-      setHistorico(data);
-    } catch (error) {
-      console.error("Erro ao carregar histórico:", error);
-    } finally {
-      setLoading(prev => ({ ...prev, historico: false }));
-    }
-  }, [requestApi]);
-
-  useEffect(() => {
-    loadHistorico();
-  }, [loadHistorico]);
-
-  // Handlers de Ação
-  const handleContactChange = (field: keyof ContactFormState, value: string) => {
-    setContactForm(prev => ({ ...prev, [field]: value }));
-  };
-
-  const toggleModulo = (modulo: string) => {
-    if (!ui.isEditing) return;
-    setInteractionForm(prev => ({
-      ...prev,
-      modulos: prev.modulos.includes(modulo) 
-        ? prev.modulos.filter(m => m !== modulo) 
-        : [...prev.modulos, modulo]
-    }));
-  };
-
-  const saveContatos = async () => {
-    setLoading(prev => ({ ...prev, savingContatos: true }));
-    try {
-      await requestApi('patch', 'update', {
-        ...contactForm,
-        observacoes: "Atualizou os dados de contato.",
-        usuarioLogado: currentUserName
-      });
-      setUi(prev => ({ ...prev, isEditingContatos: false }));
-      await loadHistorico();
-    } catch (error) {
-      console.error('Erro ao atualizar contatos:', error);
-    } finally {
-      setLoading(prev => ({ ...prev, savingContatos: false }));
-    }
-  };
-
-  const saveInteracao = async (extraPayload = {}) => {
-    setLoading(prev => ({ ...prev, saving: true }));
-    try {
-      await requestApi('patch', 'update', {
-        observacoes: interactionForm.observacoes.trim(),
-        novosModulos: interactionForm.modulos,
-        usuarioLogado: currentUserName,
-        ...extraPayload
-      });
-      setInteractionForm(prev => ({ ...prev, observacoes: '' }));
-      setUi(prev => ({ ...prev, isEditing: false }));
-      await loadHistorico();
-    } catch (error) {
-      console.error('Erro na atualização:', error);
-    } finally {
-      setLoading(prev => ({ ...prev, saving: false }));
-    }
-  };
-
-  const finishAtendimento = async (acao: string) => {
-    setLoading(prev => ({ ...prev, saving: true }));
-    try {
-      await requestApi('post', 'finish', {
-        userId: currentUserId,
-        atendidoPor: currentUserName,
-        observacoes: interactionForm.observacoes,
-        novosModulos: interactionForm.modulos,
-        acao
-      });
-      onClose();
-    } catch (error) {
-      console.error('Erro ao finalizar atendimento:', error);
-      setLoading(prev => ({ ...prev, saving: false }));
-    }
-  };
-
-  return {
-    isFinished, ui, setUi, loading, historico, contactForm, interactionForm,
-    handleContactChange, toggleModulo, setInteractionForm,
-    saveContatos, saveInteracao, finishAtendimento
-  };
-};
-
-// ==========================================
-// 4. MINI-COMPONENTES VISUAIS (Stateless)
+// MINI-COMPONENTES VISUAIS (Stateless)
 // ==========================================
 const StatusBadge = ({ status }: { status: string }) => {
   const configs: Record<string, { cls: string, label: string }> = {
@@ -230,7 +50,6 @@ const ModalHeader = ({ prospect }: { prospect: Prospect }) => (
   </div>
 );
 
-// Resumo do Histórico
 const Timeline = ({ historico, loading }: { historico: Historico[], loading: boolean }) => (
   <div className="lg:col-span-2 bg-slate-50 rounded-xl border border-slate-200 p-6 overflow-y-auto max-h-[400px]">
     <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2 mb-6">
@@ -274,9 +93,10 @@ const Timeline = ({ historico, loading }: { historico: Historico[], loading: boo
 );
 
 // ==========================================
-// 5. O COMPONENTE PRINCIPAL (Orquestrador)
+// O COMPONENTE PRINCIPAL (Orquestrador)
 // ==========================================
 export default function ProspectModal({ prospect, onClose, currentUserId, currentUserName }: ModalProps) {
+  // Puxando tudo do nosso Cérebro (Hook)
   const { 
     isFinished, ui, setUi, loading, historico, contactForm, interactionForm,
     handleContactChange, toggleModulo, setInteractionForm,
@@ -334,7 +154,6 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
                 )}
               </div>
               <div className="space-y-3">
-                {/* Inputs de Contato Abstraídos Visualmente */}
                 {[
                   { id: 'telefone', label: 'Principal', icon: Phone, color: 'blue', val: contactForm.telefone },
                   { id: 'telefoneSecundario', label: 'Secundário', icon: Phone, color: 'slate', val: contactForm.telefoneSecundario },
@@ -428,7 +247,7 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
           {isFinished ? (
             <div className="flex justify-between items-center gap-4">
               <div className="text-sm text-slate-600">
-                {prospect.atendidoPor ? <>Atendido por <span className="font-bold">{prospect.atendidoPor}</span></> : <span className="italic">Autor desconhecido</span>}
+                <span className="italic">Gerenciamento de Atendimento</span>
               </div>
               <div className="flex gap-3">
                 {!ui.isEditing ? (
