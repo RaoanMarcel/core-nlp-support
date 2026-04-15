@@ -8,7 +8,8 @@ import type {
 } from './types';
 import { parseModulos } from './prospectUtils';
 
-const API_URL = 'https://core-nlp-support.onrender.com/prospects';
+const API_URL = import.meta.env?.PUBLIC_API_URL || import.meta.env?.VITE_API_URL || 'https://core-nlp-support.onrender.com';
+
 
 export const useProspectLogic = (
   prospect: Prospect, 
@@ -27,7 +28,7 @@ export const useProspectLogic = (
     telefone: prospect.telefone || '',
     telefoneSecundario: prospect.telefoneSecundario || '',
     email: prospect.email || '',
-    valor: prospect.valor ? prospect.valor.toString() : '' // Inicializa o valor
+    valor: prospect.valor ? prospect.valor.toString() : '' 
   });
 
   const [interactionForm, setInteractionForm] = useState<InteractionFormState>({
@@ -82,7 +83,7 @@ export const useProspectLogic = (
     try {
       await requestApi('patch', 'update', {
         ...contactForm,
-        valor: contactForm.valor ? parseFloat(contactForm.valor) : null, // Envia como número
+        valor: contactForm.valor ? parseFloat(contactForm.valor) : null,
         observacoes: "Atualizou dados cadastrais/financeiros.",
         usuarioLogado: currentUserName
       });
