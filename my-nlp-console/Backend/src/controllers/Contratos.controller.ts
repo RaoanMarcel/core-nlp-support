@@ -3,6 +3,19 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+// Função auxiliar para limpar e converter valores monetários vindos da planilha
+const parseMoeda = (valor: any): number | null => {
+  if (!valor) return null;
+  // Remove R$, espaços e converte formato brasileiro (1.000,00) para americano (1000.00)
+  const limpo = String(valor)
+    .replace("R$", "")
+    .replace(/\s/g, "")
+    .replace(/\./g, "")
+    .replace(",", ".");
+  const num = parseFloat(limpo);
+  return isNaN(num) ? null : num;
+};
+
 export class ProspectController {
   
   buscarTodos = async (req: Request, res: Response) => {
@@ -47,6 +60,9 @@ export class ProspectController {
           .replace(/^[,\s\-]+|[,\s\-]+$/g, '') 
           .trim();
 
+        // Capturando o valor da planilha (verificando 'Valor' ou 'VALOR')
+        const valorTratado = parseMoeda(cliente['Valor'] || cliente['VALOR']);
+
         try {
           // Usa o UPSERT: Atualiza se existir, cria se não existir
           await prisma.prospect.upsert({
@@ -56,6 +72,7 @@ export class ProspectController {
             update: {
               nomeFantasia: nomeFantasia,
               endereco: enderecoCompleto !== '' ? enderecoCompleto : null,
+              valor: valorTratado, // Atualiza o valor
             },
             create: {
               cnpj: String(cliente.CNPJ),
@@ -65,7 +82,8 @@ export class ProspectController {
               telefone: String(cliente['Telefone Principal'] || 'Sem Telefone'),
               modulosAtuais: 'Nenhum',
               status: 'PENDENTE',
-              clienteWLE: isWLE
+              clienteWLE: isWLE,
+              valor: valorTratado // Cria o valor
             }
           });
           importados++;
@@ -138,8 +156,8 @@ export class ProspectController {
   finalizar = async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      // Adicionado nomeFantasia e endereco aqui
-      const { acao, observacoes, novosModulos, atendidoPor, nomeFantasia, endereco } = req.body; 
+      // Adicionado "valor" aqui
+      const { acao, observacoes, novosModulos, atendidoPor, nomeFantasia, endereco, valor } = req.body; 
 
       const atualizado = await prisma.prospect.update({
         where: { id },
@@ -148,8 +166,9 @@ export class ProspectController {
           observacoes, 
           novosModulos,
           atendidoPor,
-          nomeFantasia, // Salva o nome fantasia se enviado
-          endereco,     // Salva o endereço se enviado
+          nomeFantasia, 
+          endereco, 
+          valor: valor !== undefined && valor !== null && valor !== '' ? parseFloat(valor) : null,
           dataAtendimento: new Date() 
         }
       });
@@ -176,16 +195,17 @@ export class ProspectController {
   atualizar = async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      // Adicionado nomeFantasia e endereco aqui
-      const { observacoes, novosModulos, status, usuarioLogado, nomeFantasia, endereco } = req.body;
+      // Adicionado "valor" aqui
+      const { observacoes, novosModulos, status, usuarioLogado, nomeFantasia, endereco, valor } = req.body;
 
-      // 1. Atualiza apenas módulos, status, nome fantasia e endereço no cadastro principal. 
+      // 1. Atualiza apenas módulos, status, nome fantasia, endereço e valor no cadastro principal. 
       const atualizado = await prisma.prospect.update({
         where: { id },
         data: {
           novosModulos,
-          nomeFantasia, // Atualiza se enviado
-          endereco,     // Atualiza se enviado
+          nomeFantasia, 
+          endereco, 
+          valor: valor !== undefined && valor !== null && valor !== '' ? parseFloat(valor) : null,
           ...(status && { status }) 
         }
       });

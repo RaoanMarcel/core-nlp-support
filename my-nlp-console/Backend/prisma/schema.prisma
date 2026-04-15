@@ -1,72 +1,74 @@
-generator client {
-  provider = "prisma-client-js"
-}
+  generator client {
+    provider = "prisma-client-js"
+  }
 
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
+  datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+  }
 
-enum StatusAtendimento {
-  PENDENTE
-  EM_ATENDIMENTO
-  APROVADO
-  REPROVADO
-  POSSIBILIDADE
-  RETORNAR
-}
+  enum StatusAtendimento {
+    PENDENTE
+    EM_ATENDIMENTO
+    APROVADO
+    REPROVADO
+    POSSIBILIDADE
+    RETORNAR
+  }
 
-model Prospect {
-  id                 String            @id @default(uuid())
-  cnpj               String            @unique
-  nome               String
-  modulosAtuais      String?
-  telefone           String?
-  
-  simplesNacional    String?
-  situacaoCadastral  String?
-  telefoneSecundario String?
-  email              String?
-  atividadePrincipal String?
-  telefoneBackup     String?
-  nomeFantasia String?
-  endereco     String?
+  model Prospect {
+    id                 String            @id @default(uuid())
+    cnpj               String            @unique
+    nome               String
+    modulosAtuais      String?
+    telefone           String?
+    
+    simplesNacional    String?
+    situacaoCadastral  String?
+    telefoneSecundario String?
+    email              String?
+    atividadePrincipal String?
+    telefoneBackup     String?
+    nomeFantasia String?
+    endereco     String?
 
-  observacoes        String?           @db.Text
-  novosModulos       String[]          
-  status             StatusAtendimento @default(PENDENTE)
-  
-  clienteWLE         Boolean           @default(false)
-  
-  lockedBy           String?           
-  lockedAt           DateTime?
-  atendidoPor        String?           
-  dataAtendimento    DateTime?         
-  createdAt          DateTime          @default(now())
-  updatedAt          DateTime          @updatedAt
+    valor              Float?
 
-  historicos         HistoricoAtendimento[]
-}
+    observacoes        String?           @db.Text
+    novosModulos       String[]          
+    status             StatusAtendimento @default(PENDENTE)
+    
+    clienteWLE         Boolean           @default(false)
+    
+    lockedBy           String?           
+    lockedAt           DateTime?
+    atendidoPor        String?           
+    dataAtendimento    DateTime?         
+    createdAt          DateTime          @default(now())
+    updatedAt          DateTime          @updatedAt
 
-model User {
-  id              String   @id @default(uuid())
-  nome            String
-  usuario         String   @unique
-  senha           String   
-  primeiroAcesso  Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt 
-}
+    historicos         HistoricoAtendimento[]
+  }
 
-model HistoricoAtendimento {
-  id            String   @id @default(uuid())
-  prospectId    String
-  prospect      Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
-  
-  acao          String   // Ex: "Em Atendimento", "Atualizado", "Aprovado"
-  observacoes   String?  @db.Text
-  novosModulos  String[]
-  usuario       String   // Nome do usuário que fez a alteração
-  
-  createdAt     DateTime @default(now())
-}
+  model User {
+    id              String   @id @default(uuid())
+    nome            String
+    usuario         String   @unique
+    senha           String   
+    primeiroAcesso  Boolean  @default(true)
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt 
+  }
+
+  model HistoricoAtendimento {
+    id            String   @id @default(uuid())
+    prospectId    String
+    prospect      Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+    
+    acao          String   // Ex: "Em Atendimento", "Atualizado", "Aprovado"
+    observacoes   String?  @db.Text
+    novosModulos  String[]
+    usuario       String   // Nome do usuário que fez a alteração
+    
+    createdAt     DateTime @default(now())
+  }

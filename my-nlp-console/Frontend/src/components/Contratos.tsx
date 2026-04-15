@@ -33,6 +33,11 @@ export interface Prospect {
   
   atendidoPor?: string;
   dataAtendimento?: string | Date;
+  
+  // --- NOVO CAMPO ADICIONADO ---
+  // Apenas tipado aqui. O visual será feito apenas no modal.
+  valor?: number | null; 
+  // -----------------------------
 }
 
 const BASE_URL = import.meta.env?.PUBLIC_API_URL || import.meta.env?.VITE_API_URL || 'https://core-nlp-support.onrender.com';
@@ -219,6 +224,7 @@ function PaginatedSection({ title, icon, data, emptyMessage, onCardClick }: Sect
     </div>
   );
 }
+
 export default function ProspectList() {
   const [prospects, setProspects] = useState<Prospect[]>([]); 
   const [selectedProspect, setSelectedProspect] = useState<Prospect | null>(null);
