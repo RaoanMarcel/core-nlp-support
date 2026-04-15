@@ -121,7 +121,7 @@ export const useProspectLogic = (
   const finishAtendimento = async (acao: string) => {
     setLoading(prev => ({ ...prev, saving: true }));
     try {
-      await requestApi('patch', 'finalizar', {
+      await requestApi('post', 'finalizar', {
         acao,
         observacoes: interactionForm.observacoes,
         novosModulos: interactionForm.modulos,
