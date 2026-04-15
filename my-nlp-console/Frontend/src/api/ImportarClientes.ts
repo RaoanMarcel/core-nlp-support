@@ -13,9 +13,6 @@ export const POST: APIRoute = async ({ request }) => {
 
     for (const cliente of clientes) {
       if (!cliente.CNPJ) continue;
-
-      // --- Tratamento do Valor ---
-      // Captura a coluna "Valor pago" e converte "378,04" para 378.04
       const valorRaw = cliente['Valor pago'];
       let valorNumerico: number | null = null;
       

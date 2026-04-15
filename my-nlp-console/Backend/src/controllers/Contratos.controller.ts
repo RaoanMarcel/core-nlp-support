@@ -28,6 +28,15 @@ export class ProspectController {
       for (const cliente of clientes) {
         if (!cliente.CNPJ) continue;
 
+        // --- Tratamento do Valor ---
+        const valorRaw = cliente['Valor pago'];
+        let valorNumerico: number | null = null;
+        
+        if (valorRaw) {
+          const valorLimpo = String(valorRaw).replace('R$', '').replace('.', '').replace(',', '.').trim();
+          valorNumerico = parseFloat(valorLimpo);
+        }
+
         const wleStr = cliente['AR (Clientes WLE)'] ? String(cliente['AR (Clientes WLE)']) : '';
         const isWLE = wleStr.trim().toLowerCase() === 'sim';
 
@@ -53,6 +62,7 @@ export class ProspectController {
             update: {
               nomeFantasia: nomeFantasia,
               endereco: enderecoCompleto !== '' ? enderecoCompleto : null,
+              valor: valorNumerico, // <-- VALOR ADICIONADO AQUI
             },
             create: {
               cnpj: String(cliente.CNPJ),
@@ -62,7 +72,8 @@ export class ProspectController {
               telefone: String(cliente['Telefone Principal'] || 'Sem Telefone'),
               modulosAtuais: 'Nenhum',
               status: 'PENDENTE',
-              clienteWLE: isWLE
+              clienteWLE: isWLE,
+              valor: valorNumerico // <-- VALOR ADICIONADO AQUI
             }
           });
           importados++;
