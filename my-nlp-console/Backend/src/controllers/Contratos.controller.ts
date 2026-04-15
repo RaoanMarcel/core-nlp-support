@@ -32,9 +32,30 @@ export class ProspectController {
         const valorRaw = cliente['Valor pago'];
         let valorNumerico: number | null = null;
         
-        if (valorRaw) {
-          const valorLimpo = String(valorRaw).replace('R$', '').replace('.', '').replace(',', '.').trim();
-          valorNumerico = parseFloat(valorLimpo);
+        if (valorRaw !== undefined && valorRaw !== null && valorRaw !== '') {
+          if (typeof valorRaw === 'number') {
+            // Se a biblioteca da planilha já enviou como número (ex: 350.77)
+            valorNumerico = valorRaw;
+          } else {
+            // Se enviou como texto, limpamos com segurança
+            let valorString = String(valorRaw).trim();
+            
+            // Verifica se está no padrão brasileiro (com vírgula)
+            if (valorString.includes(',')) {
+              // Remove "R$", remove pontos de milhar (com Regex global) e troca vírgula por ponto
+              valorString = valorString.replace(/R\$\s?/gi, '').replace(/\./g, '').replace(',', '.');
+            } else {
+              // Se não tem vírgula, já está no padrão americano. Removemos apenas símbolos indesejados.
+              valorString = valorString.replace(/R\$\s?/gi, '');
+            }
+            
+            valorNumerico = parseFloat(valorString);
+            
+            // Se por acaso a conversão falhar (NaN), salva como null para não bugar o banco
+            if (isNaN(valorNumerico)) {
+              valorNumerico = null;
+            }
+          }
         }
 
         const wleStr = cliente['AR (Clientes WLE)'] ? String(cliente['AR (Clientes WLE)']) : '';
@@ -62,7 +83,7 @@ export class ProspectController {
             update: {
               nomeFantasia: nomeFantasia,
               endereco: enderecoCompleto !== '' ? enderecoCompleto : null,
-              valor: valorNumerico, // <-- VALOR ADICIONADO AQUI
+              valor: valorNumerico,
             },
             create: {
               cnpj: String(cliente.CNPJ),
@@ -73,7 +94,7 @@ export class ProspectController {
               modulosAtuais: 'Nenhum',
               status: 'PENDENTE',
               clienteWLE: isWLE,
-              valor: valorNumerico // <-- VALOR ADICIONADO AQUI
+              valor: valorNumerico 
             }
           });
           importados++;
