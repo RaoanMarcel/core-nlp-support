@@ -61,7 +61,7 @@ export const POST: APIRoute = async ({ request }) => {
             modulosAtuais: 'Nenhum',
             status: 'PENDENTE',
             clienteWLE: isWLE,
-            valor: valorNumerico // Define o valor para novos registros
+            valor: valorNumerico
           }
         });
 
