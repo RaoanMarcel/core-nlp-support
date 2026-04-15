@@ -74,7 +74,7 @@
   }
 
 model Quote {
-  id                 Serial
+  id                 Int      @id @default(autoincrement())
   nomeCliente        String
   cnpj               String
   endereco           String?

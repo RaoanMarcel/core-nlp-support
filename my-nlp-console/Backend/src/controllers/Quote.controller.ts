@@ -13,12 +13,17 @@ export class QuoteController {
 
       if (termo && typeof termo === 'string' && termo.trim() !== '') {
         const cleanTerm = termo.trim();
+        const numTerm = parseInt(cleanTerm, 10);
+        
         whereOptions.OR = [
-          { id: { contains: cleanTerm, mode: 'insensitive' } },
           { nomeCliente: { contains: cleanTerm, mode: 'insensitive' } },
           { cnpj: { contains: cleanTerm.replace(/\D/g, '') } },
           { endereco: { contains: cleanTerm, mode: 'insensitive' } }
         ];
+
+        if (!isNaN(numTerm)) {
+          whereOptions.OR.push({ id: numTerm });
+        }
       }
 
       if (dataInicio && dataFim) {
@@ -28,7 +33,6 @@ export class QuoteController {
         };
       }
 
-      // Filtro de Status
       if (status && status !== 'TODOS') {
         whereOptions.status = String(status);
       }
@@ -36,7 +40,7 @@ export class QuoteController {
       const quotes = await prisma.quote.findMany({
         where: whereOptions,
         orderBy: { createdAt: 'desc' },
-        take: 100 // Limite de segurança
+        take: 100 
       });
 
       return res.json(quotes);
@@ -82,11 +86,10 @@ export class QuoteController {
           valorNegociado: Number(valorNegociado),
           interesses,
           observacoes,
-          status: status || 'RASCUNHO' // Todo novo entra como rascunho por padrão
+          status: status || 'RASCUNHO' 
         }
       });
 
-      // Sincronização em Tempo Real
       const io = req.app.get('io');
       if (io) {
         io.emit('quote:created', quote);
@@ -99,7 +102,6 @@ export class QuoteController {
     }
   }
 
-  // NOVO MÉTODO: Para permitir a edição e negociação dos orçamentos
   async update(req: Request, res: Response) {
     try {
       const { id } = req.params;
@@ -113,7 +115,7 @@ export class QuoteController {
       const cleanCnpj = cnpj ? cnpj.replace(/\D/g, '') : undefined;
 
       const quote = await prisma.quote.update({
-        where: { id },
+        where: { id: Number(id) }, 
         data: {
           ...(nomeCliente && { nomeCliente }),
           ...(cleanCnpj && { cnpj: cleanCnpj }),
@@ -131,7 +133,6 @@ export class QuoteController {
         }
       });
 
-      // Sincronização em Tempo Real para atualizações
       const io = req.app.get('io');
       if (io) {
         io.emit('quote:updated', quote);
