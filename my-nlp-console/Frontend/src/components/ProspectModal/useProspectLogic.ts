@@ -8,8 +8,8 @@ import type {
 } from './types';
 import { parseModulos } from './prospectUtils';
 
-const API_URL = import.meta.env?.PUBLIC_API_URL || import.meta.env?.VITE_API_URL || 'https://core-nlp-support.onrender.com';
-
+const API_BASE_URL = import.meta.env?.PUBLIC_API_URL || process.env?.PUBLIC_API_URL || 'https://core-nlp-support.onrender.com';
+const API_URL = `${API_BASE_URL}/prospects`;
 
 export const useProspectLogic = (
   prospect: Prospect, 
