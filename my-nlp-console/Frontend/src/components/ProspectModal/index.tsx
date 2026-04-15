@@ -6,7 +6,6 @@ import type { ModalProps, Historico, ContactFormState } from './types';
 import { getSituacaoColor, formatarData, formatarMoeda } from './prospectUtils';
 import { useProspectLogic } from './useProspectLogic';
 
-
 const MODULOS_DISPONIVEIS = ['NFE', 'NFCE', 'MDFE', 'CTE', 'NFSE', 'FINANCEIRO', 'ESTOQUE'];
 
 const StatusBadge = ({ status }: { status: string }) => {
@@ -88,12 +87,14 @@ const Timeline = ({ historico, loading }: { historico: Historico[], loading: boo
   </div>
 );
 
-export default function ProspectModal({ prospect, onClose, currentUserId, currentUserName }: ModalProps) {
-const { 
-  isFinished, ui, setUi, loading, historico, contactForm, interactionForm,
-  handleContactChange, toggleModulo, setInteractionForm,
-  saveContatos, saveInteracao, finishAtendimento, handleVoltar
-} = useProspectLogic(prospect, currentUserId, currentUserName, onClose);
+// CORREÇÃO: Adicionado onUpdate nas props destruídas
+export default function ProspectModal({ prospect, onClose, currentUserId, currentUserName, onUpdate }: ModalProps) {
+  
+  const { 
+    isFinished, ui, setUi, loading, historico, contactForm, interactionForm,
+    handleContactChange, toggleModulo, setInteractionForm,
+    saveContatos, saveInteracao, finishAtendimento, handleVoltar
+  } = useProspectLogic(prospect, currentUserId, currentUserName, onClose, onUpdate); // CORREÇÃO: Repassando onUpdate para o Hook
 
   return (
     <div 

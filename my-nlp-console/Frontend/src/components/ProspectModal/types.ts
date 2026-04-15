@@ -21,7 +21,7 @@ export interface ContactFormState {
   telefone: string;
   telefoneSecundario: string;
   email: string;
-  valor: string; // Novo campo para gerenciar o input
+  valor: string; 
 }
 
 export interface InteractionFormState {
