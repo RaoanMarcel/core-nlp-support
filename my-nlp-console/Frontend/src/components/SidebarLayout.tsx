@@ -87,7 +87,7 @@ export default function AppLayout({ children, onLogout }: AppLayoutProps) {
           </div>
           <div className="ml-4 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300 md:delay-75">
             <h1 className="text-lg font-black text-white leading-tight">AutoDesk</h1>
-            <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Core NLP</p>
+            <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Interplace</p>
           </div>
         </div>
 
@@ -104,7 +104,7 @@ export default function AppLayout({ children, onLogout }: AppLayoutProps) {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`w-full flex items-center gap-4 px-3 py-3 rounded-xl font-bold transition-all whitespace-nowrap cursor-pointer text-left ${
+                className={`w-full flex items-center gap-4 px-1 py-2 rounded-xl font-bold transition-all whitespace-nowrap cursor-pointer text-left ${
                   isActive 
                     ? 'bg-blue-600/10 text-blue-500' 
                     : 'text-slate-400 hover:bg-slate-800/50 hover:text-white'
