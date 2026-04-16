@@ -7,3 +7,11 @@ export interface QuoteDetailsProps {
   onDelete?: () => void; 
   onEdit?: (quote: IQuote) => void;
 }
+
+export interface IQuoteNote {
+  id: string;
+  quoteId: number;
+  texto: string;
+  usuario: string;
+  createdAt: string;
+}

@@ -62,7 +62,7 @@ export default function KnowledgeBase() {
   return (
     <div className="flex h-full w-full bg-[#f4f5f7] overflow-hidden font-sans">
       
-      <div className="w-[240px] bg-white border-r border-slate-200 flex flex-col shrink-0">
+      <div className="w-60 bg-white border-r border-slate-200 flex flex-col shrink-0">
         <div className="p-5 h-[80px] flex items-center border-b border-slate-100 shrink-0">
           <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
             <BookOpen size={22} className="text-blue-600" />
@@ -182,7 +182,7 @@ export default function KnowledgeBase() {
         {selectedItem ? (
           <>
             {/* Header do Leitor */}
-            <div className="h-[80px] px-8 border-b border-slate-200 flex justify-between items-center shrink-0">
+            <div className="h-20 px-8 border-b border-slate-200 flex justify-between items-center shrink-0">
               <div className="flex items-center gap-3">
                 <span className={`px-2.5 py-1 text-[11px] font-bold uppercase rounded-md border ${
                   activeSection === 'macros' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-indigo-50 text-indigo-700 border-indigo-200'

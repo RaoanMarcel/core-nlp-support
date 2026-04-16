@@ -5,6 +5,14 @@ export interface IModulo {
   valorBase: number;
 }
 
+export interface IQuoteNote {
+  id: string;
+  quoteId: number;
+  texto: string;
+  usuario: string;
+  createdAt: string;
+}
+
 export interface IQuote {
   id: string;
   nomeCliente: string;
@@ -21,4 +29,5 @@ export interface IQuote {
   interesses?: string;
   status: 'RASCUNHO' | 'EM_NEGOCIACAO' | 'APROVADO' | 'REJEITADO'; 
   createdAt: string;
+  notas?: IQuoteNote[];
 }

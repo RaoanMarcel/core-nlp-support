@@ -140,7 +140,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
       <div className="w-full max-w-md relative group">
         
         {/* Glow atrás do card */}
-        <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl blur opacity-10 group-hover:opacity-20 transition duration-1000"></div>
+        <div className="absolute -inset-1 bg-linear-to-r from-blue-600 to-indigo-600 rounded-2xl blur opacity-10 group-hover:opacity-20 transition duration-1000"></div>
         
         <div className="relative bg-white/80 backdrop-blur-xl rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-white/60 p-8 overflow-hidden">
           
@@ -150,7 +150,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
           {/* Barra de Progresso */}
           {isLoading && (
             <div className="absolute top-0 left-0 w-full h-1 bg-blue-50 overflow-hidden z-20">
-              <div className="w-full h-full bg-gradient-to-r from-blue-400 via-blue-600 to-blue-400 animate-progress origin-left"></div>
+              <div className="w-full h-full bg-linear-to-r from-blue-400 via-blue-600 to-blue-400 animate-progress origin-left"></div>
             </div>
           )}
 
@@ -170,7 +170,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
           )}
           
           <div className="text-center mb-10 relative mt-4">
-            <div className={`w-20 h-20 ${modoTrocaSenha ? 'bg-amber-500' : 'bg-gradient-to-br from-blue-600 to-indigo-700'} rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-blue-500/30 transform transition-all duration-500 hover:rotate-6`}>
+            <div className={`w-20 h-20 ${modoTrocaSenha ? 'bg-amber-500' : 'bg-linear-to-br from-blue-600 to-indigo-700'} rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-blue-500/30 transform transition-all duration-500 hover:rotate-6`}>
               {modoTrocaSenha ? (
                 <ShieldCheck size={36} className="text-white" />
               ) : (
@@ -235,7 +235,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                   <>
                     <span className="relative z-10">Entrar no Painel</span>
                     <ArrowRight size={18} className="relative z-10 group-hover/btn:translate-x-1 transition-transform" />
-                    <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300" />
+                    <div className="absolute inset-0 bg-linear-to-r from-blue-600 to-indigo-600 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300" />
                   </>
                 )}
               </button>

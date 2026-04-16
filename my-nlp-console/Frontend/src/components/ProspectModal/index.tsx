@@ -95,6 +95,25 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
     saveContatos, saveInteracao, finishAtendimento, handleVoltar
   } = useProspectLogic(prospect, currentUserId, currentUserName, onClose, onUpdate);
 
+  // === BUSCA O PRIMEIRO ATENDIMENTO NO HISTÓRICO ===
+  // Invertemos o array com [...historico].reverse() para buscar do mais antigo pro mais novo.
+  // Assim pegamos exatamente a PRIMEIRA vez que alguém deu uma tratativa no card.
+  const primeiroAtendimento = [...historico].reverse().find(h => 
+    ['APROVADO', 'REPROVADO', 'POSSIBILIDADE', 'RETORNAR'].some(status => 
+      h.acao?.toUpperCase().includes(status)
+    )
+  );
+
+  // Define o nome de quem atendeu (ou avisa se estiver carregando)
+  const nomeAtendente = primeiroAtendimento 
+    ? primeiroAtendimento.usuario 
+    : (loading.historico ? 'Buscando...' : 'Desconhecido');
+
+  // Formata a data e hora do atendimento
+  const dataHoraAtendimento = primeiroAtendimento 
+    ? `${new Date(primeiroAtendimento.createdAt).toLocaleDateString('pt-BR')} às ${new Date(primeiroAtendimento.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
+    : '--:--';
+
   return (
     <div 
       className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 sm:p-6 font-sans" 
@@ -245,7 +264,6 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
                     Ação Rápida: Salvar e Alterar Status
                   </span>
                   
-                  {/* Trocamos flex por grid para garantir alinhamento perfeito */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
                     <button 
                       onClick={() => saveInteracao({ status: 'APROVADO' })} 
@@ -287,12 +305,15 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
           </div>
         </div>
 
-        {/* Footer */}
+        {/* Footer Atualizado */}
         <div className="px-8 py-5 border-t border-slate-200 bg-white shrink-0">
           {isFinished ? (
             <div className="flex justify-between items-center gap-4">
               <div className="text-sm text-slate-600">
-                <span className="italic">Gerenciamento de Atendimento</span>
+                {/* === INFORMAÇÕES REAIS DO ATENDIMENTO APLICADAS AQUI === */}
+                <span className="italic">
+                  Atendido por <span className="font-semibold text-slate-800">{nomeAtendente}</span> em {dataHoraAtendimento}
+                </span>
               </div>
               <div className="flex gap-3">
                 {!ui.isEditing ? (

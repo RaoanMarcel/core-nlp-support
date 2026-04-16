@@ -1,20 +1,20 @@
 import { useState } from 'react';
 import type { IQuote } from '../types';
+import { QuoteService } from '../../../services/quote.service';
 
 export const useQuoteDetails = (quote: IQuote, onUpdate: (fields: Partial<IQuote>) => void) => {
-  // Estados Locais
   const [copiedCnpj, setCopiedCnpj] = useState(false);
   const [editInteresses, setEditInteresses] = useState(false);
   const [tempInteresses, setTempInteresses] = useState(quote.interesses || '');
   const [editObs, setEditObs] = useState(false);
   const [tempObs, setTempObs] = useState(quote.observacoes || '');
+  
+  const [isUpdating, setIsUpdating] = useState(false);
 
-  // Formatação
   const formatarMoeda = (valor: number) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor || 0);
   };
 
-  // Handlers (Ações)
   const handleCopyCnpj = async (cnpj: string) => {
     if (!cnpj) return;
     try {
@@ -26,8 +26,22 @@ export const useQuoteDetails = (quote: IQuote, onUpdate: (fields: Partial<IQuote
     }
   };
 
-  const handleSaveInteresses = () => {
-    onUpdate({ interesses: tempInteresses });
+const updateBackend = async (fields: Partial<IQuote>) => {
+    setIsUpdating(true);
+    try {
+      await QuoteService.update(Number(quote.id), fields);
+      
+      onUpdate(fields);
+    } catch (error) {
+      console.error('Erro ao atualizar orçamento no backend:', error);
+      alert('Não foi possível salvar a alteração. Tente novamente.');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleSaveInteresses = async () => {
+    await updateBackend({ interesses: tempInteresses });
     setEditInteresses(false);
   };
 
@@ -36,8 +50,8 @@ export const useQuoteDetails = (quote: IQuote, onUpdate: (fields: Partial<IQuote
     setEditInteresses(false);
   };
 
-  const handleSaveObs = () => {
-    onUpdate({ observacoes: tempObs });
+  const handleSaveObs = async () => {
+    await updateBackend({ observacoes: tempObs });
     setEditObs(false);
   };
 
@@ -46,12 +60,10 @@ export const useQuoteDetails = (quote: IQuote, onUpdate: (fields: Partial<IQuote
     setEditObs(false);
   };
 
-  // CORREÇÃO AQUI: Mudando de 'string' para IQuote['status']
-  const handleStatusChange = (newStatus: IQuote['status']) => {
-    onUpdate({ status: newStatus });
+  const handleStatusChange = async (newStatus: IQuote['status']) => {
+    await updateBackend({ status: newStatus });
   };
 
-  // Variáveis Derivadas
   const modulos = quote.modulos || ['Financeiro', 'NFe', 'Estoque', 'PDV'];
   const formattedId = String(quote.id || '0000').padStart(4, '0');
   const steps = ['RASCUNHO', 'ENVIADO', 'APROVADO'];
@@ -63,6 +75,7 @@ export const useQuoteDetails = (quote: IQuote, onUpdate: (fields: Partial<IQuote
     tempInteresses,
     editObs,
     tempObs,
+    isUpdating, 
     setTempInteresses,
     setTempObs,
     setEditInteresses,

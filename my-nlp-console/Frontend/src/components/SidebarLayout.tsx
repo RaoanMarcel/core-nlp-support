@@ -104,13 +104,13 @@ export default function AppLayout({ children, onLogout }: AppLayoutProps) {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`w-full flex items-center gap-4 px-1 py-2 rounded-xl font-bold transition-all whitespace-nowrap cursor-pointer text-left ${
+                className={`w-full flex items-center gap-4 px-4 py-1 rounded-xl font-bold transition-all whitespace-nowrap cursor-pointer text-left ${
                   isActive 
                     ? 'bg-blue-600/10 text-blue-500' 
                     : 'text-slate-400 hover:bg-slate-800/50 hover:text-white'
                 }`}
               >
-                <Icon size={22} className="shrink-0" />
+                <Icon size={18} className="shrink-0" />
                 <span className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">
                   {item.label}
                 </span>
@@ -134,7 +134,7 @@ export default function AppLayout({ children, onLogout }: AppLayoutProps) {
           </button>
 
           <div className="flex items-center gap-4 px-2 py-2 mt-2 bg-slate-800/30 rounded-xl">
-            <div className="w-9 h-9 shrink-0 rounded-full bg-slate-700 flex items-center justify-center text-slate-300 font-bold text-xs border border-slate-600">
+            <div className="w-7 h-7 shrink-0 rounded-full bg-slate-700 flex items-center justify-center text-slate-300 font-bold text-xs border border-slate-600">
               {iniciais}
             </div>
             <div className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">
