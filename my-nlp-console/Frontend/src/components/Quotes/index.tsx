@@ -7,46 +7,40 @@ import {
   X, 
   Calendar, 
   RefreshCw, 
-  AlertCircle 
+  ChevronRight,
+  UserPlus,
+  Box,
+  Clock
 } from 'lucide-react';
 import QuoteModal from './QuoteModal';
 import type { IQuote } from './types';
 import { api } from '../../services/api';
 import { formatarMoeda } from '../ProspectModal/prospectUtils';
 
+
+const LEADS_AGUARDANDO_MOCK = [
+  { id: 1, nome: 'TechCorp Solutions', tempo: 'Há 2h' },
+  { id: 2, nome: 'Padaria Central', tempo: 'Há 5h' },
+  { id: 3, nome: 'Lojas Silva', tempo: 'Ontem' },
+  { id: 4, nome: 'Mecânica AutoTech', tempo: 'Ontem' },
+];
+
 export default function QuotesPage() {
-  // Estados do Modal
+  // ==========================================
+  // ESTADOS E LÓGICA
+  // ==========================================
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [quoteEditando, setQuoteEditando] = useState<IQuote | null>(null);
 
-  // Estados dos Filtros
   const [termo, setTermo] = useState('');
   const [statusFiltro, setStatusFiltro] = useState('TODOS');
   const [dataInicio, setDataInicio] = useState('');
   const [dataFim, setDataFim] = useState('');
   
-  // Estados de Dados e UI
   const [quotesList, setQuotesList] = useState<IQuote[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Helper para as cores do Status
-  const getStatusBadge = (status: string) => {
-    const configs: Record<string, string> = {
-      APROVADO: "bg-emerald-100 text-emerald-700 border-emerald-200",
-      ENVIADO: "bg-blue-100 text-blue-700 border-blue-200",
-      REPROVADO: "bg-rose-100 text-rose-700 border-rose-200",
-      RASCUNHO: "bg-slate-100 text-slate-600 border-slate-200"
-    };
-    const cls = configs[status] || configs.RASCUNHO;
-    return (
-      <span className={`${cls} px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider border`}>
-        {status.toLowerCase()}
-      </span>
-    );
-  };
-
-  // FUNÇÃO PRINCIPAL DE BUSCA
   const fetchQuotes = useCallback(async () => {
     setIsLoading(true);
     setError(null);
@@ -68,12 +62,12 @@ export default function QuotesPage() {
     }
   }, [termo, statusFiltro, dataInicio, dataFim]);
 
-  // Dispara busca automática apenas quando mudar Status ou Datas
   useEffect(() => {
     fetchQuotes();
   }, [statusFiltro, dataInicio, dataFim]);
 
-  const handleOpenNewQuote = () => {
+  const handleOpenNewQuote = (leadData: any = null) => {
+    // Se leadData for passado (vindo do Radar), você pode injetar no modal aqui
     setQuoteEditando(null);
     setIsModalOpen(true);
   };
@@ -90,180 +84,271 @@ export default function QuotesPage() {
     setDataFim('');
   };
 
+  // ==========================================
+  // HELPERS DE APRESENTAÇÃO
+  // ==========================================
+
+  const getStatusBadge = (status: string) => {
+    const configs: Record<string, string> = {
+      APROVADO: "bg-emerald-50 text-emerald-700",
+      ENVIADO: "bg-blue-50 text-blue-700",
+      REPROVADO: "bg-rose-50 text-rose-700",
+      RASCUNHO: "bg-slate-100 text-slate-600"
+    };
+    const cls = configs[status] || configs.RASCUNHO;
+    return (
+      <span className={`${cls} px-2.5 py-1 rounded text-xs font-bold uppercase tracking-widest`}>
+        {status.toLowerCase()}
+      </span>
+    );
+  };
+
+  const getStatusBorderClass = (status: string) => {
+    switch (status) {
+      case 'APROVADO': return 'border-l-emerald-500';
+      case 'ENVIADO': return 'border-l-blue-500';
+      case 'REPROVADO': return 'border-l-rose-500';
+      default: return 'border-l-slate-300';
+    }
+  };
+
+  const formatarTempoRelativo = (data?: string) => {
+    if (!data) return 'Atualizado recentemente';
+    const dataObj = new Date(data);
+    const diffHoras = Math.floor((new Date().getTime() - dataObj.getTime()) / (1000 * 60 * 60));
+    if (diffHoras < 1) return 'Atualizado há pouco';
+    if (diffHoras < 24) return `Atualizado há ${diffHoras}h`;
+    return `Atualizado há ${Math.floor(diffHoras / 24)}d`;
+  };
+
+  // Renderiza as tags dos módulos de forma limpa.
+  // Assumindo que você terá um array de strings no seu IQuote (ex: quote.modulos)
+  const renderModulosTags = (modulos?: string[]) => {
+    // Array mockado como fallback para você ver o efeito visual caso não tenha dados reais ainda
+    const listaModulos = modulos && modulos.length > 0 ? modulos : ['Financeiro', 'Estoque', 'NFe']; 
+    
+    // Mostra no máximo 3 módulos para não quebrar o layout, o resto agrupa
+    const mostrar = listaModulos.slice(0, 3);
+    const restantes = listaModulos.length - 3;
+
+    return (
+      <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+        <Box size={14} className="text-slate-400 mr-1" />
+        {mostrar.map((mod, idx) => (
+          <span key={idx} className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-[11px] font-semibold">
+            {mod}
+          </span>
+        ))}
+        {restantes > 0 && (
+          <span className="bg-slate-50 border border-slate-200 text-slate-500 px-2 py-0.5 rounded text-[11px] font-semibold">
+            +{restantes}
+          </span>
+        )}
+      </div>
+    );
+  };
+
+  const STATUS_OPCOES = ['TODOS', 'RASCUNHO', 'ENVIADO', 'APROVADO', 'REPROVADO'];
+
   return (
-    <div className="p-8 h-screen flex flex-col bg-slate-50/30 animate-in fade-in duration-300">
+    <div className="p-4 md:p-8 h-screen flex flex-col bg-[#f4f7f9] animate-in fade-in duration-300 font-sans">
       
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+      {/* HEADER */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Orçamentos</h1>
-          <p className="text-slate-500 text-sm font-medium mt-1">Gerencie propostas e negociações comerciais.</p>
+          <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">
+            Visualizando: {statusFiltro === 'TODOS' ? 'Todos os Orçamentos' : statusFiltro}
+          </h1>
+          <p className="text-slate-500 text-base mt-2">{quotesList.length} registros encontrados</p>
         </div>
         
         <button 
-          onClick={handleOpenNewQuote}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-blue-600/20 transition-all active:scale-95"
+          onClick={() => handleOpenNewQuote()}
+          className="hidden md:flex bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-bold items-center gap-2 transition-all active:scale-95 shadow-sm text-base"
         >
           <Plus size={20} />
           Novo Orçamento
         </button>
       </div>
 
-      <div className="flex-1 bg-white border border-slate-200 rounded-2xl flex flex-col overflow-hidden shadow-sm">
-        
-        {/* Barra de Filtros */}
-        <div className="p-5 border-b border-slate-100 bg-white flex flex-col gap-4">
-          <div className="flex flex-col lg:flex-row gap-4">
-            
-            {/* Campo de Busca Texto */}
-            <div className="relative flex-1 flex gap-2">
-              <div className="relative flex-1">
-                <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input 
-                  type="text" 
-                  value={termo}
-                  onChange={(e) => setTermo(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && fetchQuotes()}
-                  placeholder="Buscar por cliente, CNPJ ou ID..." 
-                  className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-blue-500 transition-all"
-                />
-              </div>
-              <button 
-                onClick={fetchQuotes}
-                className="bg-slate-900 hover:bg-slate-800 text-white px-6 py-2.5 rounded-xl font-bold text-sm transition-all active:scale-95"
-              >
-                Pesquisar
-              </button>
-            </div>
-
-            {/* Outros Filtros */}
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
-                <Filter size={16} className="text-slate-400" />
-                <select 
-                  value={statusFiltro}
-                  onChange={(e) => setStatusFiltro(e.target.value)}
-                  className="bg-transparent text-sm text-slate-700 outline-none font-bold cursor-pointer min-w-[120px]"
-                >
-                  <option value="TODOS">Todos Status</option>
-                  <option value="RASCUNHO">Rascunho</option>
-                  <option value="ENVIADO">Enviado</option>
-                  <option value="APROVADO">Aprovado</option>
-                  <option value="REPROVADO">Reprovado</option>
-                </select>
-              </div>
-
-              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
-                <Calendar size={16} className="text-slate-400" />
-                <input 
-                  type="date" 
-                  value={dataInicio}
-                  onChange={(e) => setDataInicio(e.target.value)}
-                  className="bg-transparent text-xs font-bold outline-none text-slate-600"
-                />
-                <span className="text-slate-300">-</span>
-                <input 
-                  type="date" 
-                  value={dataFim}
-                  onChange={(e) => setDataFim(e.target.value)}
-                  className="bg-transparent text-xs font-bold outline-none text-slate-600"
-                />
-              </div>
-
-              <button 
-                onClick={fetchQuotes}
-                className="bg-slate-100 hover:bg-slate-200 text-slate-600 p-2.5 rounded-xl transition-colors"
-                title="Atualizar lista"
-              >
-                <RefreshCw size={18} className={isLoading ? 'animate-spin' : ''} />
-              </button>
-            </div>
-          </div>
-
-          {/* Botão Limpar (aparece se houver filtro ativo) */}
-          {(termo || statusFiltro !== 'TODOS' || dataInicio || dataFim) && (
-            <div className="flex justify-end">
-              <button 
-                onClick={limparFiltros}
-                className="flex items-center gap-1.5 text-xs font-bold text-rose-500 hover:bg-rose-50 px-3 py-1.5 rounded-lg transition-colors"
-              >
-                <X size={14} /> LIMPAR FILTROS
-              </button>
-            </div>
-          )}
+      {/* RADAR DE CONVERSÃO (PRATELEIRA) */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+            <UserPlus size={16} className="text-blue-500" />
+            Aguardando Orçamento
+          </h3>
         </div>
-
-        {/* Listagem / Tabela */}
-        <div className="flex-1 overflow-auto relative">
-          {isLoading && quotesList.length === 0 ? (
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/50 z-20">
-              <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-            </div>
-          ) : quotesList.length === 0 ? (
-            <div className="flex flex-col items-center justify-center p-16 text-center">
-              <div className="bg-slate-50 p-6 rounded-full mb-4">
-                <FileText size={40} className="text-slate-200" />
+        <div className="flex gap-4 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide">
+          {LEADS_AGUARDANDO_MOCK.map((lead) => (
+            <div 
+              key={lead.id}
+              onClick={() => handleOpenNewQuote(lead)}
+              className="min-w-[200px] bg-white border border-slate-200 rounded-xl p-4 cursor-pointer hover:border-blue-400 hover:shadow-md transition-all group flex flex-col gap-2"
+            >
+              <div className="flex items-start justify-between">
+                <h4 className="font-bold text-slate-800 text-sm truncate pr-2 group-hover:text-blue-600 transition-colors">
+                  {lead.nome}
+                </h4>
               </div>
-              <h3 className="text-xl font-bold text-slate-800">Nenhum orçamento encontrado</h3>
-              <p className="text-slate-500 text-sm max-w-xs mt-2">
-                Não encontramos registros com os filtros aplicados ou sua base está vazia.
-              </p>
+              <div className="flex items-center gap-1.5 mt-auto">
+                <Clock size={12} className="text-amber-500" />
+                <span className="text-[11px] font-semibold text-amber-600">{lead.tempo}</span>
+              </div>
             </div>
-          ) : (
-            <table className="w-full text-left border-collapse">
-              <thead className="bg-slate-50/50 sticky top-0 backdrop-blur-md z-10 border-b border-slate-100">
-                <tr>
-                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">ID</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Cliente / Empresa</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Valor Final</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Ações</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50 bg-white">
-                {quotesList.map((quote) => (
-                  <tr key={quote.id} className="hover:bg-blue-50/30 transition-colors group">
-                    <td className="px-6 py-5">
-                      <span className="text-xs font-mono font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded">
-                        #{String(quote.id).padStart(4, '0')}
-                      </span>
-                    </td>
-                    <td className="px-6 py-5">
-                      <div className="flex flex-col">
-                        <span className="text-sm font-bold text-slate-800">{quote.nomeCliente}</span>
-                        <span className="text-[11px] font-medium text-slate-400">{quote.cnpj || 'Sem CNPJ'}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-5 text-center">
-                      <span className="text-sm font-black text-slate-900">
-                        {formatarMoeda(quote.valorNegociado || quote.valorBase)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-5">{getStatusBadge(quote.status)}</td>
-                    <td className="px-6 py-5 text-right">
-                      <button 
-                        onClick={() => handleEditQuote(quote)}
-                        className="px-4 py-1.5 text-xs font-bold text-blue-600 hover:bg-blue-600 hover:text-white border border-blue-200 rounded-lg transition-all"
-                      >
-                        Visualizar
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-
-        {/* Rodapé da Tabela */}
-        <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-between items-center">
-          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
-            TOTAL DE {quotesList.length} ORÇAMENTOS ENCONTRADOS
-          </p>
+          ))}
         </div>
       </div>
 
-      {/* Modal de Criação/Edição */}
+      {/* TOOLBAR MINIMALISTA */}
+      <div className="flex flex-col gap-5 mb-6">
+        <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide">
+          {STATUS_OPCOES.map((status) => (
+            <button
+              key={status}
+              onClick={() => setStatusFiltro(status)}
+              className={`px-5 py-2.5 rounded-full text-sm font-bold whitespace-nowrap transition-all border ${
+                statusFiltro === status 
+                  ? 'bg-slate-800 border-slate-800 text-white shadow-sm' 
+                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              {status === 'TODOS' ? 'Todos' : status}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex-1 flex items-center bg-white border border-slate-200 rounded-lg px-4 py-3 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 transition-all shadow-sm">
+            <Search size={20} className="text-slate-400 mr-3" />
+            <input 
+              type="text" 
+              value={termo}
+              onChange={(e) => setTermo(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && fetchQuotes()}
+              placeholder="Buscar orçamento..." 
+              className="bg-transparent border-none outline-none w-full text-base text-slate-800 placeholder:text-slate-400"
+            />
+            {termo && (
+              <button onClick={() => { setTermo(''); fetchQuotes(); }} className="text-slate-400 hover:text-rose-500 p-1">
+                <X size={18} />
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-3 bg-white border border-slate-200 rounded-lg px-4 py-3 shadow-sm">
+            <Calendar size={18} className="text-slate-400" />
+            <input 
+              type="date" 
+              value={dataInicio}
+              onChange={(e) => setDataInicio(e.target.value)}
+              className="bg-transparent text-sm md:text-base outline-none text-slate-700"
+            />
+            <span className="text-slate-300">-</span>
+            <input 
+              type="date" 
+              value={dataFim}
+              onChange={(e) => setDataFim(e.target.value)}
+              className="bg-transparent text-sm md:text-base outline-none text-slate-700"
+            />
+          </div>
+
+          <div className="flex gap-3">
+            <button 
+              onClick={fetchQuotes}
+              className="bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-6 py-3 rounded-lg text-base font-bold shadow-sm transition-colors flex items-center justify-center min-w-[120px]"
+            >
+              <RefreshCw size={18} className={`mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+              Atualizar
+            </button>
+            {(termo || statusFiltro !== 'TODOS' || dataInicio || dataFim) && (
+              <button 
+                onClick={limparFiltros}
+                className="bg-rose-50 text-rose-600 px-4 py-3 rounded-lg text-sm font-bold transition-colors flex items-center justify-center"
+                title="Limpar Filtros"
+              >
+                <X size={20} />
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* LISTA */}
+      <div className="flex-1 overflow-auto bg-white border-y border-slate-200 shadow-sm">
+        {isLoading && quotesList.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full">
+            <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        ) : quotesList.length === 0 ? (
+          <div className="flex flex-col items-center justify-center p-16 text-center h-full">
+            <FileText size={56} className="text-slate-200 mb-6" />
+            <h3 className="text-xl font-bold text-slate-800">Nada por aqui</h3>
+            <p className="text-slate-500 text-base mt-2">Ajuste os filtros ou crie um novo orçamento.</p>
+          </div>
+        ) : (
+          <div className="flex flex-col">
+            {quotesList.map((quote) => (
+              <div 
+                key={quote.id} 
+                onClick={() => handleEditQuote(quote)}
+                className={`group flex items-center justify-between bg-white border-b border-slate-100 hover:bg-slate-50/80 cursor-pointer transition-colors px-5 py-4 border-l-4 ${getStatusBorderClass(quote.status)}`}
+              >
+                <div className="flex-1 min-w-0 pr-6">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="text-xs font-mono font-bold text-slate-500">#{String(quote.id).padStart(4, '0')}</span>
+                    <span className="text-xs text-slate-300">•</span>
+                    <span className="text-xs text-slate-500">
+                      {formatarTempoRelativo((quote as any).createdAt || (quote as any).updatedAt)}
+                    </span>
+                    <div className="hidden md:block ml-3">{getStatusBadge(quote.status)}</div>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-bold text-slate-900 text-base md:text-lg truncate pr-4">
+                      {quote.nomeCliente}
+                    </h4>
+                    <span className="font-black text-slate-900 text-base md:text-lg whitespace-nowrap">
+                      {formatarMoeda(quote.valorNegociado || quote.valorBase)}
+                    </span>
+                  </div>
+
+                  <div className="flex flex-col gap-1 mt-1">
+                    <span className="text-sm text-slate-500 truncate">
+                      {quote.cnpj || 'Consumidor Final'}
+                    </span>
+                    
+                    {/* Exibindo os INTERESSES do Lead caso existam */}
+                    {quote.interesses && (
+                      <div className="flex items-center">
+                        <span className="bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded text-[11px] font-bold flex items-center gap-1.5 truncate max-w-full">
+                          🎯 Interesse: {quote.interesses}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* NOVAS TAGS DOS MÓDULOS */}
+                  {/* Passe a propriedade correta do seu IQuote aqui, ex: quote.modulosSelecionados */}
+                  {renderModulosTags((quote as any).modulos)}
+                </div>
+
+                <div className="flex items-center pl-3 border-l border-transparent md:group-hover:border-slate-200 transition-colors">
+                  <ChevronRight size={24} className="text-slate-300 group-hover:text-blue-600 transition-colors" />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <button 
+        onClick={() => handleOpenNewQuote()}
+        className="md:hidden fixed bottom-6 right-6 w-16 h-16 bg-blue-600 hover:bg-blue-700 text-white rounded-full flex items-center justify-center shadow-lg shadow-blue-600/30 active:scale-95 transition-all z-40"
+      >
+        <Plus size={28} />
+      </button>
+
       {isModalOpen && (
         <QuoteModal 
           quote={quoteEditando} 

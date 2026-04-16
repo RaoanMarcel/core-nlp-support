@@ -39,7 +39,6 @@ export function useQuoteModal(quote: IQuote | null, onClose: () => void) {
     }
   }, [quote]);
 
-  // Cálculo Automático da Tabela (Base)
   const valorTabela = useMemo(() => {
     const base = MODULOS_DISPONIVEIS
       .filter(m => selectedModulos.includes(m.id))
@@ -48,7 +47,6 @@ export function useQuoteModal(quote: IQuote | null, onClose: () => void) {
     return formData.plano === 'ANUAL' ? (base * 12) * 0.9 : base; 
   }, [selectedModulos, formData.plano]);
 
-  // Valor Final que será salvo (Tabela ou Negociado)
   const valorFinal = isNegotiating && formData.valorNegociado > 0 
     ? formData.valorNegociado 
     : valorTabela;
