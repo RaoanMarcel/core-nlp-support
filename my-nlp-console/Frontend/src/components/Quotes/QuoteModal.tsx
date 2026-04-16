@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { 
   X, Building, Search, Phone, Mail, MapPin, 
-  FileText, CheckSquare, DollarSign, Save 
+  FileText, CheckSquare, Save, Calculator
 } from 'lucide-react';
 import { useQuoteModal } from './useQuoteModal'; // Ajuste o caminho se necessário
 import { MODULOS_DISPONIVEIS } from './utils'; // Ajuste o caminho se necessário
@@ -19,7 +19,6 @@ export default function QuoteModal({ quote, onClose }: QuoteModalProps) {
     selectedModulos,
     handleToggleModulo,
     valorTabela,
-    valorFinal,
     isNegotiating,
     setIsNegotiating,
     isLoading,
@@ -27,7 +26,13 @@ export default function QuoteModal({ quote, onClose }: QuoteModalProps) {
     isReadOnly
   } = useQuoteModal(quote, onClose);
 
-  // Helper para atualizar os campos do form
+  // Garante que o plano seja sempre MENSAL em background
+  useEffect(() => {
+    if (formData.plano !== 'MENSAL') {
+      handleChange('plano', 'MENSAL');
+    }
+  }, []);
+
   const handleChange = (field: string, value: string | number) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
@@ -38,84 +43,85 @@ export default function QuoteModal({ quote, onClose }: QuoteModalProps) {
 
   return (
     <div 
-      className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 sm:p-6 font-sans animate-in fade-in duration-200"
+      className="fixed inset-0 bg-gray-900/60 flex items-center justify-center z-50 p-4 sm:p-6 font-sans animate-in fade-in duration-200"
       onClick={(e) => e.target === e.currentTarget && !isLoading && onClose()}
     >
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl overflow-hidden flex flex-col max-h-[95vh] ring-1 ring-slate-900/5">
+      <div className="bg-white rounded-md shadow-2xl w-full max-w-5xl overflow-hidden flex flex-col max-h-[95vh]">
         
-        {/* Header */}
-        <div className="px-8 py-6 border-b border-slate-100 bg-white flex justify-between items-center shrink-0">
+        {/* Header - Padrão Zendesk */}
+        <div className="px-6 py-4 border-b border-gray-200 bg-white flex justify-between items-center shrink-0">
           <div>
-            <h2 className="text-2xl font-black text-slate-900 tracking-tight leading-none">
+            <h2 className="text-lg font-semibold text-gray-900 leading-none">
               {quote ? 'Editar Orçamento' : 'Novo Orçamento'}
             </h2>
-            <p className="text-sm font-medium text-slate-500 mt-2">
-              Preencha os dados abaixo para gerar uma nova proposta comercial.
+            <p className="text-sm text-gray-500 mt-1.5">
+              Preencha os dados do cliente e configure a proposta comercial.
             </p>
           </div>
           <button 
             onClick={onClose}
-            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
+            className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
           >
-            <X size={24} />
+            <X size={20} />
           </button>
         </div>
 
         {/* Body */}
-        <div className="p-8 overflow-y-auto flex-1 bg-slate-50/50">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="p-6 overflow-y-auto flex-1 bg-white">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             
             {/* LADO ESQUERDO: Dados do Cliente */}
-            <div className="space-y-6">
-              <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2 mb-5">
-                  <Building size={14} /> Dados do Cliente
+            <div className="lg:col-span-7 space-y-6">
+              
+              <section>
+                <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2 mb-4 border-b border-gray-100 pb-2">
+                  <Building size={16} className="text-gray-500" /> Detalhes do Cliente
                 </h3>
                 
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 mb-1.5">Nome da Empresa / Cliente *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Nome da Empresa / Cliente *</label>
                     <input 
                       type="text" 
                       value={formData.nomeCliente}
                       onChange={(e) => handleChange('nomeCliente', e.target.value)}
                       disabled={isReadOnly}
-                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 disabled:bg-slate-50"
+                      className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-[#1f73b7] focus:border-[#1f73b7] disabled:bg-gray-50 transition-shadow"
                       placeholder="Ex: Empresa Silva LTDA"
                     />
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-bold text-slate-500 mb-1.5">CNPJ</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">CNPJ</label>
                       <div className="flex gap-2">
                         <input 
                           type="text" 
                           value={formData.cnpj}
                           onChange={(e) => handleChange('cnpj', e.target.value)}
                           disabled={isReadOnly}
-                          className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 disabled:bg-slate-50"
+                          className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-[#1f73b7] focus:border-[#1f73b7] disabled:bg-gray-50 transition-shadow"
                           placeholder="00.000.000/0000-00"
                         />
                         <button 
                           title="Buscar CNPJ na Receita"
                           disabled={isReadOnly || formData.cnpj.length < 14}
-                          className="bg-slate-900 hover:bg-slate-800 disabled:bg-slate-300 text-white px-3 rounded-xl flex items-center justify-center transition-colors"
+                          className="bg-white border border-gray-300 hover:bg-gray-50 disabled:bg-gray-100 disabled:text-gray-400 text-gray-700 px-3 rounded-md flex items-center justify-center transition-colors shadow-sm"
                         >
                           <Search size={16} />
                         </button>
                       </div>
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-slate-500 mb-1.5">Endereço</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Endereço</label>
                       <div className="relative">
-                        <MapPin size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <MapPin size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                         <input 
                           type="text" 
                           value={formData.endereco}
                           onChange={(e) => handleChange('endereco', e.target.value)}
                           disabled={isReadOnly}
-                          className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/20 disabled:bg-slate-50"
+                          className="w-full pl-9 pr-3 py-2 bg-white border border-gray-300 rounded-md text-sm outline-none focus:ring-1 focus:ring-[#1f73b7] focus:border-[#1f73b7] disabled:bg-gray-50 transition-shadow"
                           placeholder="Cidade / Estado"
                         />
                       </div>
@@ -123,15 +129,15 @@ export default function QuoteModal({ quote, onClose }: QuoteModalProps) {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 mb-1.5">E-mail de Contato</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">E-mail de Contato</label>
                     <div className="relative">
-                      <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                       <input 
                         type="email" 
                         value={formData.email}
                         onChange={(e) => handleChange('email', e.target.value)}
                         disabled={isReadOnly}
-                        className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/20 disabled:bg-slate-50"
+                        className="w-full pl-9 pr-3 py-2 bg-white border border-gray-300 rounded-md text-sm outline-none focus:ring-1 focus:ring-[#1f73b7] focus:border-[#1f73b7] disabled:bg-gray-50 transition-shadow"
                         placeholder="contato@empresa.com.br"
                       />
                     </div>
@@ -139,160 +145,181 @@ export default function QuoteModal({ quote, onClose }: QuoteModalProps) {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-bold text-slate-500 mb-1.5">Telefone Principal *</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Telefone Principal *</label>
                       <div className="relative">
-                        <Phone size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <Phone size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                         <input 
                           type="text" 
                           value={formData.telefonePrincipal}
                           onChange={(e) => handleChange('telefonePrincipal', e.target.value)}
                           disabled={isReadOnly}
-                          className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/20 disabled:bg-slate-50"
+                          className="w-full pl-9 pr-3 py-2 bg-white border border-gray-300 rounded-md text-sm outline-none focus:ring-1 focus:ring-[#1f73b7] focus:border-[#1f73b7] disabled:bg-gray-50 transition-shadow"
                           placeholder="(00) 00000-0000"
                         />
                       </div>
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-slate-500 mb-1.5">Telefone Secundário</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Telefone Secundário</label>
                       <div className="relative">
-                        <Phone size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <Phone size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                         <input 
                           type="text" 
-                          // Nota: Como telefoneSecundario não estava no estado inicial do seu hook, 
-                          // adicionei como fallback, mas você pode adicioná-lo no useQuoteModal
                           value={(formData as any).telefoneSecundario || ''}
                           onChange={(e) => handleChange('telefoneSecundario', e.target.value)}
                           disabled={isReadOnly}
-                          className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/20 disabled:bg-slate-50"
+                          className="w-full pl-9 pr-3 py-2 bg-white border border-gray-300 rounded-md text-sm outline-none focus:ring-1 focus:ring-[#1f73b7] focus:border-[#1f73b7] disabled:bg-gray-50 transition-shadow"
                           placeholder="(00) 00000-0000"
                         />
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              </section>
+
+              <section className="pt-2">
+                <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2 mb-4 border-b border-gray-100 pb-2">
+                  <FileText size={16} className="text-gray-500" /> Informações Adicionais
+                </h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Interesses</label>
+                    <textarea 
+                      value={formData.interesses}
+                      onChange={(e) => handleChange('interesses', e.target.value)}
+                      disabled={isReadOnly}
+                      className="w-full h-20 bg-white border border-gray-300 rounded-md px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-[#1f73b7] focus:border-[#1f73b7] disabled:bg-gray-50 resize-none transition-shadow"
+                      placeholder="Descreva brevemente os interesses do cliente..."
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Observações Internas</label>
+                    <textarea 
+                      value={formData.observacoes}
+                      onChange={(e) => handleChange('observacoes', e.target.value)}
+                      disabled={isReadOnly}
+                      className="w-full h-20 bg-white border border-gray-300 rounded-md px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-[#1f73b7] focus:border-[#1f73b7] disabled:bg-gray-50 resize-none transition-shadow"
+                      placeholder="Notas e detalhes da negociação..."
+                    />
+                  </div>
+                </div>
+              </section>
+
             </div>
 
             {/* LADO DIREITO: Configuração, Valores e Infos */}
-            <div className="space-y-6">
+            <div className="lg:col-span-5 space-y-6">
               
-              <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2 mb-5">
-                  <CheckSquare size={14} /> Configuração e Valores
+              <section>
+                <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2 mb-4 border-b border-gray-100 pb-2">
+                  <CheckSquare size={16} className="text-gray-500" /> Configuração do Sistema
                 </h3>
                 
-                <div className="space-y-5">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 mb-2">Módulos Adicionais</label>
-                    <div className="flex flex-wrap gap-2">
-                      {MODULOS_DISPONIVEIS.map(modulo => {
-                        const isChecked = selectedModulos.includes(modulo.id);
-                        return (
-                          <label key={modulo.id} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all ${isChecked ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-white border-slate-200 text-slate-600'} ${isReadOnly ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer hover:bg-slate-50'}`}>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Módulos Selecionados</label>
+                  <div className="flex flex-col gap-2">
+                    {MODULOS_DISPONIVEIS.map(modulo => {
+                      const isChecked = selectedModulos.includes(modulo.id);
+                      return (
+                        <label 
+                          key={modulo.id} 
+                          className={`flex items-center justify-between p-3 rounded-md border transition-all ${
+                            isChecked ? 'bg-[#f0f7fb] border-[#1f73b7]/30' : 'bg-white border-gray-200'
+                          } ${isReadOnly ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer hover:border-gray-300'}`}
+                        >
+                          <div className="flex items-center gap-3">
                             <input 
                               type="checkbox" 
-                              className="hidden" 
                               checked={isChecked} 
                               onChange={() => handleToggleModulo(modulo.id)} 
-                              disabled={isReadOnly} 
+                              disabled={isReadOnly}
+                              className="rounded-sm border-gray-300 text-[#1f73b7] focus:ring-[#1f73b7] w-4 h-4"
                             />
-                            {modulo.id}
-                          </label>
-                        );
-                      })}
-                    </div>
+                            <span className={`text-sm ${isChecked ? 'font-medium text-[#144a75]' : 'text-gray-700'}`}>
+                              {modulo.id}
+                            </span>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              </section>
+
+              {/* Bloco Integrado de Valores */}
+              <section className="bg-gray-50 border border-gray-200 rounded-md p-5">
+                <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2 mb-4">
+                  <Calculator size={16} className="text-gray-500" /> Resumo Financeiro
+                </h3>
+
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Ciclo de faturamento</span>
+                    <span className="text-xs font-semibold bg-gray-200 text-gray-800 px-2.5 py-1 rounded-sm uppercase tracking-wide">
+                      Mensal
+                    </span>
+                  </div>
+                  
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Valor de Tabela</span>
+                    <span className={`text-sm font-medium ${isNegotiating ? 'line-through text-gray-400' : 'text-gray-900'}`}>
+                      {formatarMoeda(valorTabela)}
+                    </span>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-bold text-slate-500 mb-1.5">Plano</label>
-                      <select 
-                        value={formData.plano}
-                        onChange={(e) => handleChange('plano', e.target.value)}
-                        disabled={isReadOnly}
-                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-blue-500/20 disabled:bg-slate-50"
-                      >
-                        <option value="MENSAL">Mensal</option>
-                        <option value="ANUAL">Anual (10% Desc)</option>
-                      </select>
-                    </div>
-                    
-                    <div className="bg-slate-50 rounded-xl border border-slate-200 p-2.5 flex flex-col justify-center items-end">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Valor da Tabela</span>
-                      <span className="text-lg font-black text-slate-900">{formatarMoeda(valorTabela)}</span>
-                    </div>
-                  </div>
-
-                  <div className="pt-4 border-t border-slate-100">
-                    <label className="flex items-center gap-2 cursor-pointer mb-3 w-max">
+                  <div className="pt-3 border-t border-gray-200 mt-3">
+                    <label className="flex items-center gap-2 cursor-pointer mb-3">
                       <input 
                         type="checkbox" 
                         checked={isNegotiating}
-                        onChange={(e) => setIsNegotiating(e.target.checked)}
+                        onChange={(e) => {
+                          setIsNegotiating(e.target.checked);
+                          if (!e.target.checked) handleChange('valorNegociado', '');
+                        }}
                         disabled={isReadOnly}
-                        className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                        className="rounded-sm border-gray-300 text-[#1f73b7] focus:ring-[#1f73b7] w-4 h-4"
                       />
-                      <span className="text-sm font-bold text-slate-700 flex items-center gap-1.5">
-                        <DollarSign size={16} className="text-emerald-500" />
-                        Aplicar Valor Negociado Diferente
+                      <span className="text-sm font-medium text-gray-800">
+                        Ajustar valor final (Desconto / Acréscimo)
                       </span>
                     </label>
 
                     {isNegotiating && (
-                      <div className="animate-in slide-in-from-top-2 fade-in">
+                      <div className="flex items-center gap-2 bg-white border border-gray-300 rounded-md px-3 py-2 focus-within:ring-1 focus-within:ring-[#1f73b7] focus-within:border-[#1f73b7] transition-shadow">
+                        <span className="text-sm font-medium text-gray-500">R$</span>
                         <input 
                           type="number" 
                           step="0.01"
                           value={formData.valorNegociado || ''}
                           onChange={(e) => handleChange('valorNegociado', parseFloat(e.target.value))}
                           disabled={isReadOnly}
-                          className="w-full bg-emerald-50/50 border-2 border-emerald-100 rounded-xl px-4 py-2.5 text-sm font-bold text-emerald-900 outline-none focus:border-emerald-400 transition-colors disabled:bg-slate-50"
-                          placeholder="Digite o valor final..."
+                          className="w-full bg-transparent text-sm text-gray-900 outline-none placeholder-gray-400 disabled:text-gray-500"
+                          placeholder="0.00"
                         />
                       </div>
                     )}
                   </div>
-                </div>
-              </div>
 
-              <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2 mb-4">
-                  <FileText size={14} /> Informações Adicionais
-                </h3>
-                
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 mb-1.5">Interesses</label>
-                    <textarea 
-                      value={formData.interesses}
-                      onChange={(e) => handleChange('interesses', e.target.value)}
-                      disabled={isReadOnly}
-                      className="w-full h-20 bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 disabled:bg-slate-50 resize-none"
-                      placeholder="Descreva brevemente os interesses..."
-                    />
+                  <div className="pt-4 mt-4 flex justify-between items-end border-t border-gray-200">
+                    <span className="text-sm font-semibold text-gray-900">Total a pagar / mês</span>
+                    <span className="text-xl font-bold text-[#1f73b7]">
+                      {isNegotiating && formData.valorNegociado 
+                        ? formatarMoeda(formData.valorNegociado) 
+                        : formatarMoeda(valorTabela)}
+                    </span>
                   </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 mb-1.5">Observações / Detalhes da Negociação</label>
-                    <textarea 
-                      value={formData.observacoes}
-                      onChange={(e) => handleChange('observacoes', e.target.value)}
-                      disabled={isReadOnly}
-                      className="w-full h-24 bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 disabled:bg-slate-50 resize-none"
-                      placeholder="Notas internas..."
-                    />
-                  </div>
+
                 </div>
-              </div>
+              </section>
 
             </div>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="px-8 py-5 border-t border-slate-200 bg-white shrink-0 flex justify-end gap-3 items-center">
+        <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 items-center shrink-0">
           <button 
             onClick={onClose}
-            className="px-5 py-2.5 text-slate-600 text-sm font-bold hover:bg-slate-100 rounded-xl transition-colors"
+            className="px-4 py-2 text-gray-700 text-sm font-medium border border-gray-300 bg-white hover:bg-gray-50 rounded-md transition-colors shadow-sm"
           >
             Cancelar
           </button>
@@ -300,9 +327,9 @@ export default function QuoteModal({ quote, onClose }: QuoteModalProps) {
             <button 
               onClick={handleSave}
               disabled={isLoading || !formData.nomeCliente || !formData.telefonePrincipal}
-              className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed shadow-lg shadow-blue-600/20 transition-all active:scale-95"
+              className="flex items-center gap-2 px-5 py-2 bg-[#1f73b7] hover:bg-[#144a75] text-white text-sm font-medium rounded-md disabled:bg-blue-300 disabled:cursor-not-allowed shadow-sm transition-colors"
             >
-              <Save size={18} /> 
+              <Save size={16} /> 
               {isLoading ? 'Salvando...' : 'Salvar Orçamento'}
             </button>
           )}
