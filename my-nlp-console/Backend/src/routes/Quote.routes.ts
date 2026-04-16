@@ -1,17 +1,21 @@
 import { Router } from 'express';
-import { QuoteController } from '../controllers/Quote.controller';
+import { QuoteController } from '../controllers/Quote.controller'; // Ajuste o caminho se necessário
 
 const router = Router();
 const quoteController = new QuoteController();
 
-// Rotas de GET
+// 1. Rotas de Listagem e Busca (GET)
 router.get('/', quoteController.list);
-router.get('/consultar', quoteController.consultar);
+router.get('/consultar', quoteController.consultar); // Tem que vir antes do /:id
 
-// Rota de POST (Novo Orçamento/Pedido)
+// 2. Rota de Detalhes Específicos (GET)
+router.get('/:id', quoteController.getById); // Essencial para a tela de detalhes
+
+// 3. Rota de Criação (POST)
 router.post('/', quoteController.create);
 
-// Rota de PUT (Editar/Negociar Orçamento Existente)
+// 4. Rotas de Edição e Exclusão (PUT, DELETE)
 router.put('/:id', quoteController.update);
+router.delete('/:id', quoteController.delete);
 
 export default router;

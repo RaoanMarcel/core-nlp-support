@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
-import http from 'http'; // <-- Import nativo do Node
-import { Server } from 'socket.io'; // <-- Import do Socket.io
+import http from 'http'; 
+import { Server } from 'socket.io';
 import contratosRoutes from './routes/Contratos.routes';
 import ordersRoutes from './routes/Quote.routes';
 
@@ -11,7 +11,7 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: '*', // Em produção, você limitará isso para a URL do front
+    origin: '*',
     methods: ['GET', 'POST', 'PUT']
   }
 });
@@ -19,7 +19,6 @@ const io = new Server(server, {
 
 app.set('io', io);
 
-// Opcional: Apenas para logar quem entrou
 io.on('connection', (socket) => {
   console.log(`🟢 Usuário conectado no Socket: ${socket.id}`);
   socket.on('disconnect', () => {
@@ -35,9 +34,6 @@ import authRoutes from './routes/Auth.routes';
 import { authMiddleware } from './middlewares/auth';
 import { relatoriosRoutes } from './routes/Relatorios.routes';
 
-
-
-// Rotas públicas
 app.use('/auth', authRoutes);
 
 // Rotas Protegidas (Exige Token!)

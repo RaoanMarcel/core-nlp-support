@@ -128,7 +128,7 @@ function PaginatedSection({ title, icon, data, emptyMessage, onCardClick }: Sect
                       </span>
                       {prospect.status === 'EM_ATENDIMENTO' && prospect.lockedBy && (
                         <span 
-                          className="flex items-center gap-1.5 text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded max-w-[120px]"
+                          className="flex items-center gap-1.5 text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded max-w-30"
                           title={`Sendo atendido por: ${prospect.lockedBy}`}
                         >
                           <RefreshCw size={10} className="animate-spin shrink-0" />
@@ -432,7 +432,7 @@ export default function ProspectList() {
           
           <div className="flex flex-col sm:flex-row items-center bg-white border border-slate-200 rounded-xl shadow-sm p-1.5 gap-2 w-full xl:w-auto">
             
-            <div className="relative w-full sm:w-56 flex-shrink-0">
+            <div className="relative w-full sm:w-56 shrink-0">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
               <input 
                 type="text" 
@@ -446,7 +446,7 @@ export default function ProspectList() {
             <div className="hidden sm:block w-px h-6 bg-slate-200"></div>
 
             {/* COMBOBOX DE BAIRROS (SEARCHABLE) */}
-            <div className="relative w-full sm:w-56 flex-shrink-0" ref={dropdownRef}>
+            <div className="relative w-full sm:w-56 shrink-0" ref={dropdownRef}>
               <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
               <input 
                 type="text"
@@ -510,7 +510,7 @@ export default function ProspectList() {
               <div className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${filtroWLE ? 'bg-blue-600' : 'bg-slate-300'}`}>
                 <span 
                   className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform duration-200 ease-in-out ${
-                    filtroWLE ? 'translate-x-[20px]' : 'translate-x-[3px]'
+                    filtroWLE ? 'translate-x-5' : 'translate-x-0.75'
                   }`} 
                 />
               </div>

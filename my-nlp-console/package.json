@@ -247,6 +247,7 @@
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-is": "^19.2.4",
+    "react-markdown": "^10.1.0",
     "react-redux": "^9.2.0",
     "react-refresh": "^0.18.0",
     "readdirp": "^5.0.0",

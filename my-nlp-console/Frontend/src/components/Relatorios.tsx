@@ -184,12 +184,12 @@ export default function Relatorios() {
 
       <div className="mb-8">
         <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2">
-          <LayoutDashboard size={16} /> Construtor Avançado
+          <LayoutDashboard size={16} /> Construtor
         </h2>
         
-        <div className="bg-white border border-[#d8dcde] rounded-xl shadow-sm flex flex-col md:flex-row min-h-[500px] overflow-hidden">
+        <div className="bg-white border border-[#d8dcde] rounded-xl shadow-sm flex flex-col md:flex-row min-h-125 overflow-hidden">
           
-          <div className="w-full md:w-[320px] bg-[#fafafa] border-r border-[#d8dcde] p-6 flex flex-col shrink-0 h-[600px] overflow-y-auto">
+          <div className="w-full md:w-[320px] bg-[#fafafa] border-r border-[#d8dcde] p-6 flex flex-col shrink-0 h-150 overflow-y-auto">
             
             <div className="mb-6">
               <label className="text-sm font-bold text-slate-900 block mb-2">Base de Dados</label>

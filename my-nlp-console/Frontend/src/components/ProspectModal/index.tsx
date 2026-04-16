@@ -46,7 +46,7 @@ const ModalHeader = ({ prospect }: { prospect: Prospect }) => (
 );
 
 const Timeline = ({ historico, loading }: { historico: Historico[], loading: boolean }) => (
-  <div className="lg:col-span-2 bg-slate-50 rounded-xl border border-slate-200 p-6 overflow-y-auto max-h-[400px]">
+  <div className="lg:col-span-2 bg-slate-50 rounded-xl border border-slate-200 p-6 overflow-y-auto max-h-100">
     <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2 mb-6">
       <History size={14} /> Linha do Tempo
     </h3>
@@ -58,7 +58,7 @@ const Timeline = ({ historico, loading }: { historico: Historico[], loading: boo
       ) : (
         historico.map((item) => (
           <div key={item.id} className="relative pl-6">
-            <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-white border-2 border-blue-500 shadow-sm" />
+            <div className="absolute -left-2.25 top-0 w-4 h-4 rounded-full bg-white border-2 border-blue-500 shadow-sm" />
             <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
               <div className="flex justify-between items-start gap-2 mb-2">
                 <span className="text-[10px] font-bold text-blue-600 uppercase bg-blue-50 px-2 py-0.5 rounded">{item.acao}</span>
@@ -66,7 +66,7 @@ const Timeline = ({ historico, loading }: { historico: Historico[], loading: boo
                   <Clock size={10} /> {formatarData(item.createdAt)}
                 </span>
               </div>
-              <p className="text-sm text-slate-600 leading-relaxed mb-3 break-words">
+              <p className="text-sm text-slate-600 leading-relaxed mb-3 wrap-break-words">
                 {item.observacoes ? `"${item.observacoes}"` : <span className="text-xs italic text-slate-400">Sem observações.</span>}
               </p>
               <div className="flex items-center justify-between pt-3 border-t border-slate-50">
@@ -232,7 +232,7 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
               
               <label className="block text-sm font-bold text-slate-700 mb-2">Nova Observação</label>
               <textarea 
-                className={`w-full flex-1 min-h-[120px] border rounded-xl p-4 text-sm focus:outline-none transition-all resize-none ${!ui.isEditing ? 'bg-slate-50 border-slate-200 cursor-not-allowed' : 'border-slate-300 focus:ring-2 focus:ring-blue-500'}`}
+                className={`w-full flex-1 min-h-30 border rounded-xl p-4 text-sm focus:outline-none transition-all resize-none ${!ui.isEditing ? 'bg-slate-50 border-slate-200 cursor-not-allowed' : 'border-slate-300 focus:ring-2 focus:ring-blue-500'}`}
                 value={interactionForm.observacoes}
                 onChange={(e) => setInteractionForm(p => ({ ...p, observacoes: e.target.value }))}
                 placeholder="Descreva a interação..."

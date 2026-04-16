@@ -4,7 +4,21 @@ import { PrismaClient, Prisma } from '@prisma/client';
 const prisma = new PrismaClient();
 
 export class QuoteController {
+  
+  // Lista todos (com ordenação)
+  async list(req: Request, res: Response) {
+    try {
+      const quotes = await prisma.quote.findMany({
+        orderBy: { createdAt: 'desc' }
+      });
+      return res.json(quotes);
+    } catch (error) {
+      console.error('Erro na listagem:', error);
+      return res.status(500).json({ error: 'Erro ao buscar pedidos' });
+    }
+  }
 
+  // Busca por filtros específicos
   async consultar(req: Request, res: Response) {
     try {
       const { termo, dataInicio, dataFim, status } = req.query;
@@ -15,20 +29,17 @@ export class QuoteController {
 
       if (termo && typeof termo === 'string' && termo.trim() !== '') {
         const cleanTerm = termo.trim();
-        const onlyNumbers = cleanTerm.replace(/\D/g, ''); // Remove tudo que não é número
+        const onlyNumbers = cleanTerm.replace(/\D/g, ''); 
         
-        // Criamos as condições básicas (Nome e Email sempre)
         const orConditions: Prisma.QuoteWhereInput[] = [
           { nomeCliente: { contains: cleanTerm, mode: 'insensitive' } },
           { email: { contains: cleanTerm, mode: 'insensitive' } }
         ];
 
-        // SÓ busca por CNPJ se o usuário digitou algum número
         if (onlyNumbers.length > 0) {
           orConditions.push({ cnpj: { contains: onlyNumbers } });
         }
 
-        // SÓ busca por ID se for um número válido e não muito longo
         const numTerm = parseInt(onlyNumbers, 10);
         if (!isNaN(numTerm) && onlyNumbers.length < 10) {
           orConditions.push({ id: numTerm });
@@ -37,12 +48,10 @@ export class QuoteController {
         whereOptions.OR = orConditions;
       }
 
-      // Filtro de Status
       if (status && status !== 'TODOS') {
         whereOptions.status = String(status);
       }
 
-      // Filtro de Data
       if (dataInicio && dataFim) {
         whereOptions.createdAt = {
           gte: new Date(`${dataInicio}T00:00:00.000Z`),
@@ -61,18 +70,28 @@ export class QuoteController {
       return res.status(500).json({ error: 'Erro ao consultar' });
     }
   }
-  
-  async list(req: Request, res: Response) {
+
+  // NOVO: Busca apenas um orçamento pelo ID (Essencial para a tela QuoteDetails)
+  async getById(req: Request, res: Response) {
     try {
-      const quotes = await prisma.quote.findMany({
-        orderBy: { createdAt: 'desc' }
+      const { id } = req.params;
+
+      const quote = await prisma.quote.findUnique({
+        where: { id: Number(id) }
       });
-      return res.json(quotes);
+
+      if (!quote) {
+        return res.status(404).json({ error: 'Orçamento não encontrado' });
+      }
+
+      return res.json(quote);
     } catch (error) {
-      return res.status(500).json({ error: 'Erro ao buscar pedidos' });
+      console.error('Erro ao buscar orçamento por ID:', error);
+      return res.status(500).json({ error: 'Erro ao buscar o orçamento' });
     }
   }
 
+  // Cria um novo orçamento
   async create(req: Request, res: Response) {
     try {
       const { 
@@ -82,7 +101,7 @@ export class QuoteController {
         interesses, observacoes, status 
       } = req.body;
 
-      const cleanCnpj = cnpj.replace(/\D/g, '');
+      const cleanCnpj = cnpj ? cnpj.replace(/\D/g, '') : undefined;
 
       const quote = await prisma.quote.create({
         data: {
@@ -114,6 +133,7 @@ export class QuoteController {
     }
   }
 
+  // Atualiza um orçamento existente
   async update(req: Request, res: Response) {
     try {
       const { id } = req.params;
@@ -154,6 +174,27 @@ export class QuoteController {
     } catch (error) {
       console.error('Erro ao atualizar pedido:', error);
       return res.status(400).json({ error: 'Erro ao atualizar pedido' });
+    }
+  }
+
+  // NOVO: Deleta um orçamento
+  async delete(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+
+      await prisma.quote.delete({
+        where: { id: Number(id) }
+      });
+
+      const io = req.app.get('io');
+      if (io) {
+        io.emit('quote:deleted', { id: Number(id) });
+      }
+
+      return res.status(204).send(); // 204 No Content
+    } catch (error) {
+      console.error('Erro ao deletar pedido:', error);
+      return res.status(400).json({ error: 'Erro ao deletar pedido' });
     }
   }
 }
