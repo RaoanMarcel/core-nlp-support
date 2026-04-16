@@ -71,13 +71,18 @@ export class QuoteController {
     }
   }
 
-  // NOVO: Busca apenas um orçamento pelo ID (Essencial para a tela QuoteDetails)
+ // ATUALIZADO: Busca o orçamento trazendo o histórico de notas ordenado
   async getById(req: Request, res: Response) {
     try {
       const { id } = req.params;
 
       const quote = await prisma.quote.findUnique({
-        where: { id: Number(id) }
+        where: { id: Number(id) },
+        include: {
+          notas: {
+            orderBy: { createdAt: 'desc' } // Traz da mais nova para a mais antiga (ou 'asc' se preferir)
+          }
+        }
       });
 
       if (!quote) {
@@ -91,6 +96,34 @@ export class QuoteController {
     }
   }
 
+  async addNote(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const { texto, usuario } = req.body;
+
+      if (!texto || !usuario) {
+        return res.status(400).json({ error: 'Texto e usuário são obrigatórios' });
+      }
+
+      const note = await prisma.quoteNote.create({
+        data: {
+          quoteId: Number(id),
+          texto,
+          usuario
+        }
+      });
+
+      const io = req.app.get('io');
+      if (io) {
+        io.emit('quote:note_added', note);
+      }
+
+      return res.status(201).json(note);
+    } catch (error) {
+      console.error('Erro ao adicionar nota:', error);
+      return res.status(500).json({ error: 'Erro ao adicionar nota' });
+    }
+  }
   // Cria um novo orçamento
   async create(req: Request, res: Response) {
     try {

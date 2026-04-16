@@ -98,4 +98,16 @@ model Quote {
   
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
+  notas     QuoteNote[] 
+
+}
+
+model QuoteNote {
+  id        String   @id @default(uuid())
+  quoteId   Int
+  quote     Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  texto     String   @db.Text
+  usuario   String   
+  
+  createdAt DateTime @default(now())
 }
