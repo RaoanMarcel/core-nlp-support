@@ -124,6 +124,29 @@ export const useProspectLogic = (
     finally { setLoading(prev => ({ ...prev, saving: false })); }
   };
 
+  // ====== AQUI ESTÁ A FUNÇÃO CORRIGIDA ======
+  const handleVoltar = async () => {
+    setLoading(prev => ({ ...prev, saving: true }));
+    try {
+      const { data } = await requestApi('patch', 'update', {
+        status: 'PENDENTE',
+        usuarioLogado: currentUserName,
+        observacoes: 'Atendimento devolvido para a fila.',
+        novosModulos: []
+      });
+
+      if (onUpdate && data.prospect) {
+        onUpdate(data.prospect);
+      }
+
+      onClose(); 
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(prev => ({ ...prev, saving: false }));
+    }
+  };
+
   return {
     isFinished, ui, setUi, loading, historico, contactForm, interactionForm,
     handleContactChange: (field: keyof ContactFormState, value: string) => setContactForm(prev => ({ ...prev, [field]: value })),
@@ -134,7 +157,6 @@ export const useProspectLogic = (
         modulos: prev.modulos.includes(modulo) ? prev.modulos.filter(m => m !== modulo) : [...prev.modulos, modulo]
       }));
     },
-    saveContatos, saveInteracao, finishAtendimento,
-    setInteractionForm, handleVoltar: async () => { /* lógica similar */ }
+    saveContatos, saveInteracao, finishAtendimento, setInteractionForm, handleVoltar
   };
 };
