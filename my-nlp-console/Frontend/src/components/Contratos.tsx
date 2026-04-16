@@ -3,18 +3,22 @@ import Papa from 'papaparse';
 import { 
   UploadCloud, Search, Phone, RefreshCw, Inbox, PlayCircle, 
   CheckCircle2, XCircle, ChevronLeft, ChevronRight, Target, 
-  Clock, ChevronDown, ChevronUp 
+  Clock, ChevronDown, ChevronUp, MapPin
 } from 'lucide-react';
 import { io } from 'socket.io-client'; 
 import ProspectModal from './ProspectModal/index';
-import { api } from '../services/api'; // <-- IMPORTANDO NOSSA API INTELIGENTE
+import { api } from '../services/api';
 
 export interface Prospect {
   id: string;
   cnpj: string;
   nome: string; 
   nomeFantasia?: string; 
-  endereco?: string;     
+  endereco?: string;
+  bairro?: string;   // <-- ADICIONADO
+  cidade?: string;   // <-- ADICIONADO
+  estado?: string;   // <-- ADICIONADO
+  cep?: string;      // <-- ADICIONADO
   modulosAtuais: string;
   telefone: string;
   status: 'PENDENTE' | 'EM_ATENDIMENTO' | 'APROVADO' | 'REPROVADO' | 'POSSIBILIDADE' | 'RETORNAR';
@@ -34,9 +38,9 @@ export interface Prospect {
   atendidoPor?: string;
   dataAtendimento?: string | Date;
   valor?: number | null; 
+  updatedAt?: string; // <-- ADICIONADO PARA ORDENAÇÃO
 }
 
-// O Socket ainda precisa de uma URL base pura, então pegamos direto do env
 const SOCKET_URL = import.meta.env?.VITE_API_URL || 'https://core-nlp-support.onrender.com';
 
 const getCardStyle = (status: string) => {
@@ -150,6 +154,14 @@ function PaginatedSection({ title, icon, data, emptyMessage, onCardClick }: Sect
                           WLE: {prospect.clienteWLE ? 'Sim' : 'Não'}
                         </span>
                       </div>
+                      
+                      {/* Bairro Exibido no Card */}
+                      {prospect.bairro && (
+                        <div className="flex items-center gap-1 mt-2 text-slate-500">
+                          <MapPin size={12} />
+                          <span className="text-[11px] font-medium truncate">{prospect.bairro}</span>
+                        </div>
+                      )}
                     </div>
                     
                     <div className="flex justify-between items-center pt-3 border-t border-slate-100/80 mt-auto">
@@ -225,6 +237,7 @@ export default function ProspectList() {
   
   const [searchQuery, setSearchQuery] = useState('');
   const [filtroWLE, setFiltroWLE] = useState(false); 
+  const [filtroBairro, setFiltroBairro] = useState('TODOS'); // NOVO ESTADO DE FILTRO
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -232,13 +245,18 @@ export default function ProspectList() {
   const currentUser = userStr ? JSON.parse(userStr) : null;
   const currentUserId = currentUser?.id || '';
 
-  const handleUpdateProspect = (updated: Prospect) => {
-    setProspects(prev =>
-      prev.map(p => p.id === updated.id ? updated : p)
-    );
+  // Extrai lista única de bairros da listagem
+  const bairrosDisponiveis = Array.from(new Set(prospects.map(p => p.bairro).filter(Boolean))).sort();
 
+  // Atualiza com ordenação instantânea!
+  const handleUpdateProspect = (updated: Prospect) => {
+    setProspects(prev => {
+      const novaLista = prev.map(p => p.id === updated.id ? updated : p);
+      return novaLista.sort((a, b) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime());
+    });
     setSelectedProspect(updated);
   };
+
   const handleAuthError = (error: any) => {
     if (error.response && error.response.status === 401) {
       localStorage.removeItem('@CRM:token');
@@ -251,7 +269,6 @@ export default function ProspectList() {
 
   const fetchProspects = async () => {
     try {
-      // Adeus axios e headers manuais!
       const response = await api.get('/prospects', {
         params: { t: new Date().getTime() },
         headers: {
@@ -273,9 +290,11 @@ export default function ProspectList() {
     const socket = io(SOCKET_URL);
 
     socket.on('prospectUpdated', (updatedProspect: Prospect) => {
-      setProspects(prev => prev.map(p => 
-        p.id === updatedProspect.id ? updatedProspect : p
-      ));
+      setProspects(prev => {
+        const novaLista = prev.map(p => p.id === updatedProspect.id ? updatedProspect : p);
+        // Coloca o atualizado em primeiro garantido
+        return novaLista.sort((a, b) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime());
+      });
     });
 
     socket.on('prospectsRefresh', () => {
@@ -306,7 +325,6 @@ export default function ProspectList() {
           const clientes = results.data.filter((row: any) => row.CNPJ && String(row.CNPJ).trim() !== '');
 
           try {
-            // Adeus axios e headers manuais!
             await api.post('/prospects/importar', { clientes });
           } catch (apiError: any) {
             if (handleAuthError(apiError)) return;
@@ -335,7 +353,6 @@ export default function ProspectList() {
     
     if (prospect.status === 'PENDENTE') {
       try {
-        // Adeus axios e headers manuais!
         const response = await api.put(`/prospects/${prospect.id}/travar`, { 
           userId: currentUserId,
           userName: currentUser?.nome 
@@ -365,13 +382,14 @@ export default function ProspectList() {
       prospect.nome.toLowerCase().includes(termo) || 
       (prospect.nomeFantasia && prospect.nomeFantasia.toLowerCase().includes(termo)) || 
       prospect.cnpj.includes(termo) || 
-      prospect.telefone.includes(termo);
+      prospect.telefone.includes(termo) ||
+      (prospect.endereco && prospect.endereco.toLowerCase().includes(termo)); // Busca geral no endereço antigo tb
 
-    if (filtroWLE) {
-      return matchBusca && prospect.clienteWLE === true;
-    }
+    const matchWLE = filtroWLE ? prospect.clienteWLE === true : true;
     
-    return matchBusca;
+    const matchBairro = filtroBairro === 'TODOS' || prospect.bairro === filtroBairro;
+
+    return matchBusca && matchWLE && matchBairro;
   });
 
   const prospectsPendentes = filteredProspects.filter(p => p.status === 'PENDENTE');
@@ -393,15 +411,32 @@ export default function ProspectList() {
           
           <div className="flex flex-col sm:flex-row items-center bg-white border border-slate-200 rounded-xl shadow-sm p-1.5 gap-2 w-full xl:w-auto">
             
-            <div className="relative w-full sm:w-64 flex-shrink-0">
+            <div className="relative w-full sm:w-56 flex-shrink-0">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
               <input 
                 type="text" 
                 placeholder="Buscar cliente..." 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 bg-transparent text-sm focus:outline-none text-slate-700 placeholder:text-slate-400"
+                className="w-full pl-9 pr-4 py-2 bg-transparent text-sm font-medium focus:outline-none text-slate-700 placeholder:text-slate-400"
               />
+            </div>
+
+            <div className="hidden sm:block w-px h-6 bg-slate-200"></div>
+
+            {/* NOVO FILTRO DE BAIRRO */}
+            <div className="relative w-full sm:w-48 flex-shrink-0">
+              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+              <select 
+                value={filtroBairro}
+                onChange={(e) => setFiltroBairro(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 bg-transparent text-sm font-medium focus:outline-none text-slate-700 appearance-none cursor-pointer"
+              >
+                <option value="TODOS">Todos os Bairros</option>
+                {bairrosDisponiveis.map(b => (
+                  <option key={b as string} value={b as string}>{b}</option>
+                ))}
+              </select>
             </div>
 
             <div className="hidden sm:block w-px h-6 bg-slate-200"></div>

@@ -31,6 +31,10 @@
     telefoneBackup     String?
     nomeFantasia String?
     endereco     String?
+    bairro       String?
+    cidade       String?
+    estado       String?
+    cep          String?
 
     valor              Float?
 

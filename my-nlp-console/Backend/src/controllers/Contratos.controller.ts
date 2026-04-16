@@ -7,7 +7,10 @@ export class ProspectController {
   
   buscarTodos = async (req: Request, res: Response) => {
     try {
-      const lista = await prisma.prospect.findMany();
+      const lista = await prisma.prospect.findMany({
+        // CORREÇÃO: Trazendo os recém-atualizados primeiro
+        orderBy: { updatedAt: 'desc' }
+      });
       res.json(lista);
     } catch (error) {
       console.error(error);
@@ -28,33 +31,21 @@ export class ProspectController {
       for (const cliente of clientes) {
         if (!cliente.CNPJ) continue;
 
-        // --- Tratamento do Valor ---
         const valorRaw = cliente['Valor pago'];
         let valorNumerico: number | null = null;
         
         if (valorRaw !== undefined && valorRaw !== null && valorRaw !== '') {
           if (typeof valorRaw === 'number') {
-            // Se a biblioteca da planilha já enviou como número (ex: 350.77)
             valorNumerico = valorRaw;
           } else {
-            // Se enviou como texto, limpamos com segurança
             let valorString = String(valorRaw).trim();
-            
-            // Verifica se está no padrão brasileiro (com vírgula)
             if (valorString.includes(',')) {
-              // Remove "R$", remove pontos de milhar (com Regex global) e troca vírgula por ponto
               valorString = valorString.replace(/R\$\s?/gi, '').replace(/\./g, '').replace(',', '.');
             } else {
-              // Se não tem vírgula, já está no padrão americano. Removemos apenas símbolos indesejados.
               valorString = valorString.replace(/R\$\s?/gi, '');
             }
-            
             valorNumerico = parseFloat(valorString);
-            
-            // Se por acaso a conversão falhar (NaN), salva como null para não bugar o banco
-            if (isNaN(valorNumerico)) {
-              valorNumerico = null;
-            }
+            if (isNaN(valorNumerico)) valorNumerico = null;
           }
         }
 
@@ -81,15 +72,23 @@ export class ProspectController {
               cnpj: String(cliente.CNPJ) 
             },
             update: {
-              nomeFantasia: nomeFantasia,
+              nomeFantasia,
               endereco: enderecoCompleto !== '' ? enderecoCompleto : null,
+              bairro: bairro !== '' ? bairro : null, 
+              cidade: cidade !== '' ? cidade : null, 
+              estado: estado !== '' ? estado : null, 
+              cep: cep !== '' ? cep : null,          
               valor: valorNumerico,
             },
             create: {
               cnpj: String(cliente.CNPJ),
               nome: String(cliente['Razão Social'] || cliente['Nome Fantasia'] || 'Sem Nome'),
-              nomeFantasia: nomeFantasia,
+              nomeFantasia,
               endereco: enderecoCompleto !== '' ? enderecoCompleto : null,
+              bairro: bairro !== '' ? bairro : null, 
+              cidade: cidade !== '' ? cidade : null, 
+              estado: estado !== '' ? estado : null, 
+              cep: cep !== '' ? cep : null,        
               telefone: String(cliente['Telefone Principal'] || 'Sem Telefone'),
               modulosAtuais: 'Nenhum',
               status: 'PENDENTE',
@@ -176,7 +175,7 @@ export class ProspectController {
           atendidoPor,
           nomeFantasia, 
           endereco,
-          valor: valor ? parseFloat(valor) : null, // Conversão para Float 
+          valor: valor ? parseFloat(valor) : null,
           dataAtendimento: new Date() 
         }
       });
@@ -203,27 +202,14 @@ export class ProspectController {
     try {
       const { id } = req.params;
       const { 
-        observacoes, 
-        novosModulos, 
-        status, 
-        usuarioLogado, 
-        nomeFantasia, 
-        endereco, 
-        valor,
-        telefone,           // <-- ADICIONADO
-        telefoneSecundario, // <-- ADICIONADO
-        email               // <-- ADICIONADO
+        observacoes, novosModulos, status, usuarioLogado, 
+        nomeFantasia, endereco, valor, telefone, telefoneSecundario, email 
       } = req.body;
 
       const atualizado = await prisma.prospect.update({
         where: { id },
         data: {
-          novosModulos,
-          nomeFantasia,
-          endereco,
-          telefone,          
-          telefoneSecundario,
-          email,              
+          novosModulos, nomeFantasia, endereco, telefone, telefoneSecundario, email,
           valor: valor ? parseFloat(valor) : null, 
           ...(status && { status }) 
         }

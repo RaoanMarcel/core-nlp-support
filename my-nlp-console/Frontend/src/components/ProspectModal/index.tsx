@@ -87,14 +87,13 @@ const Timeline = ({ historico, loading }: { historico: Historico[], loading: boo
   </div>
 );
 
-// CORREÇÃO: Adicionado onUpdate nas props destruídas
 export default function ProspectModal({ prospect, onClose, currentUserId, currentUserName, onUpdate }: ModalProps) {
   
   const { 
     isFinished, ui, setUi, loading, historico, contactForm, interactionForm,
     handleContactChange, toggleModulo, setInteractionForm,
     saveContatos, saveInteracao, finishAtendimento, handleVoltar
-  } = useProspectLogic(prospect, currentUserId, currentUserName, onClose, onUpdate); // CORREÇÃO: Repassando onUpdate para o Hook
+  } = useProspectLogic(prospect, currentUserId, currentUserName, onClose, onUpdate);
 
   return (
     <div 
@@ -211,6 +210,7 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
             </div>
           </div>
 
+          {/* GRID INFERIOR (TEXTAREA + BOTOES DE UM LADO | TIMELINE DO OUTRO) */}
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
             <div className="lg:col-span-3 bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col">
               <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2 mb-5">
@@ -240,19 +240,48 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
               />
 
               {isFinished && ui.isEditing && (
-                <div className="mt-4 pt-4 border-t border-slate-100">
-                  <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Ação Rápida: Salvar e Alterar Status</span>
-                  <div className="flex gap-2">
-                    <button onClick={() => saveInteracao({ status: 'APROVADO' })} disabled={loading.saving} className="flex items-center gap-1.5 px-4 py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-xs font-bold hover:bg-emerald-600 hover:text-white">
-                      <CheckCircle2 size={14} /> Interessado
+                <div className="mt-6 pt-5 border-t border-slate-100">
+                  <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">
+                    Ação Rápida: Salvar e Alterar Status
+                  </span>
+                  
+                  {/* Trocamos flex por grid para garantir alinhamento perfeito */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+                    <button 
+                      onClick={() => saveInteracao({ status: 'APROVADO' })} 
+                      disabled={loading.saving} 
+                      className="flex justify-center items-center gap-2 px-4 py-2.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold hover:bg-emerald-600 hover:text-white hover:shadow-md hover:-translate-y-0.5 transition-all w-full"
+                    >
+                      <CheckCircle2 size={16} /> Interessado
                     </button>
-                    <button onClick={() => saveInteracao({ status: 'POSSIBILIDADE' })} disabled={loading.saving} className="flex items-center gap-1.5 px-4 py-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-full text-xs font-bold hover:bg-blue-600 hover:text-white">
-                      <Target size={14} /> Possibilidade
+                    
+                    <button 
+                      onClick={() => saveInteracao({ status: 'POSSIBILIDADE' })} 
+                      disabled={loading.saving} 
+                      className="flex justify-center items-center gap-2 px-4 py-2.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-xl text-xs font-bold hover:bg-blue-600 hover:text-white hover:shadow-md hover:-translate-y-0.5 transition-all w-full"
+                    >
+                      <Target size={16} /> Possibilidade
+                    </button>
+
+                    <button 
+                      onClick={() => saveInteracao({ status: 'RETORNAR' })} 
+                      disabled={loading.saving}  
+                      className="flex justify-center items-center gap-2 px-4 py-2.5 bg-purple-50 text-purple-700 border border-purple-200 rounded-xl text-xs font-bold hover:bg-purple-600 hover:text-white hover:shadow-md hover:-translate-y-0.5 transition-all w-full"
+                    >
+                      <Clock size={16} /> Retornar
+                    </button>
+
+                    <button 
+                      onClick={() => saveInteracao({ status: 'REPROVADO' })} 
+                      disabled={loading.saving} 
+                      className="flex justify-center items-center gap-2 px-4 py-2.5 bg-rose-50 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold hover:bg-rose-600 hover:text-white hover:shadow-md hover:-translate-y-0.5 transition-all w-full"
+                    >
+                      <XCircle size={16} /> Não Interessado
                     </button>
                   </div>
                 </div>
               )}
-            </div>
+            </div> 
 
             <Timeline historico={historico} loading={loading.historico} />
           </div>
