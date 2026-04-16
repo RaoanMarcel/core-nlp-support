@@ -15,10 +15,10 @@ export interface Prospect {
   nome: string; 
   nomeFantasia?: string; 
   endereco?: string;
-  bairro?: string;   // <-- ADICIONADO
-  cidade?: string;   // <-- ADICIONADO
-  estado?: string;   // <-- ADICIONADO
-  cep?: string;      // <-- ADICIONADO
+  bairro?: string;   
+  cidade?: string;   
+  estado?: string;   
+  cep?: string;      
   modulosAtuais: string;
   telefone: string;
   status: 'PENDENTE' | 'EM_ATENDIMENTO' | 'APROVADO' | 'REPROVADO' | 'POSSIBILIDADE' | 'RETORNAR';
@@ -38,7 +38,7 @@ export interface Prospect {
   atendidoPor?: string;
   dataAtendimento?: string | Date;
   valor?: number | null; 
-  updatedAt?: string; // <-- ADICIONADO PARA ORDENAÇÃO
+  updatedAt?: string; 
 }
 
 const SOCKET_URL = import.meta.env?.VITE_API_URL || 'https://core-nlp-support.onrender.com';
@@ -155,7 +155,6 @@ function PaginatedSection({ title, icon, data, emptyMessage, onCardClick }: Sect
                         </span>
                       </div>
                       
-                      {/* Bairro Exibido no Card */}
                       {prospect.bairro && (
                         <div className="flex items-center gap-1 mt-2 text-slate-500">
                           <MapPin size={12} />
@@ -237,7 +236,12 @@ export default function ProspectList() {
   
   const [searchQuery, setSearchQuery] = useState('');
   const [filtroWLE, setFiltroWLE] = useState(false); 
-  const [filtroBairro, setFiltroBairro] = useState('TODOS'); // NOVO ESTADO DE FILTRO
+  
+  // ESTADOS DO COMBOBOX (SEARCHABLE DROPDOWN)
+  const [filtroBairro, setFiltroBairro] = useState('TODOS'); 
+  const [bairroSearchTerm, setBairroSearchTerm] = useState('');
+  const [isBairroDropdownOpen, setIsBairroDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -245,10 +249,28 @@ export default function ProspectList() {
   const currentUser = userStr ? JSON.parse(userStr) : null;
   const currentUserId = currentUser?.id || '';
 
-  // Extrai lista única de bairros da listagem
   const bairrosDisponiveis = Array.from(new Set(prospects.map(p => p.bairro).filter(Boolean))).sort();
 
-  // Atualiza com ordenação instantânea!
+  // Fecha o dropdown se o usuário clicar fora dele
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsBairroDropdownOpen(false);
+        // Se fechou sem escolher nada e o texto tá vazio, volta pro filtro TODOS
+        if (bairroSearchTerm.trim() === '') {
+          setFiltroBairro('TODOS');
+        }
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [bairroSearchTerm]);
+
+  // Filtra as opções do dropdown com base no que o usuário digitou
+  const filteredBairrosDropdown = bairrosDisponiveis.filter(b => 
+    (b as string).toLowerCase().includes(bairroSearchTerm.toLowerCase())
+  );
+
   const handleUpdateProspect = (updated: Prospect) => {
     setProspects(prev => {
       const novaLista = prev.map(p => p.id === updated.id ? updated : p);
@@ -292,7 +314,6 @@ export default function ProspectList() {
     socket.on('prospectUpdated', (updatedProspect: Prospect) => {
       setProspects(prev => {
         const novaLista = prev.map(p => p.id === updatedProspect.id ? updatedProspect : p);
-        // Coloca o atualizado em primeiro garantido
         return novaLista.sort((a, b) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime());
       });
     });
@@ -383,7 +404,7 @@ export default function ProspectList() {
       (prospect.nomeFantasia && prospect.nomeFantasia.toLowerCase().includes(termo)) || 
       prospect.cnpj.includes(termo) || 
       prospect.telefone.includes(termo) ||
-      (prospect.endereco && prospect.endereco.toLowerCase().includes(termo)); // Busca geral no endereço antigo tb
+      (prospect.endereco && prospect.endereco.toLowerCase().includes(termo));
 
     const matchWLE = filtroWLE ? prospect.clienteWLE === true : true;
     
@@ -424,19 +445,57 @@ export default function ProspectList() {
 
             <div className="hidden sm:block w-px h-6 bg-slate-200"></div>
 
-            {/* NOVO FILTRO DE BAIRRO */}
-            <div className="relative w-full sm:w-48 flex-shrink-0">
+            {/* COMBOBOX DE BAIRROS (SEARCHABLE) */}
+            <div className="relative w-full sm:w-56 flex-shrink-0" ref={dropdownRef}>
               <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-              <select 
-                value={filtroBairro}
-                onChange={(e) => setFiltroBairro(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 bg-transparent text-sm font-medium focus:outline-none text-slate-700 appearance-none cursor-pointer"
-              >
-                <option value="TODOS">Todos os Bairros</option>
-                {bairrosDisponiveis.map(b => (
-                  <option key={b as string} value={b as string}>{b}</option>
-                ))}
-              </select>
+              <input 
+                type="text"
+                placeholder="Todos os Bairros"
+                value={bairroSearchTerm}
+                onChange={(e) => {
+                  setBairroSearchTerm(e.target.value);
+                  setIsBairroDropdownOpen(true);
+                  if (e.target.value === '') {
+                    setFiltroBairro('TODOS'); // Se limpar tudo, reseta o filtro
+                  }
+                }}
+                onClick={() => setIsBairroDropdownOpen(true)}
+                className="w-full pl-9 pr-8 py-2 bg-transparent text-sm font-medium focus:outline-none text-slate-700 placeholder:text-slate-700 cursor-text"
+              />
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={16} />
+              
+              {isBairroDropdownOpen && (
+                <div className="absolute top-full left-0 mt-2 w-full bg-white border border-slate-200 rounded-xl shadow-xl z-50 max-h-60 overflow-y-auto py-1">
+                  <button
+                    onClick={() => {
+                      setFiltroBairro('TODOS');
+                      setBairroSearchTerm('');
+                      setIsBairroDropdownOpen(false);
+                    }}
+                    className={`w-full text-left px-4 py-2 text-sm font-medium hover:bg-slate-50 transition-colors ${filtroBairro === 'TODOS' ? 'text-blue-600 bg-blue-50/50' : 'text-slate-700'}`}
+                  >
+                    Todos os Bairros
+                  </button>
+                  
+                  {filteredBairrosDropdown.map(b => (
+                    <button
+                      key={b as string}
+                      onClick={() => {
+                        setFiltroBairro(b as string);
+                        setBairroSearchTerm(b as string);
+                        setIsBairroDropdownOpen(false);
+                      }}
+                      className={`w-full text-left px-4 py-2 text-sm font-medium hover:bg-slate-50 transition-colors ${filtroBairro === b ? 'text-blue-600 bg-blue-50/50' : 'text-slate-700'}`}
+                    >
+                      {b as string}
+                    </button>
+                  ))}
+
+                  {filteredBairrosDropdown.length === 0 && (
+                    <div className="px-4 py-3 text-sm text-slate-400 text-center italic">Nenhum bairro encontrado</div>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="hidden sm:block w-px h-6 bg-slate-200"></div>
