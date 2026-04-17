@@ -20,7 +20,6 @@ export default function QuoteDetails() {
   const [copiedCnpj, setCopiedCnpj] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-  // 2. ESTADO DO NOVO MODAL
   const [isSendModalOpen, setIsSendModalOpen] = useState(false);
 
   const [newNote, setNewNote] = useState('');
@@ -31,7 +30,7 @@ export default function QuoteDetails() {
   const [isForcingStatus, setIsForcingStatus] = useState(false);
   const [forceError, setForceError] = useState('');
 
-  let currentUser = { id: '', nome: 'Usuário Desconhecido' };
+  let currentUser = { id: '', nome: 'Usuário Desconhecido', login: '' };
   try {
     const userStr = localStorage.getItem('@CRM:user');
     if (userStr) currentUser = JSON.parse(userStr);
@@ -97,7 +96,9 @@ export default function QuoteDetails() {
     try {
       if (!currentUser.nome) throw new Error('Sessão expirada');
       
-      await QuoteService.forceStatusUpdate(Number(quote.id), forceStatusModal.targetStatus, currentUser.nome, forcePassword);
+      const loginParaValidar = currentUser.login || currentUser.nome.toLowerCase();
+      
+      await QuoteService.forceStatusUpdate(Number(quote.id), forceStatusModal.targetStatus, loginParaValidar, forcePassword);
       
       await fetchQuoteDetails(); 
       
@@ -151,7 +152,7 @@ export default function QuoteDetails() {
 
   const modulos = quote.modulos || ['Financeiro', 'NFe', 'Estoque'];
   const formattedId = String(quote.id || '0000').padStart(4, '0');
-  const steps = ['RASCUNHO', 'ENVIADO', 'APROVADO'];
+  const steps = ['RASCUNHO', 'ENVIADO', 'APROVADO', 'REJEITADO'];
   const currentStatus = (quote.status?.toUpperCase() || 'RASCUNHO');
   const currentStepIdx = steps.indexOf(currentStatus);
 
@@ -460,10 +461,36 @@ export default function QuoteDetails() {
                     </p>
                   </div>
 
-                  <button className="w-full mt-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black py-4 rounded-xl transition-all shadow-md hover:shadow-xl hover:-translate-y-0.5 flex items-center justify-center gap-2 active:scale-95">
-                    <CheckCircle2 size={20} />
-                    APROVAR PEDIDO
-                  </button>
+                  {currentStatus !== 'APROVADO' && currentStatus !== 'REJEITADO' && (
+                    <>
+                      <button 
+                        onClick={() => setForceStatusModal({ isOpen: true, targetStatus: 'APROVADO' })}
+                        className="w-full mt-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black py-4 rounded-xl transition-all shadow-md hover:shadow-xl hover:-translate-y-0.5 flex items-center justify-center gap-2 active:scale-95"
+                      >
+                        <CheckCircle2 size={20} />
+                        APROVAR PEDIDO
+                      </button>
+
+                      <button 
+                        onClick={() => setForceStatusModal({ isOpen: true, targetStatus: 'REJEITADO' })}
+                        className="w-full mt-3 py-2 text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg text-[11px] font-black uppercase tracking-widest transition-colors flex items-center justify-center"
+                      >
+                        Orçamento Rejeitado
+                      </button>
+                    </>
+                  )}
+
+                  {currentStatus === 'APROVADO' && (
+                    <div className="w-full mt-4 bg-emerald-100 text-emerald-700 font-black py-3 rounded-xl flex items-center justify-center gap-2 uppercase text-sm border border-emerald-200">
+                      <CheckCircle2 size={18} /> Orçamento Aprovado
+                    </div>
+                  )}
+                  
+                  {currentStatus === 'REJEITADO' && (
+                    <div className="w-full mt-4 bg-rose-100 text-rose-700 font-black py-3 rounded-xl flex items-center justify-center uppercase text-sm border border-rose-200">
+                      Orçamento Rejeitado
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -560,7 +587,6 @@ export default function QuoteDetails() {
         </div>
       )}
 
-      {/* 4. AQUI O SEU COMPONENTE DO MODAL ESTÁ DE FATO RENDERIZANDO NA TELA */}
       {isSendModalOpen && quote && (
         <EnviarPropostaModal 
           quote={quote}

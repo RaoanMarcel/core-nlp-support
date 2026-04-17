@@ -6,7 +6,6 @@ const prisma = new PrismaClient();
 
 export class QuoteController {
   
-  // Lista todos (com ordenação)
   async list(req: Request, res: Response) {
     try {
       const quotes = await prisma.quote.findMany({
@@ -19,7 +18,6 @@ export class QuoteController {
     }
   }
 
-  // Busca por filtros específicos
   async consultar(req: Request, res: Response) {
     try {
       const { termo, dataInicio, dataFim, status } = req.query;
@@ -72,7 +70,6 @@ export class QuoteController {
     }
   }
 
-  // Busca Orçamento trazendo notas e histórico
   async getById(req: Request, res: Response) {
     try {
       const { id } = req.params;
@@ -81,7 +78,7 @@ export class QuoteController {
         where: { id: Number(id) },
         include: {
           notas: { orderBy: { createdAt: 'desc' } },
-          historico: { orderBy: { createdAt: 'desc' } } // Separado e tipado corretamente
+          historico: { orderBy: { createdAt: 'desc' } } 
         }
       });
 
@@ -175,7 +172,6 @@ export class QuoteController {
     }
   }
 
-  // Atualiza orçamento (Registrando no Histórico)
   async update(req: Request, res: Response) {
     try {
       const { id } = req.params;
@@ -184,7 +180,7 @@ export class QuoteController {
         telefonePrincipal, telefoneSecundario, 
         modulos, plano, valorBase, valorNegociado,
         interesses, observacoes, status,
-        usuarioLogin // Captura o usuário que está alterando
+        usuarioLogin 
       } = req.body;
 
       const cleanCnpj = cnpj ? cnpj.replace(/\D/g, '') : undefined;
@@ -247,7 +243,6 @@ export class QuoteController {
     }
   }
   
-  // Força atualização de Status via Autenticação (Registrando no Histórico Real)
   async forceStatusUpdate(req: Request, res: Response) {
     try {
       const { id } = req.params;
@@ -267,7 +262,6 @@ export class QuoteController {
         return res.status(401).json({ error: 'Senha incorreta. Ação negada.' });
       }
 
-      // Atualiza o status e já insere na tabela de histórico de forma limpa (nested write)
       const quote = await prisma.quote.update({
         where: { id: Number(id) },
         data: { 

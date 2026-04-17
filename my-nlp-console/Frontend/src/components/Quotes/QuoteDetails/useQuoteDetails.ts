@@ -66,7 +66,7 @@ const updateBackend = async (fields: Partial<IQuote>) => {
 
   const modulos = quote.modulos || ['Financeiro', 'NFe', 'Estoque', 'PDV'];
   const formattedId = String(quote.id || '0000').padStart(4, '0');
-  const steps = ['RASCUNHO', 'ENVIADO', 'APROVADO'];
+  const steps = ['RASCUNHO', 'ENVIADO', 'APROVADO', 'REJEITADO'];
   const currentStepIdx = steps.indexOf(quote.status?.toUpperCase() || 'RASCUNHO');
 
   return {
