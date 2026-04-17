@@ -4,7 +4,7 @@ import {
   ArrowLeft, Building, Mail, Phone, MapPin, 
   CheckSquare, DollarSign, Send, CheckCircle2, 
   Clock, Copy, Check, ExternalLink, User, Pencil,
-  CornerDownLeft, Loader2
+  CornerDownLeft, Loader2 
 } from 'lucide-react';
 import type { IQuote, IQuoteNote } from '../types';
 import { QuoteService } from '../../../services/quote.service'; // Importando o Service atualizado
@@ -133,20 +133,28 @@ export default function QuoteDetails() {
   return (
     <>
       <div className="h-full flex flex-col bg-[#f8fafc] font-sans overflow-hidden">
-        {/* CABEÇALHO */}
+
         <header className="bg-white border-b border-slate-200 px-6 py-4 shrink-0 z-20 shadow-sm">
           <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div className="flex items-start gap-4">
+            
+            <div className="flex items-start gap-4 md:ml-5">
               <button 
                 onClick={() => navigate('/orcamentos')}
-                className="p-2 mt-1 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-full transition-colors"
+                className="relative z-30 p-2 mt-1 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-full transition-colors"
+                title="Voltar para Orçamentos"
               >
                 <ArrowLeft size={20} />
               </button>
               
               <div>
                 <div className="text-slate-400 text-[11px] mb-1 font-medium uppercase tracking-wider">
-                  Orçamentos / <span className="text-slate-500">{quote.nomeCliente}</span> / Pedido #{formattedId}
+                  <span 
+                    onClick={() => navigate('/orcamentos')}
+                    className="relative z-30 cursor-pointer hover:text-blue-600 transition-colors"
+                    title="Voltar para Orçamentos"
+                  >
+                    Orçamentos
+                  </span> / <span className="text-slate-500">{quote.nomeCliente}</span> / Pedido #{formattedId}
                 </div>
                 
                 <div className="flex flex-col xl:flex-row xl:items-center gap-4 xl:gap-8">
@@ -233,38 +241,50 @@ export default function QuoteDetails() {
                   </div>
                   <div className="space-y-4">
                     <div>
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Contato Direto</label>
-                      <div className="flex flex-col gap-2">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Contato Direto</label>
+                        <div className="flex flex-col gap-3">
                         {quote.email && (
-                          <a href={`mailto:${quote.email}`} className="flex items-center gap-2 text-sm text-slate-600 hover:text-blue-600 transition-colors w-fit">
-                            <Mail size={14} className="text-slate-400" />
-                            {quote.email}
-                          </a>
+                            <a 
+                            href={`mailto:${quote.email}`} 
+                            className="inline-flex items-center gap-2 text-sm text-slate-700 hover:text-blue-600 transition-colors group w-fit"
+                            >
+                            <Mail size={16} className="text-slate-400 group-hover:text-blue-600 transition-colors shrink-0" />
+                            <span className="font-semibold">{quote.email}</span>
+                            <ExternalLink size={14} className="text-slate-400 opacity-100  group-hover:text-blue-600 transition-all duration-300 -ml-0.5" />
+                            </a>
                         )}
+                        
                         {quote.telefonePrincipal && (
-                          <a href={`tel:${quote.telefonePrincipal.replace(/\D/g, '')}`} className="flex items-center gap-2 text-sm text-slate-600 hover:text-blue-600 transition-colors w-fit">
-                            <Phone size={14} className="text-slate-400" />
-                            {quote.telefonePrincipal}
-                          </a>
+                            <a 
+                            href={`tel:${quote.telefonePrincipal.replace(/\D/g, '')}`} 
+                            className="inline-flex items-center gap-2 text-sm text-slate-700 hover:text-blue-600 transition-colors group w-fit"
+                            >
+                            <Phone size={16} className="text-slate-400 group-hover:text-blue-600 transition-colors shrink-0" />
+                            <span className="font-semibold">{quote.telefonePrincipal}</span>
+                            <ExternalLink size={14} className="text-slate-400 opacity-100 group-hover:text-blue-600 transition-all duration-300 -ml-0.5" />
+                            </a>
                         )}
-                      </div>
+                        </div>
                     </div>
+                    
                     <div>
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Localização</label>
-                      {quote.endereco ? (
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Localização</label>
+                        {quote.endereco ? (
                         <a 
-                          href={`http://googleusercontent.com/maps.google.com/?q=${encodeURIComponent(quote.endereco)}`} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-2 text-sm text-slate-600 hover:text-blue-600 transition-colors group"
+                            href={`https://maps.google.com/?q=$${encodeURIComponent(quote.endereco)}`} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 text-sm text-slate-700 hover:text-blue-600 transition-colors group w-fit"
                         >
-                          <MapPin size={14} className="text-slate-400 shrink-0" />
-                          <span className="truncate">{quote.endereco}</span>
-                          <ExternalLink size={12} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <MapPin size={16} className="text-slate-400 group-hover:text-blue-600 shrink-0 transition-colors" />
+                            <span className="font-semibold">{quote.endereco}</span>
+                            <ExternalLink size={14} className="text-slate-400 opacity-100 group-hover:text-blue-600 transition-all duration-300 -ml-0.5 shrink-0" />
                         </a>
-                      ) : <p className="text-sm text-slate-400 italic">Endereço não informado</p>}
+                        ) : (
+                        <p className="text-sm text-slate-400 italic px-1">Endereço não informado</p>
+                        )}
                     </div>
-                  </div>
+                    </div>
                 </div>
               </div>
 
@@ -285,7 +305,6 @@ export default function QuoteDetails() {
                 </div>
               </div>
 
-              {/* LOG DE ANOTAÇÕES (ZENDESK/LINEAR STYLE) */}
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col flex-1 min-h-112.5">
                 {/* Header do Container */}
                 <div className="px-6 py-3 border-b border-slate-100 shrink-0">
