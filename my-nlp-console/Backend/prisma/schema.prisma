@@ -99,7 +99,7 @@ model Quote {
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
   notas     QuoteNote[] 
-
+  historico QuoteHistory[]
 }
 
 model QuoteNote {
@@ -109,5 +109,14 @@ model QuoteNote {
   texto     String   @db.Text
   usuario   String   
   
+  createdAt DateTime @default(now())
+}
+
+model QuoteHistory {
+  id        String   @id @default(uuid())
+  quoteId   Int
+  quote     Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  acao      String   // Ex: "Orçamento Criado", "Status alterado para APROVADO"
+  usuario   String   // Nome de quem fez a ação
   createdAt DateTime @default(now())
 }

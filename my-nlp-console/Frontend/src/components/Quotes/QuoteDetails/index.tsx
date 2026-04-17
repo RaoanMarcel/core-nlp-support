@@ -471,7 +471,7 @@ export default function QuoteDetails() {
                 </div>
               </div>
 
-              {/* LINHA DO TEMPO */}
+              {/* LINHA DO TEMPO (AGORA DINÂMICA) */}
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                 <div className="px-6 py-3 border-b border-slate-100 bg-slate-50/50">
                   <h2 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
@@ -481,32 +481,32 @@ export default function QuoteDetails() {
                 </div>
                 <div className="p-6">
                   <div className="relative pl-6 border-l-2 border-slate-100 space-y-8">
-                    <div className="relative">
-                      <div className="absolute -left-7.75 bg-blue-600 border-4 border-white w-3.5 h-3.5 rounded-full top-1 shadow-sm"></div>
-                      <div className="bg-white border border-slate-100 p-3 rounded-lg shadow-sm">
-                        <p className="text-xs font-bold text-slate-900">
-                          {quote.status === 'APROVADO' ? 'Pedido Aprovado' : 
-                           'Aguardando Ação'}
-                        </p>
-                        <div className="flex items-center gap-1.5 mt-1 text-slate-400">
-                          <User size={10} />
-                          <span className="text-[9px] font-bold uppercase tracking-tighter">Sistema</span>
-                          <span className="text-[9px]">• Agora</span>
-                        </div>
-                      </div>
-                    </div>
+                    
+                    {quote.historico && quote.historico.length > 0 ? (
+                      quote.historico.map((item, index) => {
+                        const isLatest = index === 0;
+                        
+                        return (
+                          <div key={item.id} className={`relative ${!isLatest ? 'opacity-60' : ''}`}>
+                            <div className={`absolute -left-7.75 border-4 border-white w-3.5 h-3.5 rounded-full top-1 ${isLatest ? 'bg-blue-600 shadow-sm' : 'bg-slate-300'}`}></div>
+                            
+                            <div className={isLatest ? "bg-white border border-slate-100 p-3 rounded-lg shadow-sm" : "p-1"}>
+                              <p className={`text-xs font-bold ${isLatest ? 'text-slate-900' : 'text-slate-800'}`}>
+                                {item.acao}
+                              </p>
+                              <div className="flex items-center gap-1.5 mt-1 text-slate-400">
+                                <User size={10} />
+                                <span className="text-[9px] font-bold uppercase tracking-tighter">{item.usuario}</span>
+                                <span className="text-[9px]">• {formatarData(item.createdAt)}</span>
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })
+                    ) : (
+                      <p className="text-xs text-slate-400 font-medium italic py-4">Nenhum histórico registrado.</p>
+                    )}
 
-                    <div className="relative opacity-60">
-                      <div className="absolute -left-7.75 bg-slate-300 border-4 border-white w-3.5 h-3.5 rounded-full top-1"></div>
-                      <div className="p-1">
-                        <p className="text-xs font-bold text-slate-800">Orçamento Criado</p>
-                        <div className="flex items-center gap-1.5 text-slate-400 mt-1">
-                          <User size={10} />
-                          <span className="text-[9px] font-bold uppercase tracking-tighter">Vendedor</span>
-                          <span className="text-[9px]">• {formatarData(quote.createdAt || new Date().toISOString())}</span>
-                        </div>
-                      </div>
-                    </div>
                   </div>
                 </div>
               </div>

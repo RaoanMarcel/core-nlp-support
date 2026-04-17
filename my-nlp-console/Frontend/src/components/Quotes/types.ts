@@ -13,6 +13,15 @@ export interface IQuoteNote {
   createdAt: string;
 }
 
+// AQUI ESTÁ A INTERFACE! Ela tem que viver neste arquivo.
+export interface IQuoteHistory {
+  id: string;
+  quoteId: number;
+  acao: string;
+  usuario: string;
+  createdAt: string;
+}
+
 export interface IQuote {
   id: string;
   nomeCliente: string;
@@ -30,4 +39,5 @@ export interface IQuote {
   status: 'RASCUNHO' | 'EM_NEGOCIACAO' | 'APROVADO' | 'REJEITADO'; 
   createdAt: string;
   notas?: IQuoteNote[];
+  historico?: IQuoteHistory[]; // Agora ele encontra a interface logo acima!
 }

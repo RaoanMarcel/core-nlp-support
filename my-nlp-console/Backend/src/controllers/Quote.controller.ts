@@ -2,7 +2,6 @@ import { Request, Response } from 'express';
 import { PrismaClient, Prisma } from '@prisma/client';
 import bcrypt from 'bcrypt';
 
-
 const prisma = new PrismaClient();
 
 export class QuoteController {
@@ -73,7 +72,7 @@ export class QuoteController {
     }
   }
 
- // ATUALIZADO: Busca o orçamento trazendo o histórico de notas ordenado
+  // Busca Orçamento trazendo notas e histórico
   async getById(req: Request, res: Response) {
     try {
       const { id } = req.params;
@@ -81,9 +80,8 @@ export class QuoteController {
       const quote = await prisma.quote.findUnique({
         where: { id: Number(id) },
         include: {
-          notas: {
-            orderBy: { createdAt: 'desc' } // Traz da mais nova para a mais antiga (ou 'asc' se preferir)
-          }
+          notas: { orderBy: { createdAt: 'desc' } },
+          historico: { orderBy: { createdAt: 'desc' } } // Separado e tipado corretamente
         }
       });
 
@@ -98,6 +96,7 @@ export class QuoteController {
     }
   }
 
+  // Adiciona Nota (Comentário humano)
   async addNote(req: Request, res: Response) {
     try {
       const { id } = req.params;
@@ -126,14 +125,16 @@ export class QuoteController {
       return res.status(500).json({ error: 'Erro ao adicionar nota' });
     }
   }
-  // Cria um novo orçamento
+
+  // Cria um novo orçamento (Registrando no Histórico)
   async create(req: Request, res: Response) {
     try {
       const { 
         nomeCliente, cnpj, endereco, email, 
         telefonePrincipal, telefoneSecundario, 
         modulos, plano, valorBase, valorNegociado,
-        interesses, observacoes, status 
+        interesses, observacoes, status,
+        usuarioLogin // O ideal é passar isso no body a partir do Frontend
       } = req.body;
 
       const cleanCnpj = cnpj ? cnpj.replace(/\D/g, '') : undefined;
@@ -152,7 +153,13 @@ export class QuoteController {
           valorNegociado: Number(valorNegociado),
           interesses,
           observacoes,
-          status: status || 'RASCUNHO' 
+          status: status || 'RASCUNHO',
+          historico: {
+            create: {
+              acao: 'Orçamento Criado',
+              usuario: usuarioLogin || 'Sistema'
+            }
+          }
         }
       });
 
@@ -168,6 +175,7 @@ export class QuoteController {
     }
   }
 
+  // Atualiza orçamento (Registrando no Histórico)
   async update(req: Request, res: Response) {
     try {
       const { id } = req.params;
@@ -175,7 +183,8 @@ export class QuoteController {
         nomeCliente, cnpj, endereco, email, 
         telefonePrincipal, telefoneSecundario, 
         modulos, plano, valorBase, valorNegociado,
-        interesses, observacoes, status 
+        interesses, observacoes, status,
+        usuarioLogin // Captura o usuário que está alterando
       } = req.body;
 
       const cleanCnpj = cnpj ? cnpj.replace(/\D/g, '') : undefined;
@@ -195,7 +204,13 @@ export class QuoteController {
           ...(valorNegociado !== undefined && { valorNegociado: Number(valorNegociado) }),
           ...(interesses !== undefined && { interesses }),
           ...(observacoes !== undefined && { observacoes }),
-          ...(status && { status })
+          ...(status && { status }),
+          historico: {
+            create: {
+              acao: 'Orçamento Atualizado',
+              usuario: usuarioLogin || 'Sistema'
+            }
+          }
         }
       });
 
@@ -211,6 +226,7 @@ export class QuoteController {
     }
   }
 
+  // Deleta um orçamento
   async delete(req: Request, res: Response) {
     try {
       const { id } = req.params;
@@ -231,6 +247,7 @@ export class QuoteController {
     }
   }
   
+  // Força atualização de Status via Autenticação (Registrando no Histórico Real)
   async forceStatusUpdate(req: Request, res: Response) {
     try {
       const { id } = req.params;
@@ -250,29 +267,29 @@ export class QuoteController {
         return res.status(401).json({ error: 'Senha incorreta. Ação negada.' });
       }
 
+      // Atualiza o status e já insere na tabela de histórico de forma limpa (nested write)
       const quote = await prisma.quote.update({
         where: { id: Number(id) },
-        data: { status: novoStatus }
-      });
-
-      const note = await prisma.quoteNote.create({
-        data: {
-          quoteId: Number(id),
-          texto: `⚠️ STATUS FORÇADO PARA: ${novoStatus}. Ação autorizada mediante senha.`,
-          usuario: user.nome
+        data: { 
+          status: novoStatus,
+          historico: {
+            create: {
+              acao: `Status forçado para: ${novoStatus} (Ação Autorizada)`,
+              usuario: user.nome
+            }
+          }
         }
       });
 
       const io = req.app.get('io');
       if (io) {
         io.emit('quote:updated', quote);
-        io.emit('quote:note_added', note);
       }
 
-      return res.json({ quote, note });
+      return res.json({ quote });
     } catch (error) {
       console.error('Erro ao forçar atualização de status:', error);
       return res.status(500).json({ error: 'Erro interno ao forçar status.' });
     }
   }
-  }
+}
