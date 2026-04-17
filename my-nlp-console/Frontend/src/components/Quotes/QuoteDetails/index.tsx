@@ -7,7 +7,7 @@ import {
   CornerDownLeft, Loader2 
 } from 'lucide-react';
 import type { IQuote, IQuoteNote } from '../types';
-import { QuoteService } from '../../../services/quote.service'; // Importando o Service atualizado
+import { QuoteService } from '../../../services/quote.service'; 
 import QuoteModal from '../QuoteModal'; 
 
 export default function QuoteDetails() {
@@ -23,10 +23,15 @@ export default function QuoteDetails() {
   const [newNote, setNewNote] = useState('');
   const [isSubmittingNote, setIsSubmittingNote] = useState(false);
 
+  // NOVOS ESTADOS: Modal de Forçar Status
+  const [forceStatusModal, setForceStatusModal] = useState<{isOpen: boolean, targetStatus: string}>({ isOpen: false, targetStatus: '' });
+  const [forcePassword, setForcePassword] = useState('');
+  const [isForcingStatus, setIsForcingStatus] = useState(false);
+  const [forceError, setForceError] = useState('');
+
   const fetchQuoteDetails = async () => {
     setIsLoading(true);
     try {
-      // Usando o QuoteService em vez da chamada direta com api.get
       const data = await QuoteService.getById(Number(id));
       setQuote(data);
     } catch (error) {
@@ -82,6 +87,32 @@ export default function QuoteDetails() {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSubmitNote();
+    }
+  };
+
+  // NOVA FUNÇÃO: Dispara a atualização de status forçada
+  const handleForceStatus = async () => {
+    if (!forcePassword.trim() || !quote?.id) return;
+    
+    setIsForcingStatus(true);
+    setForceError('');
+    
+    try {
+      const userStorage = localStorage.getItem('@CRM:user');
+      if (!userStorage) throw new Error('Sessão expirada');
+      
+      const { usuario } = JSON.parse(userStorage); 
+      
+      await QuoteService.forceStatusUpdate(Number(quote.id), forceStatusModal.targetStatus, usuario, forcePassword);
+      
+      await fetchQuoteDetails(); // Recarrega os dados para mostrar o novo status e o log automático
+      
+      setForceStatusModal({ isOpen: false, targetStatus: '' });
+      setForcePassword('');
+    } catch (error: any) {
+      setForceError(error.response?.data?.error || 'Erro ao validar senha');
+    } finally {
+      setIsForcingStatus(false);
     }
   };
 
@@ -163,19 +194,27 @@ export default function QuoteDetails() {
                   </h1>
                   
                   <div className="flex items-center gap-1.5">
+                    {/* AQUI: Renderização dos steps transformada em botões interativos */}
                     {steps.map((step, idx) => {
                       const isCompleted = idx < currentStepIdx;
                       const isCurrent = idx === currentStepIdx;
                       return (
                         <React.Fragment key={step}>
-                          <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all ${
-                            isCurrent ? 'bg-blue-600 text-white shadow-sm' : 
-                            isCompleted ? 'bg-emerald-100 text-emerald-700' : 
-                            'bg-slate-100 text-slate-400'
-                          }`}>
+                          <button 
+                            onClick={() => !isCurrent && setForceStatusModal({ isOpen: true, targetStatus: step })}
+                            title={!isCurrent ? `Forçar alteração para ${step}` : ''}
+                            disabled={isCurrent}
+                            className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all ${
+                              !isCurrent ? 'cursor-pointer hover:-translate-y-0.5 hover:shadow-sm' : 'cursor-default'
+                            } ${
+                              isCurrent ? 'bg-blue-600 text-white shadow-sm ring-2 ring-blue-600/30 ring-offset-1' : 
+                              isCompleted ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' : 
+                              'bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600'
+                            }`}
+                          >
                             {(isCompleted || isCurrent) && <Check size={12} />}
                             {step}
-                          </div>
+                          </button>
                           {idx < steps.length - 1 && (
                             <div className={`w-6 h-0.5 rounded ${idx < currentStepIdx ? 'bg-emerald-200' : 'bg-slate-200'}`} />
                           )}
@@ -250,7 +289,7 @@ export default function QuoteDetails() {
                             >
                             <Mail size={16} className="text-slate-400 group-hover:text-blue-600 transition-colors shrink-0" />
                             <span className="font-semibold">{quote.email}</span>
-                            <ExternalLink size={14} className="text-slate-400 opacity-100  group-hover:text-blue-600 transition-all duration-300 -ml-0.5" />
+                            <ExternalLink size={14} className="text-slate-400 opacity-0 group-hover:opacity-100 group-hover:text-blue-600 transition-all duration-300 -ml-0.5" />
                             </a>
                         )}
                         
@@ -261,7 +300,7 @@ export default function QuoteDetails() {
                             >
                             <Phone size={16} className="text-slate-400 group-hover:text-blue-600 transition-colors shrink-0" />
                             <span className="font-semibold">{quote.telefonePrincipal}</span>
-                            <ExternalLink size={14} className="text-slate-400 opacity-100 group-hover:text-blue-600 transition-all duration-300 -ml-0.5" />
+                            <ExternalLink size={14} className="text-slate-400 opacity-0 group-hover:opacity-100 group-hover:text-blue-600 transition-all duration-300 -ml-0.5" />
                             </a>
                         )}
                         </div>
@@ -278,7 +317,7 @@ export default function QuoteDetails() {
                         >
                             <MapPin size={16} className="text-slate-400 group-hover:text-blue-600 shrink-0 transition-colors" />
                             <span className="font-semibold">{quote.endereco}</span>
-                            <ExternalLink size={14} className="text-slate-400 opacity-100 group-hover:text-blue-600 transition-all duration-300 -ml-0.5 shrink-0" />
+                            <ExternalLink size={14} className="text-slate-400 opacity-0 group-hover:opacity-100 group-hover:text-blue-600 transition-all duration-300 -ml-0.5 shrink-0" />
                         </a>
                         ) : (
                         <p className="text-sm text-slate-400 italic px-1">Endereço não informado</p>
@@ -306,7 +345,6 @@ export default function QuoteDetails() {
               </div>
 
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col flex-1 min-h-112.5">
-                {/* Header do Container */}
                 <div className="px-6 py-3 border-b border-slate-100 shrink-0">
                   <h2 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
                     <Pencil size={14} />
@@ -314,19 +352,14 @@ export default function QuoteDetails() {
                   </h2>
                 </div>
                 
-                {/* Grade / Table-less */}
                 <div className="flex-1 flex flex-col overflow-hidden">
-                  {/* Cabeçalho da Grade */}
                   <div className="grid grid-cols-[80px_130px_1fr] gap-4 px-6 py-2 border-b border-slate-100 bg-slate-50 sticky top-0 z-10 shrink-0">
                     <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Data</div>
                     <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Usuário</div>
                     <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Anotação</div>
                   </div>
 
-                  {/* Linhas da Grade */}
                   <div className="flex-1 overflow-y-auto">
-                    
-                    {/* Destaque 1: Interesses (Somente Leitura) */}
                     {quote.interesses && (
                       <div className="grid grid-cols-[80px_130px_1fr] gap-4 px-6 py-2.5 border-b border-slate-100 items-start hover:bg-slate-50/50 transition-colors">
                         <div className="text-[11px] text-slate-500 pt-0.5">{formatarData(quote.createdAt)}</div>
@@ -338,7 +371,6 @@ export default function QuoteDetails() {
                       </div>
                     )}
 
-                    {/* Destaque 2: Observações Iniciais (Somente Leitura) */}
                     {quote.observacoes && (
                       <div className="grid grid-cols-[80px_130px_1fr] gap-4 px-6 py-2.5 border-b border-slate-100 items-start hover:bg-slate-50/50 transition-colors">
                         <div className="text-[11px] text-slate-500 pt-0.5">{formatarData(quote.createdAt)}</div>
@@ -350,7 +382,6 @@ export default function QuoteDetails() {
                       </div>
                     )}
 
-                    {/* Notas Cadastradas (AGORA APENAS LEITURA) */}
                     {quote.notas?.map((nota: IQuoteNote) => (
                       <div key={nota.id} className="grid grid-cols-[80px_130px_1fr] gap-4 px-6 py-2.5 border-b border-slate-100 items-start hover:bg-slate-50/50 transition-colors group">
                         <div className="text-[11px] text-slate-500 pt-0.5">{formatarData(nota.createdAt)}</div>
@@ -371,7 +402,6 @@ export default function QuoteDetails() {
                   </div>
                 </div>
 
-                {/* Input Persistente de Nova Nota */}
                 <div className="px-6 py-4 border-t border-slate-100 bg-white shrink-0 rounded-b-xl flex flex-col gap-2">
                   <div className="relative flex items-end gap-2">
                     <textarea
@@ -451,20 +481,21 @@ export default function QuoteDetails() {
                 </div>
                 <div className="p-6">
                   <div className="relative pl-6 border-l-2 border-slate-100 space-y-8">
-                    {/* Evento Atual */}
                     <div className="relative">
                       <div className="absolute -left-7.75 bg-blue-600 border-4 border-white w-3.5 h-3.5 rounded-full top-1 shadow-sm"></div>
                       <div className="bg-white border border-slate-100 p-3 rounded-lg shadow-sm">
-                        <p className="text-xs font-bold text-slate-900">Aguardando Aprovação</p>
+                        <p className="text-xs font-bold text-slate-900">
+                          {quote.status === 'APROVADO' ? 'Pedido Aprovado' : 
+                           'Aguardando Ação'}
+                        </p>
                         <div className="flex items-center gap-1.5 mt-1 text-slate-400">
                           <User size={10} />
-                          <span className="text-[9px] font-bold uppercase tracking-tighter">Admin Sistema</span>
+                          <span className="text-[9px] font-bold uppercase tracking-tighter">Sistema</span>
                           <span className="text-[9px]">• Agora</span>
                         </div>
                       </div>
                     </div>
 
-                    {/* Evento de Criação */}
                     <div className="relative opacity-60">
                       <div className="absolute -left-7.75 bg-slate-300 border-4 border-white w-3.5 h-3.5 rounded-full top-1"></div>
                       <div className="p-1">
@@ -484,6 +515,55 @@ export default function QuoteDetails() {
           </div>
         </div>
       </div>
+
+      {/* MINI-MODAL: FORÇAR ATUALIZAÇÃO DE STATUS */}
+      {forceStatusModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm transition-all">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="px-6 py-4 bg-amber-50 border-b border-amber-100">
+              <h3 className="text-sm font-black text-amber-900 uppercase tracking-widest flex items-center gap-2">
+                Ação Restrita
+              </h3>
+              <p className="text-xs text-amber-700 mt-1">
+                Você está forçando o status para <span className="font-bold">"{forceStatusModal.targetStatus}"</span>.
+              </p>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Confirme sua senha</label>
+                <input 
+                  type="password"
+                  autoFocus
+                  value={forcePassword}
+                  onChange={(e) => setForcePassword(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleForceStatus()}
+                  className="w-full bg-slate-50 border border-slate-300 text-sm text-slate-900 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                  placeholder="••••••••"
+                />
+                {forceError && <p className="text-xs font-semibold text-rose-500 mt-2">{forceError}</p>}
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button 
+                  onClick={() => { setForceStatusModal({ isOpen: false, targetStatus: '' }); setForcePassword(''); setForceError(''); }}
+                  disabled={isForcingStatus}
+                  className="flex-1 px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100 rounded-lg transition-colors"
+                >
+                  CANCELAR
+                </button>
+                <button 
+                  onClick={handleForceStatus}
+                  disabled={isForcingStatus || !forcePassword}
+                  className="flex-1 bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition-all disabled:opacity-50 flex items-center justify-center"
+                >
+                  {isForcingStatus ? <Loader2 size={16} className="animate-spin" /> : 'AUTORIZAR'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {isEditModalOpen && (
         <QuoteModal 

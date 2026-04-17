@@ -15,5 +15,6 @@ router.put('/:id', quoteController.update);
 router.delete('/:id', quoteController.delete);
 
 router.post('/:id/notas', quoteController.addNote);
+router.patch('/:id/force-status', quoteController.forceStatusUpdate);
 
 export default router;

@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
 import { PrismaClient, Prisma } from '@prisma/client';
+import bcrypt from 'bcrypt';
+
 
 const prisma = new PrismaClient();
 
@@ -166,7 +168,6 @@ export class QuoteController {
     }
   }
 
-  // Atualiza um orçamento existente
   async update(req: Request, res: Response) {
     try {
       const { id } = req.params;
@@ -210,7 +211,6 @@ export class QuoteController {
     }
   }
 
-  // NOVO: Deleta um orçamento
   async delete(req: Request, res: Response) {
     try {
       const { id } = req.params;
@@ -230,4 +230,49 @@ export class QuoteController {
       return res.status(400).json({ error: 'Erro ao deletar pedido' });
     }
   }
-}
+  
+  async forceStatusUpdate(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const { novoStatus, usuarioLogin, senha } = req.body;
+
+      if (!novoStatus || !usuarioLogin || !senha) {
+        return res.status(400).json({ error: 'Dados insuficientes para forçar status.' });
+      }
+
+      const user = await prisma.user.findUnique({ where: { usuario: usuarioLogin } });
+      if (!user) {
+        return res.status(401).json({ error: 'Usuário não encontrado.' });
+      }
+
+      const senhaValida = await bcrypt.compare(senha, user.senha);
+      if (!senhaValida) {
+        return res.status(401).json({ error: 'Senha incorreta. Ação negada.' });
+      }
+
+      const quote = await prisma.quote.update({
+        where: { id: Number(id) },
+        data: { status: novoStatus }
+      });
+
+      const note = await prisma.quoteNote.create({
+        data: {
+          quoteId: Number(id),
+          texto: `⚠️ STATUS FORÇADO PARA: ${novoStatus}. Ação autorizada mediante senha.`,
+          usuario: user.nome
+        }
+      });
+
+      const io = req.app.get('io');
+      if (io) {
+        io.emit('quote:updated', quote);
+        io.emit('quote:note_added', note);
+      }
+
+      return res.json({ quote, note });
+    } catch (error) {
+      console.error('Erro ao forçar atualização de status:', error);
+      return res.status(500).json({ error: 'Erro interno ao forçar status.' });
+    }
+  }
+  }
