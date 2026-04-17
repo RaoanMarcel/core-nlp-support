@@ -9,6 +9,7 @@ import {
 import type { IQuote, IQuoteNote } from '../types';
 import { QuoteService } from '../../../services/quote.service'; 
 import QuoteModal from '../QuoteModal'; 
+import EnviarPropostaModal from './EnviarPropostaModal'; 
 
 export default function QuoteDetails() {
   const { id } = useParams<{ id: string }>();
@@ -19,15 +20,24 @@ export default function QuoteDetails() {
   const [copiedCnpj, setCopiedCnpj] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-  // Estados do Log de Anotações
+  // 2. ESTADO DO NOVO MODAL
+  const [isSendModalOpen, setIsSendModalOpen] = useState(false);
+
   const [newNote, setNewNote] = useState('');
   const [isSubmittingNote, setIsSubmittingNote] = useState(false);
 
-  // NOVOS ESTADOS: Modal de Forçar Status
   const [forceStatusModal, setForceStatusModal] = useState<{isOpen: boolean, targetStatus: string}>({ isOpen: false, targetStatus: '' });
   const [forcePassword, setForcePassword] = useState('');
   const [isForcingStatus, setIsForcingStatus] = useState(false);
   const [forceError, setForceError] = useState('');
+
+  let currentUser = { id: '', nome: 'Usuário Desconhecido' };
+  try {
+    const userStr = localStorage.getItem('@CRM:user');
+    if (userStr) currentUser = JSON.parse(userStr);
+  } catch (e) {
+    console.error('Erro ao ler usuário', e);
+  }
 
   const fetchQuoteDetails = async () => {
     setIsLoading(true);
@@ -52,22 +62,10 @@ export default function QuoteDetails() {
     
     setIsSubmittingNote(true);
     try {
-      const userStorage = localStorage.getItem('@CRM:user'); 
-      let nomeUsuario = 'Usuário Desconhecido';
-      
-      if (userStorage) {
-        try {
-          const userObj = JSON.parse(userStorage);
-          nomeUsuario = userObj.nome || nomeUsuario; 
-        } catch (e) {
-          console.error('Erro ao ler dados do usuário do localStorage:', e);
-        }
-      }
-
       const novaNota = await QuoteService.addNote(
         Number(quote.id), 
         newNote.trim(), 
-        nomeUsuario 
+        currentUser.nome 
       );
 
       setQuote(prev => prev ? {
@@ -90,7 +88,6 @@ export default function QuoteDetails() {
     }
   };
 
-  // NOVA FUNÇÃO: Dispara a atualização de status forçada
   const handleForceStatus = async () => {
     if (!forcePassword.trim() || !quote?.id) return;
     
@@ -98,14 +95,11 @@ export default function QuoteDetails() {
     setForceError('');
     
     try {
-      const userStorage = localStorage.getItem('@CRM:user');
-      if (!userStorage) throw new Error('Sessão expirada');
+      if (!currentUser.nome) throw new Error('Sessão expirada');
       
-      const { usuario } = JSON.parse(userStorage); 
+      await QuoteService.forceStatusUpdate(Number(quote.id), forceStatusModal.targetStatus, currentUser.nome, forcePassword);
       
-      await QuoteService.forceStatusUpdate(Number(quote.id), forceStatusModal.targetStatus, usuario, forcePassword);
-      
-      await fetchQuoteDetails(); // Recarrega os dados para mostrar o novo status e o log automático
+      await fetchQuoteDetails(); 
       
       setForceStatusModal({ isOpen: false, targetStatus: '' });
       setForcePassword('');
@@ -194,7 +188,6 @@ export default function QuoteDetails() {
                   </h1>
                   
                   <div className="flex items-center gap-1.5">
-                    {/* AQUI: Renderização dos steps transformada em botões interativos */}
                     {steps.map((step, idx) => {
                       const isCompleted = idx < currentStepIdx;
                       const isCurrent = idx === currentStepIdx;
@@ -234,7 +227,12 @@ export default function QuoteDetails() {
                 <Pencil size={16} />
                 Editar
               </button>
-              <button className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-bold transition-all shadow-sm hover:shadow-md active:scale-95">
+              
+              {/* 3. AQUI NO BOTÃO ADICIONEI O onClick QUE ABRE O MODAL */}
+              <button 
+                onClick={() => setIsSendModalOpen(true)} 
+                className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-bold transition-all shadow-sm hover:shadow-md active:scale-95"
+              >
                 <Send size={16} />
                 Enviar Proposta
               </button>
@@ -248,7 +246,6 @@ export default function QuoteDetails() {
             {/* COLUNA PRINCIPAL (2/3) */}
             <div className="xl:col-span-2 flex flex-col gap-6">
               
-              {/* BLOCO DE INFORMAÇÕES DO CLIENTE */}
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden shrink-0">
                 <div className="px-6 py-3 border-b border-slate-100 bg-slate-50/50">
                   <h2 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
@@ -327,7 +324,6 @@ export default function QuoteDetails() {
                 </div>
               </div>
 
-              {/* ESCOPO */}
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden shrink-0">
                 <div className="px-6 py-3 border-b border-slate-100 bg-slate-50/50">
                   <h2 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
@@ -471,7 +467,7 @@ export default function QuoteDetails() {
                 </div>
               </div>
 
-              {/* LINHA DO TEMPO (AGORA DINÂMICA) */}
+              {/* LINHA DO TEMPO */}
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                 <div className="px-6 py-3 border-b border-slate-100 bg-slate-50/50">
                   <h2 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
@@ -516,7 +512,6 @@ export default function QuoteDetails() {
         </div>
       </div>
 
-      {/* MINI-MODAL: FORÇAR ATUALIZAÇÃO DE STATUS */}
       {forceStatusModal.isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm transition-all">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in-95 duration-200">
@@ -563,6 +558,19 @@ export default function QuoteDetails() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* 4. AQUI O SEU COMPONENTE DO MODAL ESTÁ DE FATO RENDERIZANDO NA TELA */}
+      {isSendModalOpen && quote && (
+        <EnviarPropostaModal 
+          quote={quote}
+          usuarioAtual={currentUser}
+          onClose={() => setIsSendModalOpen(false)}
+          onSuccess={() => {
+            setIsSendModalOpen(false);
+            fetchQuoteDetails(); 
+          }}
+        />
       )}
 
       {isEditModalOpen && (

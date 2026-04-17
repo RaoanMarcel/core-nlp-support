@@ -11,6 +11,7 @@
     PENDENTE
     EM_ATENDIMENTO
     APROVADO
+    PROPOSTA_ENVIADA
     REPROVADO
     POSSIBILIDADE
     RETORNAR
@@ -116,7 +117,7 @@ model QuoteHistory {
   id        String   @id @default(uuid())
   quoteId   Int
   quote     Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
-  acao      String   // Ex: "Orçamento Criado", "Status alterado para APROVADO"
-  usuario   String   // Nome de quem fez a ação
+  acao      String   
+  usuario   String  
   createdAt DateTime @default(now())
 }
