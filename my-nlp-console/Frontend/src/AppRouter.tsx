@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
-import AppLayout from './SidebarLayout';
-import Dashboard from './Dashboard';
-import TicketQueue from './TicketQueue';
-import Relatorios from './Relatorios';
-import KnowledgeBase from './KnowledgeBase';
-import Quotes from './Quotes';
-import QuoteDetails from './Quotes/QuoteDetails';
-import ProspectList from '../features/ProspectList';
-import Login from '../features/ProspectList/Auth/Login';
+import AppLayout from './features/ProspectList/components/SidebarLayout';
+import Dashboard from './components/Dashboard';
+import TicketQueue from './components/TicketQueue';
+import KnowledgeBase from './components/KnowledgeBase';
+import Quotes from './components/Quotes';
+import QuoteDetails from './components/Quotes/QuoteDetails';
+import ProspectList from './features/ProspectList';
+import Login from './features/Auth/Login';
+import Relatorios from './features/Reports';
 
 export default function AppRouter() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);

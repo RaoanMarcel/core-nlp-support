@@ -1,10 +1,9 @@
-import React from 'react';
 import { 
   Lock, User, Loader2, ArrowRight, ShieldCheck, 
   Eye, EyeOff, AlertCircle, X 
 } from 'lucide-react';
-import logoSvg from '../../../../assets/logo.svg?url';
-import type { LoginProps } from '../../../../types/auth.types';
+import logoSvg from '../../../../public/logo.svg';
+import type { LoginProps } from '../../../types/auth.types';
 import { useLogin } from './hooks/useLogin';
 
 export default function Login(props: LoginProps) {
@@ -68,8 +67,7 @@ export default function Login(props: LoginProps) {
               {modoTrocaSenha ? (
                 <ShieldCheck size={36} className="text-white" />
               ) : (
-                <img src={logoSvg as string} alt="Logo" className="w-12 h-12 object-contain brightness-0 invert" />
-              )}
+            <img src="/logo.svg" alt="Logo" className="w-12 h-12 object-contain brightness-0 invert" />              )}
             </div>
             <h1 className="text-2xl font-black text-slate-800 tracking-tight">
               {modoTrocaSenha ? 'Segurança Adicional' : 'Acesso ao Sistema'}

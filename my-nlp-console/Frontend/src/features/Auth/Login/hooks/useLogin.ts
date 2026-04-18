@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { authService } from '../../../../../services/auth.service';
-import type { LoginProps } from '../../../../../types/auth.types';
+import { authService } from '../../../../services/auth.service';
+import type { LoginProps } from '../../../../types/auth.types';
 
 export function useLogin({ onLoginSuccess }: LoginProps) {
   const [usuario, setUsuario] = useState('');
