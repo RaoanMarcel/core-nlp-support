@@ -4,7 +4,7 @@ import React from 'react';
 interface BairroDropdownProps {
   value: string;
   onChange: (value: string) => void;
-  bairros?: string[]; // Pode ser injetado da sua API ou arquivo de constantes
+  bairros?: string[];
   disabled?: boolean;
   className?: string;
   error?: string;
