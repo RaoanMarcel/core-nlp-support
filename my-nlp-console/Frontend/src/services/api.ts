@@ -2,7 +2,6 @@ import axios from 'axios';
 
 console.log("Variáveis de ambiente:", import.meta.env);
 
-// Agora ele vai pegar o PUBLIC_API_URL corretamente
 const baseURL = import.meta.env?.PUBLIC_API_URL || import.meta.env?.VITE_API_URL || 'https://core-nlp-support.onrender.com';
 
 export const api = axios.create({

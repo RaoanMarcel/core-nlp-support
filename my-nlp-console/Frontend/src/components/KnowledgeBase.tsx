@@ -40,10 +40,8 @@ export default function KnowledgeBase() {
   const [selectedItemId, setSelectedItemId] = useState<string>(mockData.macros[0].id);
   const [copied, setCopied] = useState(false);
 
-  // Derivando a lista ativa baseada na seção selecionada
   const activeList = activeSection === 'macros' ? mockData.macros : mockData.guides;
   
-  // Filtrando a lista baseada na busca
   const filteredList = activeList.filter(item => 
     item.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
     item.content.toLowerCase().includes(searchQuery.toLowerCase())
@@ -63,7 +61,7 @@ export default function KnowledgeBase() {
     <div className="flex h-full w-full bg-[#f4f5f7] overflow-hidden font-sans">
       
       <div className="w-60 bg-white border-r border-slate-200 flex flex-col shrink-0">
-        <div className="p-5 h-[80px] flex items-center border-b border-slate-100 shrink-0">
+        <div className="p-5 h-20 flex items-center border-b border-slate-100 shrink-0">
           <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
             <BookOpen size={22} className="text-blue-600" />
             Base Interna

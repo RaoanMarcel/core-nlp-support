@@ -3,7 +3,6 @@ import type { LoginResponse } from '../types/auth.types';
 
 export const authService = {
   login: async (usuario: string, senha: string): Promise<LoginResponse> => {
-    // O Axios já usa a baseURL que configuramos em api.ts
     const response = await api.post<LoginResponse>('/auth/login', { usuario, senha });
     return response.data;
   },

@@ -1,5 +1,5 @@
 import { api } from './api'; 
-import type { IQuote, IQuoteNote } from '../components/Quotes/types';
+import type { IQuote, IQuoteNote } from '../features/Quotes/types';
 
 export const QuoteService = {
   list: async (): Promise<IQuote[]> => {

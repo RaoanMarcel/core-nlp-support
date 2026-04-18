@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { X, Mail, MessageCircle, Send, Loader2 } from 'lucide-react';
 import type { IQuote } from '../types';
-import { api } from '../../../services/api'; // Confirme se o caminho da API está correto no seu projeto
+import { api } from '../../../services/api'; 
 
-// AQUI ESTÁ A CORREÇÃO: Agora o modal aceita a propriedade "quote"
 interface EnviarPropostaModalProps {
   quote: IQuote;
   usuarioAtual: { id: string; nome: string };
@@ -112,7 +111,7 @@ export default function EnviarPropostaModal({ quote, usuarioAtual, onClose, onSu
               <textarea 
                 value={textoWhats}
                 onChange={(e) => setTextoWhats(e.target.value)}
-                className="w-full flex-1 min-h-[220px] bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all resize-none custom-scrollbar"
+                className="w-full flex-1 min-h-55 bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all resize-none custom-scrollbar"
               />
             </div>
 
@@ -149,7 +148,7 @@ export default function EnviarPropostaModal({ quote, usuarioAtual, onClose, onSu
               <textarea 
                 value={textoEmail}
                 onChange={(e) => setTextoEmail(e.target.value)}
-                className="w-full flex-1 min-h-[220px] bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none custom-scrollbar"
+                className="w-full flex-1 min-h-55 bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none custom-scrollbar"
               />
             </div>
 

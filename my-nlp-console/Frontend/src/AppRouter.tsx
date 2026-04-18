@@ -4,11 +4,11 @@ import AppLayout from './features/ProspectList/components/SidebarLayout';
 import Dashboard from './components/Dashboard';
 import TicketQueue from './components/TicketQueue';
 import KnowledgeBase from './components/KnowledgeBase';
-import Quotes from './components/Quotes';
-import QuoteDetails from './components/Quotes/QuoteDetails';
 import ProspectList from './features/ProspectList';
 import Login from './features/Auth/Login';
 import Relatorios from './features/Reports';
+import QuoteDetails from './features/Quotes/QuoteDetails';
+import Quotes from './features/Quotes';
 
 export default function AppRouter() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);

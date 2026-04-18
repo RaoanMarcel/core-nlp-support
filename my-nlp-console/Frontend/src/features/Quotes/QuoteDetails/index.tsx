@@ -378,7 +378,7 @@ export default function QuoteDetails() {
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col flex-1 min-h-[300px]">
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col flex-1 min-h-75">
                 <div className="px-6 py-3 border-b border-slate-100 shrink-0">
                   <h2 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
                     <Pencil size={14} />
@@ -443,7 +443,7 @@ export default function QuoteDetails() {
                       onChange={(e) => setNewNote(e.target.value)}
                       onKeyDown={handleNewNoteKeyDown}
                       placeholder="Adicionar anotação..."
-                      className="w-full bg-slate-50 border border-slate-200 text-[12px] text-slate-700 rounded-lg px-4 py-2.5 min-h-[44px] max-h-[120px] resize-none focus:outline-none focus:ring-1 focus:ring-blue-500 focus:bg-white transition-all custom-scrollbar"
+                      className="w-full bg-slate-50 border border-slate-200 text-[12px] text-slate-700 rounded-lg px-4 py-2.5 min-h-11 max-h-30 resize-none focus:outline-none focus:ring-1 focus:ring-blue-500 focus:bg-white transition-all custom-scrollbar"
                       rows={1}
                       disabled={isSubmittingNote}
                     />
@@ -549,7 +549,7 @@ export default function QuoteDetails() {
                         
                         return (
                           <div key={item.id} className={`relative ${!isLatest ? 'opacity-60' : ''}`}>
-                            <div className={`absolute -left-[31px] border-4 border-white w-3.5 h-3.5 rounded-full top-1 ${isLatest ? 'bg-blue-600 shadow-sm' : 'bg-slate-300'}`}></div>
+                            <div className={`absolute -left-7.75 border-4 border-white w-3.5 h-3.5 rounded-full top-1 ${isLatest ? 'bg-blue-600 shadow-sm' : 'bg-slate-300'}`}></div>
                             
                             <div className={isLatest ? "bg-white border border-slate-100 p-3 rounded-lg shadow-sm" : "p-1"}>
                               <p className={`text-xs font-bold ${isLatest ? 'text-slate-900' : 'text-slate-800'}`}>

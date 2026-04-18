@@ -119,7 +119,7 @@ export default function ConfirmacaoAprovacaoModal({
           <button
             onClick={handleConfirm}
             disabled={isLoading}
-            className="flex-[2] flex items-center justify-center gap-2 px-4 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-emerald-900/20 disabled:opacity-50"
+            className="flex-2 flex items-center justify-center gap-2 px-4 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-emerald-900/20 disabled:opacity-50"
           >
             {isLoading ? (
               <Loader2 className="animate-spin" size={20} />

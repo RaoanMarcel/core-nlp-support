@@ -3,8 +3,8 @@ import {
   X, Building, Search, Phone, Mail, MapPin, 
   FileText, CheckSquare, Save, Calculator
 } from 'lucide-react';
-import { useQuoteModal } from './useQuoteModal'; // Ajuste o caminho se necessário
-import { MODULOS_DISPONIVEIS } from './utils'; // Ajuste o caminho se necessário
+import { useQuoteModal } from './useQuoteModal'; 
+import { MODULOS_DISPONIVEIS } from './utils'; 
 import type { IQuote } from './types';
 
 interface QuoteModalProps {
