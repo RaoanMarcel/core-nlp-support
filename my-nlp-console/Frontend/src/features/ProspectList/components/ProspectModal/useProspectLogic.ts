@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
-import { type Prospect } from '../Contratos';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import type { Prospect } from '../../../../types/prospect.types';
+import { api } from '../../../../services/api';
 import type { Historico, ContactFormState, InteractionFormState } from './types';
-import { parseModulos } from './prospectUtils';
-import { api } from '../../services/api'; 
+import { parseModulos } from '../../../../utils/utils';
 
 export const useProspectLogic = (
   prospect: Prospect, 
@@ -124,7 +124,6 @@ export const useProspectLogic = (
     finally { setLoading(prev => ({ ...prev, saving: false })); }
   };
 
-  // ====== AQUI ESTÁ A FUNÇÃO CORRIGIDA ======
   const handleVoltar = async () => {
     setLoading(prev => ({ ...prev, saving: true }));
     try {
@@ -147,8 +146,24 @@ export const useProspectLogic = (
     }
   };
 
+  const dadosPrimeiroAtendimento = useMemo(() => {
+    const primeiro = [...historico].reverse().find(h => 
+      ['APROVADO', 'REPROVADO', 'POSSIBILIDADE', 'RETORNAR'].some(status => 
+        h.acao?.toUpperCase().includes(status)
+      )
+    );
+
+    return {
+      nomeAtendente: primeiro ? primeiro.usuario : (loading.historico ? 'Buscando...' : 'Desconhecido'),
+      dataHoraAtendimento: primeiro 
+        ? `${new Date(primeiro.createdAt).toLocaleDateString('pt-BR')} às ${new Date(primeiro.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
+        : '--:--'
+    };
+  }, [historico, loading.historico]);
+
   return {
     isFinished, ui, setUi, loading, historico, contactForm, interactionForm,
+    dadosPrimeiroAtendimento,
     handleContactChange: (field: keyof ContactFormState, value: string) => setContactForm(prev => ({ ...prev, [field]: value })),
     toggleModulo: (modulo: string) => {
       if (!ui.isEditing) return;

@@ -4,10 +4,10 @@ import { Plus, Search, FileText, X, Calendar, RefreshCw, ChevronRight, UserPlus,
 import QuoteModal from './QuoteModal';
 import type { IQuote } from './types';
 import { api } from '../../services/api';
-import { formatarMoeda } from '../ProspectModal/prospectUtils';
+import { formatarMoeda } from '../../utils/utils';
 
 export default function QuotesPage() {
-  const navigate = useNavigate(); // <-- HOOK DE ROTA
+  const navigate = useNavigate(); 
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [quoteEditando, setQuoteEditando] = useState<IQuote | null>(null);
@@ -300,7 +300,7 @@ export default function QuotesPage() {
               {quotesList.map((quote) => (
                 <div 
                   key={quote.id} 
-                  onClick={() => navigate(`/orcamentos/${quote.id}`)} // <-- AQUI ACONTECE A NAVEGAÇÃO
+                  onClick={() => navigate(`/orcamentos/${quote.id}`)} 
                   className={`group flex items-center justify-between bg-white border-b border-slate-100 hover:bg-slate-50/80 cursor-pointer transition-colors px-3 sm:px-4 py-3 border-l-4 ${getStatusBorderClass(quote.status)}`}
                 >
                   <div className="flex-1 min-w-0 pr-2 sm:pr-4">

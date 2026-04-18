@@ -53,6 +53,7 @@
     updatedAt          DateTime          @updatedAt
 
     historicos         HistoricoAtendimento[]
+    orders             Order[]
   }
 
   model User {
@@ -101,6 +102,8 @@ model Quote {
   updatedAt          DateTime @updatedAt
   notas     QuoteNote[] 
   historico QuoteHistory[]
+
+  order    Order?
 }
 
 model QuoteNote {
@@ -120,4 +123,34 @@ model QuoteHistory {
   acao      String   
   usuario   String  
   createdAt DateTime @default(now())
+}
+
+model Order {
+  id               String   @id @default(uuid())
+  orderNumber      Int      @unique @default(autoincrement()) 
+  
+  quoteId          Int      @unique
+  quote            Quote    @relation(fields: [quoteId], references: [id])
+  prospectId       String?     
+  prospect         Prospect? @relation(fields: [prospectId], references: [id])
+
+  valorTotal       Float
+  modulos          String[]
+  
+  status           OrderStatus @default(PENDENTE_ASSINATURA)
+  tokenAssinatura  String?     @unique
+  assinaturaUrl    String?     @db.Text
+  termoAceitoAt    DateTime?
+  ipAssinatura     String?
+  userAgent        String?    
+
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+}
+
+enum OrderStatus {
+  PENDENTE_ASSINATURA
+  ASSINADO
+  CANCELADO
+  CONCLUIDO
 }

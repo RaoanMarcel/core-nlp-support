@@ -14,7 +14,7 @@ export class QuoteController {
       return res.json(quotes);
     } catch (error) {
       console.error('Erro na listagem:', error);
-      return res.status(500).json({ error: 'Erro ao buscar pedidos' });
+      return res.status(500).json({ error: 'Erro ao buscar orçamentos' });
     }
   }
 
@@ -168,7 +168,7 @@ export class QuoteController {
       return res.status(201).json(quote);
     } catch (error) {
       console.error('Erro ao criar orçamento:', error);
-      return res.status(400).json({ error: 'Erro ao criar pedido' });
+      return res.status(400).json({ error: 'Erro ao criar orçamento' });
     }
   }
 
@@ -217,8 +217,8 @@ export class QuoteController {
 
       return res.json(quote);
     } catch (error) {
-      console.error('Erro ao atualizar pedido:', error);
-      return res.status(400).json({ error: 'Erro ao atualizar pedido' });
+      console.error('Erro ao atualizar orçamento:', error);
+      return res.status(400).json({ error: 'Erro ao atualizar orçamento' });
     }
   }
 
@@ -238,8 +238,8 @@ export class QuoteController {
 
       return res.status(204).send(); // 204 No Content
     } catch (error) {
-      console.error('Erro ao deletar pedido:', error);
-      return res.status(400).json({ error: 'Erro ao deletar pedido' });
+      console.error('Erro ao deletar orçamento:', error);
+      return res.status(400).json({ error: 'Erro ao deletar orçamento' });
     }
   }
   

@@ -6,9 +6,11 @@ import Dashboard from './Dashboard';
 import TicketQueue from './TicketQueue';
 import Relatorios from './Relatorios';
 import KnowledgeBase from './KnowledgeBase';
-import Contratos from './Contratos';
 import Quotes from './Quotes';
 import QuoteDetails from './Quotes/QuoteDetails';
+
+// Importação corrigida: Apontando para a nova arquitetura que criamos
+import ProspectList from '../features/ProspectList';
 
 export default function AppRouter() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
@@ -46,12 +48,11 @@ export default function AppRouter() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/fila" element={<TicketQueue />} />
             <Route path="/relatorios" element={<Relatorios />} />
-            <Route path="/base" element={<KnowledgeBase />} />
-            <Route path="/contratos" element={<Contratos />} />
+            <Route path="/base" element={<KnowledgeBase />} />            
+            <Route path="/contratos" element={<ProspectList />} />
             <Route path="/orcamentos" element={<Quotes />} />
             <Route path="/orcamentos/:id" element={<QuoteDetails />} />
 
-            {/* Rota de fallback */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </AppLayout>

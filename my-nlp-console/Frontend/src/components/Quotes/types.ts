@@ -13,7 +13,6 @@ export interface IQuoteNote {
   createdAt: string;
 }
 
-// AQUI ESTÁ A INTERFACE! Ela tem que viver neste arquivo.
 export interface IQuoteHistory {
   id: string;
   quoteId: number;

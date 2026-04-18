@@ -83,7 +83,7 @@ export default function AppLayout({ children, onLogout }: AppLayoutProps) {
 
         <div className="h-20 flex items-center px-5 shrink-0 border-b border-slate-800/60 whitespace-nowrap mt-4 md:mt-0">
           <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center shrink-0 shadow-md overflow-hidden">
-            <img src={logoSvg as string} alt="AutoDesk Logo" className="w-6 h-6 object-contain" />
+            <img src={logoSvg as string} alt="AutoDesk Logo" className="w-5 h-5 object-contain" />
           </div>
           <div className="ml-4 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300 md:delay-75">
             <h1 className="text-lg font-black text-white leading-tight">AutoDesk</h1>

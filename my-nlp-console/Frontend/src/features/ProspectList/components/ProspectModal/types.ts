@@ -1,4 +1,5 @@
-import { type Prospect } from '../Contratos'; 
+// Caminho mortal corrigido para a nova arquitetura
+import type { Prospect } from '../../../../types/prospect.types'; 
 
 export interface Historico {
   id: string;

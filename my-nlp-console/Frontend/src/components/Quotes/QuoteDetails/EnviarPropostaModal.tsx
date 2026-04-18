@@ -79,7 +79,7 @@ export default function EnviarPropostaModal({ quote, usuarioAtual, onClose, onSu
         <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-slate-50/50">
           <div>
             <h2 className="text-xl font-black text-slate-800 tracking-tight">Enviar Proposta</h2>
-            <p className="text-xs font-semibold text-slate-400 mt-1 uppercase tracking-wider">Pedido #{String(quote.id).padStart(4, '0')}</p>
+            <p className="text-xs font-semibold text-slate-400 mt-1 uppercase tracking-wider">Orçamento #{String(quote.id).padStart(4, '0')}</p>
           </div>
           <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-full transition-colors">
             <X size={20} />

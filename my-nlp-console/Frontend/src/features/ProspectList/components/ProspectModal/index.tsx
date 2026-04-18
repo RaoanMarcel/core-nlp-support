@@ -1,9 +1,8 @@
-import { Phone, Mail, Building, FileText, ArrowLeft, CheckCircle2, XCircle, Edit3, Save, Target, History, Clock, User, DollarSign } from 'lucide-react';
-
-import { type Prospect } from '../Contratos';
-
+import React from 'react';
+import { Phone, Mail, Building, FileText, ArrowLeft, CheckCircle2, XCircle, Edit3, Save, Target, History as HistoryIcon, Clock, User, DollarSign } from 'lucide-react';
+import type { Prospect } from '../../../../types/prospect.types';
 import type { ModalProps, Historico, ContactFormState } from './types';
-import { getSituacaoColor, formatarData, formatarMoeda } from './prospectUtils';
+import { getSituacaoColor, formatarData, formatarMoeda } from '../../../../utils/utils';
 import { useProspectLogic } from './useProspectLogic';
 
 const MODULOS_DISPONIVEIS = ['NFE', 'NFCE', 'MDFE', 'CTE', 'NFSE', 'FINANCEIRO', 'ESTOQUE'];
@@ -48,7 +47,7 @@ const ModalHeader = ({ prospect }: { prospect: Prospect }) => (
 const Timeline = ({ historico, loading }: { historico: Historico[], loading: boolean }) => (
   <div className="lg:col-span-2 bg-slate-50 rounded-xl border border-slate-200 p-6 overflow-y-auto max-h-100">
     <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2 mb-6">
-      <History size={14} /> Linha do Tempo
+      <HistoryIcon size={14} /> Linha do Tempo
     </h3>
     <div className="relative border-l-2 border-slate-200 ml-2 space-y-6">
       {loading ? (
@@ -91,28 +90,12 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
   
   const { 
     isFinished, ui, setUi, loading, historico, contactForm, interactionForm,
+    dadosPrimeiroAtendimento, // <-- Importado do Hook com segurança
     handleContactChange, toggleModulo, setInteractionForm,
     saveContatos, saveInteracao, finishAtendimento, handleVoltar
   } = useProspectLogic(prospect, currentUserId, currentUserName, onClose, onUpdate);
 
-  // === BUSCA O PRIMEIRO ATENDIMENTO NO HISTÓRICO ===
-  // Invertemos o array com [...historico].reverse() para buscar do mais antigo pro mais novo.
-  // Assim pegamos exatamente a PRIMEIRA vez que alguém deu uma tratativa no card.
-  const primeiroAtendimento = [...historico].reverse().find(h => 
-    ['APROVADO', 'REPROVADO', 'POSSIBILIDADE', 'RETORNAR'].some(status => 
-      h.acao?.toUpperCase().includes(status)
-    )
-  );
-
-  // Define o nome de quem atendeu (ou avisa se estiver carregando)
-  const nomeAtendente = primeiroAtendimento 
-    ? primeiroAtendimento.usuario 
-    : (loading.historico ? 'Buscando...' : 'Desconhecido');
-
-  // Formata a data e hora do atendimento
-  const dataHoraAtendimento = primeiroAtendimento 
-    ? `${new Date(primeiroAtendimento.createdAt).toLocaleDateString('pt-BR')} às ${new Date(primeiroAtendimento.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
-    : '--:--';
+  const { nomeAtendente, dataHoraAtendimento } = dadosPrimeiroAtendimento;
 
   return (
     <div 
@@ -229,7 +212,6 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
             </div>
           </div>
 
-          {/* GRID INFERIOR (TEXTAREA + BOTOES DE UM LADO | TIMELINE DO OUTRO) */}
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
             <div className="lg:col-span-3 bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col">
               <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2 mb-5">
@@ -305,12 +287,10 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
           </div>
         </div>
 
-        {/* Footer Atualizado */}
         <div className="px-8 py-5 border-t border-slate-200 bg-white shrink-0">
           {isFinished ? (
             <div className="flex justify-between items-center gap-4">
               <div className="text-sm text-slate-600">
-                {/* === INFORMAÇÕES REAIS DO ATENDIMENTO APLICADAS AQUI === */}
                 <span className="italic">
                   Atendido por <span className="font-semibold text-slate-800">{nomeAtendente}</span> em {dataHoraAtendimento}
                 </span>

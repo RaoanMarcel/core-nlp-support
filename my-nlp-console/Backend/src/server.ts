@@ -4,6 +4,8 @@ import http from 'http';
 import { Server } from 'socket.io';
 import contratosRoutes from './routes/Contratos.routes';
 import ordersRoutes from './routes/Quote.routes';
+import orderRoutes from './routes/Order.routes';
+
 
 const app = express();
 
@@ -36,10 +38,10 @@ import { relatoriosRoutes } from './routes/Relatorios.routes';
 
 app.use('/auth', authRoutes);
 
-// Rotas Protegidas (Exige Token!)
 app.use('/prospects', authMiddleware, contratosRoutes);
 app.use('/relatorios', authMiddleware, relatoriosRoutes);
 app.use('/quotes', authMiddleware, ordersRoutes); 
+app.use('/orders', authMiddleware, orderRoutes);
 
 app.get('/ping', (req, res) => {
   res.status(200).json({ message: 'Pong! Servidor acordado.' });

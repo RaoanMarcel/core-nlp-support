@@ -10,6 +10,8 @@ import type { IQuote, IQuoteNote } from '../types';
 import { QuoteService } from '../../../services/quote.service'; 
 import QuoteModal from '../QuoteModal'; 
 import EnviarPropostaModal from './EnviarPropostaModal'; 
+import ConfirmacaoAprovacaoModal from '../../Orders/ConfirmacaoAprovacaoModal';
+import { OrderService } from '../../../services/order.service';
 
 export default function QuoteDetails() {
   const { id } = useParams<{ id: string }>();
@@ -21,6 +23,11 @@ export default function QuoteDetails() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const [isSendModalOpen, setIsSendModalOpen] = useState(false);
+  
+  // Estados dos Modais de Pedido
+  const [isConfirmOrderModalOpen, setIsConfirmOrderModalOpen] = useState(false);
+  const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
+  const [generatedLink, setGeneratedLink] = useState('');
 
   const [newNote, setNewNote] = useState('');
   const [isSubmittingNote, setIsSubmittingNote] = useState(false);
@@ -35,7 +42,7 @@ export default function QuoteDetails() {
     const userStr = localStorage.getItem('@CRM:user');
     if (userStr) currentUser = JSON.parse(userStr);
   } catch (e) {
-    console.error('Erro ao ler usuário', e);
+    console.error('Erro ao ler utilizador', e);
   }
 
   const fetchQuoteDetails = async () => {
@@ -111,6 +118,37 @@ export default function QuoteDetails() {
     }
   };
 
+
+  const handleConfirmOrder = async () => {
+    if (!quote?.id) {
+      alert("Erro: O ID do orçamento não foi encontrado.");
+      return;
+    }
+
+    try {
+      const response = await OrderService.gerarPedido(quote.id);
+      
+      console.log('Pedido gerado com sucesso no backend:', response);
+      
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(response.linkAssinatura);
+      }
+      
+      setGeneratedLink(response.linkAssinatura);
+      setIsConfirmOrderModalOpen(false);
+      setIsLinkModalOpen(true);
+      
+      await fetchQuoteDetails();
+
+    } catch (error: any) {
+      console.error('Erro ao gerar pedido:', error);
+      const mensagemErro = error.response?.data?.error || error.message || 'Erro inesperado ao conectar com o servidor.';
+      alert(`❌ Erro ao gerar pedido: ${mensagemErro}`);
+      
+      throw error; 
+    }
+  };
+
   const formatarMoeda = (valor: number) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor || 0);
   };
@@ -180,12 +218,12 @@ export default function QuoteDetails() {
                     title="Voltar para Orçamentos"
                   >
                     Orçamentos
-                  </span> / <span className="text-slate-500">{quote.nomeCliente}</span> / Pedido #{formattedId}
+                  </span> / <span className="text-slate-500">{quote.nomeCliente}</span> / Orçamento #{formattedId}
                 </div>
                 
                 <div className="flex flex-col xl:flex-row xl:items-center gap-4 xl:gap-8">
                   <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-                    Pedido #{formattedId}
+                    Orçamento #{formattedId}
                   </h1>
                   
                   <div className="flex items-center gap-1.5">
@@ -229,7 +267,6 @@ export default function QuoteDetails() {
                 Editar
               </button>
               
-              {/* 3. AQUI NO BOTÃO ADICIONEI O onClick QUE ABRE O MODAL */}
               <button 
                 onClick={() => setIsSendModalOpen(true)} 
                 className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-bold transition-all shadow-sm hover:shadow-md active:scale-95"
@@ -308,7 +345,7 @@ export default function QuoteDetails() {
                         <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Localização</label>
                         {quote.endereco ? (
                         <a 
-                            href={`https://maps.google.com/?q=$${encodeURIComponent(quote.endereco)}`} 
+                            href={`http://maps.google.com/?q=$$${encodeURIComponent(quote.endereco)}`} 
                             target="_blank" 
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-2 text-sm text-slate-700 hover:text-blue-600 transition-colors group w-fit"
@@ -341,7 +378,7 @@ export default function QuoteDetails() {
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col flex-1 min-h-112.5">
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col flex-1 min-h-[300px]">
                 <div className="px-6 py-3 border-b border-slate-100 shrink-0">
                   <h2 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
                     <Pencil size={14} />
@@ -406,7 +443,7 @@ export default function QuoteDetails() {
                       onChange={(e) => setNewNote(e.target.value)}
                       onKeyDown={handleNewNoteKeyDown}
                       placeholder="Adicionar anotação..."
-                      className="w-full bg-slate-50 border border-slate-200 text-[12px] text-slate-700 rounded-lg px-4 py-2.5 min-h-11 max-h-30 resize-none focus:outline-none focus:ring-1 focus:ring-blue-500 focus:bg-white transition-all custom-scrollbar"
+                      className="w-full bg-slate-50 border border-slate-200 text-[12px] text-slate-700 rounded-lg px-4 py-2.5 min-h-[44px] max-h-[120px] resize-none focus:outline-none focus:ring-1 focus:ring-blue-500 focus:bg-white transition-all custom-scrollbar"
                       rows={1}
                       disabled={isSubmittingNote}
                     />
@@ -434,15 +471,15 @@ export default function QuoteDetails() {
               
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden top-6">
                 <div className="px-6 py-4 border-b border-slate-100 bg-slate-900">
-                  <h2 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                  <h2 className="text-[11px] font-bold text-slate-200 uppercase tracking-widest flex items-center gap-2">
                     <DollarSign size={14} className="text-blue-400" />
                     Resumo Financeiro
                   </h2>
                 </div>
                 <div className="p-6 space-y-4">
                   <div className="flex justify-between items-center text-sm font-medium">
-                    <span className="text-slate-500">Valor de Tabela</span>
-                    <span className={quote.valorNegociado ? 'line-through text-slate-300' : 'text-slate-900'}>
+                    <span className="text-slate-600">Valor de Tabela</span>
+                    <span className={quote.valorNegociado ? 'line-through text-slate-400' : 'text-slate-900'}>
                       {formatarMoeda(quote.valorBase || 0)}
                     </span>
                   </div>
@@ -463,17 +500,18 @@ export default function QuoteDetails() {
 
                   {currentStatus !== 'APROVADO' && currentStatus !== 'REJEITADO' && (
                     <>
+                      {/* BOTAO PARA GERAR O PEDIDO */}
                       <button 
-                        onClick={() => setForceStatusModal({ isOpen: true, targetStatus: 'APROVADO' })}
-                        className="w-full mt-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black py-4 rounded-xl transition-all shadow-md hover:shadow-xl hover:-translate-y-0.5 flex items-center justify-center gap-2 active:scale-95"
+                        onClick={() => setIsConfirmOrderModalOpen(true)}
+                        className="w-full mt-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black py-2 rounded-xl transition-all shadow-md hover:shadow-xl hover:-translate-y-0.5 flex items-center justify-center gap-2 active:scale-95"
                       >
                         <CheckCircle2 size={20} />
-                        APROVAR PEDIDO
+                        GERAR PEDIDO
                       </button>
 
                       <button 
                         onClick={() => setForceStatusModal({ isOpen: true, targetStatus: 'REJEITADO' })}
-                        className="w-full mt-3 py-2 text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg text-[11px] font-black uppercase tracking-widest transition-colors flex items-center justify-center"
+                        className="w-full mt-3 py-1 text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg text-[9px] font-black uppercase tracking-widest transition-colors flex items-center justify-center"
                       >
                         Orçamento Rejeitado
                       </button>
@@ -511,7 +549,7 @@ export default function QuoteDetails() {
                         
                         return (
                           <div key={item.id} className={`relative ${!isLatest ? 'opacity-60' : ''}`}>
-                            <div className={`absolute -left-7.75 border-4 border-white w-3.5 h-3.5 rounded-full top-1 ${isLatest ? 'bg-blue-600 shadow-sm' : 'bg-slate-300'}`}></div>
+                            <div className={`absolute -left-[31px] border-4 border-white w-3.5 h-3.5 rounded-full top-1 ${isLatest ? 'bg-blue-600 shadow-sm' : 'bg-slate-300'}`}></div>
                             
                             <div className={isLatest ? "bg-white border border-slate-100 p-3 rounded-lg shadow-sm" : "p-1"}>
                               <p className={`text-xs font-bold ${isLatest ? 'text-slate-900' : 'text-slate-800'}`}>
@@ -520,7 +558,7 @@ export default function QuoteDetails() {
                               <div className="flex items-center gap-1.5 mt-1 text-slate-400">
                                 <User size={10} />
                                 <span className="text-[9px] font-bold uppercase tracking-tighter">{item.usuario}</span>
-                                <span className="text-[9px]">• {formatarData(item.createdAt)}</span>
+                                <span className="text-[9px]">&bull; {formatarData(item.createdAt)}</span>
                               </div>
                             </div>
                           </div>
@@ -587,27 +625,32 @@ export default function QuoteDetails() {
         </div>
       )}
 
-      {isSendModalOpen && quote && (
-        <EnviarPropostaModal 
+      {/* MODAL: ENVIAR PROPOSTA */}
+      {isSendModalOpen && (
+        <EnviarPropostaModal
           quote={quote}
-          usuarioAtual={currentUser}
-          onClose={() => setIsSendModalOpen(false)}
+          usuarioAtual={currentUser} // Usando a variável currentUser que já existe no seu código!
+          onClose={() => setIsSendModalOpen(false)} // Função inline para fechar
           onSuccess={() => {
-            setIsSendModalOpen(false);
-            fetchQuoteDetails(); 
+            console.log("Proposta enviada com sucesso!");
+            setIsSendModalOpen(false); // Fecha o modal ao dar sucesso
+            fetchQuoteDetails(); // Recarrega os dados do orçamento
           }}
         />
       )}
 
-      {isEditModalOpen && (
-        <QuoteModal 
-          quote={quote} 
-          onClose={() => {
-            setIsEditModalOpen(false);
-            fetchQuoteDetails();
-          }} 
-        />
-      )}
+      {/* MODAL: Confirmação de Aprovação */}
+      <ConfirmacaoAprovacaoModal
+        isOpen={isConfirmOrderModalOpen}
+        onClose={() => setIsConfirmOrderModalOpen(false)}
+        onConfirm={handleConfirmOrder}
+        data={{
+          cliente: quote.nomeCliente,
+          cnpj: quote.cnpj || '',
+          valor: quote.valorNegociado || quote.valorBase || 0,
+          modulos: quote.modulos || []
+        }}
+      />
     </>
   );
 }
