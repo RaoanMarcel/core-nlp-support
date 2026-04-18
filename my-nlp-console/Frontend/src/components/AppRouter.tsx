@@ -1,16 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import AppLayout from './SidebarLayout';
-import Login from './Login';
 import Dashboard from './Dashboard';
 import TicketQueue from './TicketQueue';
 import Relatorios from './Relatorios';
 import KnowledgeBase from './KnowledgeBase';
 import Quotes from './Quotes';
 import QuoteDetails from './Quotes/QuoteDetails';
-
-// Importação corrigida: Apontando para a nova arquitetura que criamos
 import ProspectList from '../features/ProspectList';
+import Login from '../features/ProspectList/Auth/Login';
 
 export default function AppRouter() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);

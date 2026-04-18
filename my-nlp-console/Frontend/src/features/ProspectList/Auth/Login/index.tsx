@@ -1,128 +1,22 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { 
-  Lock, 
-  User, 
-  Loader2, 
-  ArrowRight, 
-  ShieldCheck, 
-  Eye, 
-  EyeOff, 
-  AlertCircle,
-  X 
+  Lock, User, Loader2, ArrowRight, ShieldCheck, 
+  Eye, EyeOff, AlertCircle, X 
 } from 'lucide-react';
+import logoSvg from '../../../../assets/logo.svg?url';
+import type { LoginProps } from '../../../../types/auth.types';
+import { useLogin } from './hooks/useLogin';
 
-import logoSvg from '../assets/logo.svg?url';
-
-// Utilizando variável de ambiente do Vite com fallback para a URL de produção
-const API_URL = import.meta.env.VITE_API_URL || 'https://core-nlp-support.onrender.com';
-
-interface LoginProps {
-  onLoginSuccess: (token: string, user: any) => void;
-}
-
-// Tipagens para as respostas da API
-interface LoginResponse {
-  token?: string;
-  user?: any;
-  error?: string;
-  requirePasswordChange?: boolean;
-  message?: string;
-}
-
-export default function Login({ onLoginSuccess }: LoginProps) {
-  // Estados do Formulário
-  const [usuario, setUsuario] = useState('');
-  const [senha, setSenha] = useState('');
-  const [novaSenha, setNovaSenha] = useState('');
-  const [confirmarSenha, setConfirmarSenha] = useState('');
-  
-  // Estados de Controle de UI
-  const [isLoading, setIsLoading] = useState(false);
-  const [erro, setErro] = useState('');
-  const [modoTrocaSenha, setModoTrocaSenha] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-
-  // Limpa o erro ao digitar
-  const handleInputChange = (setter: React.Dispatch<React.SetStateAction<string>>) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    setter(e.target.value);
-    if (erro) setErro('');
-  };
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setErro('');
-
-    try {
-      const response = await fetch(`${API_URL}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ usuario, senha })
-      });
-
-      const data: LoginResponse = await response.json();
-
-      if (response.ok && data.token && data.user) {
-        localStorage.setItem('@CRM:token', data.token);
-        localStorage.setItem('@CRM:user', JSON.stringify(data.user));
-        onLoginSuccess(data.token, data.user);
-      } else if (response.status === 403 && data.requirePasswordChange) {
-        setModoTrocaSenha(true);
-      } else {
-        setErro(data.error || 'Credenciais inválidas.');
-      }
-    } catch (error) {
-      setErro('Erro na conexão com o servidor. Tente novamente.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleTrocarSenha = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (novaSenha !== confirmarSenha) {
-      setErro('As senhas digitadas não conferem!');
-      return;
-    }
-
-    if (novaSenha.length < 6) {
-      setErro('A nova senha deve ter pelo menos 6 caracteres.');
-      return;
-    }
-
-    setIsLoading(true);
-    setErro('');
-
-    try {
-      const response = await fetch(`${API_URL}/auth/primeiro-acesso`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ usuario, senhaAtual: senha, novaSenha })
-      });
-      
-      const data: LoginResponse = await response.json();
-      
-      if (response.ok && data.token && data.user) {
-        localStorage.setItem('@CRM:token', data.token);
-        localStorage.setItem('@CRM:user', JSON.stringify(data.user));
-        onLoginSuccess(data.token, data.user);
-      } else {
-        setErro(data.error || 'Erro ao atualizar a senha.');
-      }
-    } catch (error) {
-      setErro('Erro na comunicação com o servidor.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const cancelarTrocaSenha = () => {
-    setModoTrocaSenha(false);
-    setNovaSenha('');
-    setConfirmarSenha('');
-    setErro('');
-  };
+export default function Login(props: LoginProps) {
+  const {
+    usuario, setUsuario,
+    senha, setSenha,
+    novaSenha, setNovaSenha,
+    confirmarSenha, setConfirmarSenha,
+    isLoading, erro, setErro, clearError,
+    modoTrocaSenha, showPassword, setShowPassword,
+    handleLogin, handleTrocarSenha, cancelarTrocaSenha
+  } = useLogin(props);
 
   // Classes extraídas para manter o JSX limpo
   const inputClass = "block w-full px-10 pt-6 pb-2 text-sm text-slate-900 bg-white/50 border border-slate-200/60 rounded-xl appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 peer transition-all backdrop-blur-sm";
@@ -195,7 +89,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                   id="usuario" 
                   required 
                   value={usuario} 
-                  onChange={handleInputChange(setUsuario)} 
+                  onChange={(e) => { setUsuario(e.target.value); clearError(); }} 
                   className={inputClass} 
                   placeholder=" " 
                 />
@@ -209,7 +103,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                   id="senha" 
                   required 
                   value={senha} 
-                  onChange={handleInputChange(setSenha)} 
+                  onChange={(e) => { setSenha(e.target.value); clearError(); }} 
                   className={inputClass} 
                   placeholder=" " 
                 />
@@ -249,7 +143,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                   id="novaSenha" 
                   required 
                   value={novaSenha} 
-                  onChange={handleInputChange(setNovaSenha)} 
+                  onChange={(e) => { setNovaSenha(e.target.value); clearError(); }} 
                   className={inputClass} 
                   placeholder=" " 
                 />
@@ -263,7 +157,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                   id="confirmarSenha" 
                   required 
                   value={confirmarSenha} 
-                  onChange={handleInputChange(setConfirmarSenha)} 
+                  onChange={(e) => { setConfirmarSenha(e.target.value); clearError(); }} 
                   className={inputClass} 
                   placeholder=" " 
                 />
