@@ -625,32 +625,45 @@ export default function QuoteDetails() {
         </div>
       )}
 
-      {/* MODAL: ENVIAR PROPOSTA */}
-      {isSendModalOpen && (
-        <EnviarPropostaModal
-          quote={quote}
-          usuarioAtual={currentUser} // Usando a variável currentUser que já existe no seu código!
-          onClose={() => setIsSendModalOpen(false)} // Função inline para fechar
-          onSuccess={() => {
-            console.log("Proposta enviada com sucesso!");
-            setIsSendModalOpen(false); // Fecha o modal ao dar sucesso
-            fetchQuoteDetails(); // Recarrega os dados do orçamento
+        {/* MODAL: ENVIAR PROPOSTA */}
+        {isSendModalOpen && (
+          <EnviarPropostaModal
+            quote={quote}
+            usuarioAtual={currentUser}
+            onClose={() => setIsSendModalOpen(false)}
+            onSuccess={() => {
+              console.log("Proposta enviada com sucesso!");
+              setIsSendModalOpen(false);
+              fetchQuoteDetails();
+            }}
+          />
+        )}
+
+        {/* MODAL: EDIÇÃO DE ORÇAMENTO (Corrigido sem onSuccess) */}
+        {isEditModalOpen && (
+          <QuoteModal
+            quote={quote}
+            onClose={() => {
+              setIsEditModalOpen(false);
+              // Recarrega os dados ao fechar o modal por segurança
+              fetchQuoteDetails(); 
+            }}
+          />
+        )}
+
+        {/* MODAL: Confirmação de Aprovação */}
+        <ConfirmacaoAprovacaoModal
+          isOpen={isConfirmOrderModalOpen}
+          onClose={() => setIsConfirmOrderModalOpen(false)}
+          onConfirm={handleConfirmOrder}
+          data={{
+            cliente: quote.nomeCliente,
+            cnpj: quote.cnpj || '',
+            valor: quote.valorNegociado || quote.valorBase || 0,
+            modulos: quote.modulos || []
           }}
         />
-      )}
-
-      {/* MODAL: Confirmação de Aprovação */}
-      <ConfirmacaoAprovacaoModal
-        isOpen={isConfirmOrderModalOpen}
-        onClose={() => setIsConfirmOrderModalOpen(false)}
-        onConfirm={handleConfirmOrder}
-        data={{
-          cliente: quote.nomeCliente,
-          cnpj: quote.cnpj || '',
-          valor: quote.valorNegociado || quote.valorBase || 0,
-          modulos: quote.modulos || []
-        }}
-      />
-    </>
+        
+      </>
   );
 }
