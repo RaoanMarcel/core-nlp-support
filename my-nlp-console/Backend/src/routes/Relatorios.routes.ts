@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { RelatorioController } from '../controllers/Relatorio.controller'; // Ajuste o caminho
+import { RelatorioController } from '../controllers/Relatorio.controller';
 
 const relatoriosRoutes = Router();
 const relatorioController = new RelatorioController();

@@ -154,3 +154,18 @@ enum OrderStatus {
   CANCELADO
   CONCLUIDO
 }
+
+enum CategoriaRelease {
+  NOVIDADE
+  MELHORIA
+  FIX
+}
+
+model ReleaseNote {
+  id          Int              @id @default(autoincrement())
+  versao      String
+  titulo      String
+  descricao   String           @db.Text
+  categoria   CategoriaRelease
+  createdAt   DateTime         @default(now())
+}

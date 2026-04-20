@@ -10,6 +10,9 @@ import Relatorios from './features/Reports';
 import QuoteDetails from './features/Quotes/QuoteDetails';
 import Quotes from './features/Quotes';
 
+// 1. Importamos a nova página de Configurações
+import Configuracoes from './features/Configuracoes'; 
+
 export default function AppRouter() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -50,6 +53,7 @@ export default function AppRouter() {
             <Route path="/contratos" element={<ProspectList />} />
             <Route path="/orcamentos" element={<Quotes />} />
             <Route path="/orcamentos/:id" element={<QuoteDetails />} />
+            <Route path="/configuracoes" element={<Configuracoes />} />
 
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

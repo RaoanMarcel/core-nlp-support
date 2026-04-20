@@ -120,11 +120,13 @@ export default function AppLayout({ children, onLogout }: AppLayoutProps) {
         </nav>
 
         <div className="p-4 border-t border-slate-800/60 shrink-0 whitespace-nowrap flex flex-col">
-          <button className="w-full flex items-center gap-4 px-2 py-2 mb-2 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-white font-bold transition-all whitespace-nowrap cursor-pointer text-left">
+          <Link 
+            to="/configuracoes"
+            className="w-full flex items-center gap-4 px-2 py-2 mb-2 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-white font-bold transition-all whitespace-nowrap cursor-pointer text-left"
+          >
             <Settings size={22} className="shrink-0" />
             <span className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300 text-sm">Configurações</span>
-          </button>
-          
+          </Link>
           <button 
             onClick={onLogout}
             className="w-full flex items-center gap-4 px-2 py-2 mb-4 rounded-xl text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 font-bold transition-all whitespace-nowrap cursor-pointer text-left"
