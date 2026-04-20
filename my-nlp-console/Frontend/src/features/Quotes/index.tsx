@@ -22,6 +22,17 @@ export default function QuotesPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // 🔒 CHECAGEM DE PERMISSÕES DO USUÁRIO
+  const userStr = localStorage.getItem('@CRM:user');
+  const currentUser = userStr ? JSON.parse(userStr) : null;
+  
+  const hasPermission = (permissionSlug: string) => {
+    if (currentUser?.role === 'DEV') return true;
+    return currentUser?.permissions?.includes(permissionSlug);
+  };
+  
+  const canCreateQuote = hasPermission('quotes:create');
+
   const fetchQuotes = useCallback(async () => {
     setIsLoading(true);
     setError(null);
@@ -68,6 +79,12 @@ export default function QuotesPage() {
   }, [statusFiltro, dataInicio, dataFim]);  
 
   const handleOpenNewQuote = (leadData: any = null) => {
+    // 🔒 BLOQUEIO DE CRIAÇÃO
+    if (!canCreateQuote) {
+      alert('Acesso Negado: Você não tem permissão para criar ou orçar novos clientes.');
+      return;
+    }
+
     setQuoteEditando(leadData ? { prospectInfo: leadData, ...leadData } : null);
     setIsModalOpen(true);
   };
@@ -149,13 +166,16 @@ export default function QuotesPage() {
             <p className="text-slate-500 text-sm md:text-base mt-1">{quotesList.length} registros encontrados</p>
           </div>
           
-          <button 
-            onClick={() => handleOpenNewQuote()}
-            className="hidden md:flex bg-blue-900 hover:bg-blue-800 text-white px-5 py-2.5 rounded-lg font-bold items-center gap-2 transition-all active:scale-95 shadow-sm text-sm whitespace-nowrap"
-          >
-            <Plus size={18} />
-            Novo Orçamento
-          </button>
+          {/* 🔒 BOTÃO NOVO ORÇAMENTO PROTEGIDO */}
+          {canCreateQuote && (
+            <button 
+              onClick={() => handleOpenNewQuote()}
+              className="hidden md:flex bg-blue-900 hover:bg-blue-800 text-white px-5 py-2.5 rounded-lg font-bold items-center gap-2 transition-all active:scale-95 shadow-sm text-sm whitespace-nowrap"
+            >
+              <Plus size={18} />
+              Novo Orçamento
+            </button>
+          )}
         </div>
 
         {/* RADAR DE CONVERSÃO */}
@@ -197,9 +217,12 @@ export default function QuotesPage() {
                         {formatarTempoRelativo(lead.updatedAt)}
                       </span>
                     </div>
-                    <span className="text-[9px] uppercase font-bold bg-emerald-200 text-emerald-800 px-1.5 py-0.5 rounded shrink-0">
-                      Orçar
-                    </span>
+                    {/* 🔒 SELO "ORÇAR" APENAS SE TIVER PERMISSÃO */}
+                    {canCreateQuote && (
+                      <span className="text-[9px] uppercase font-bold bg-emerald-200 text-emerald-800 px-1.5 py-0.5 rounded shrink-0">
+                        Orçar
+                      </span>
+                    )}
                   </div>
                 </div>
               ))}

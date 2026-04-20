@@ -13,8 +13,13 @@ export default function WhatsNew({ onClose }: WhatsNewProps) {
   const [isCreating, setIsCreating] = useState(false);
   const { notes, isLoading, isSubmitting, createNote } = useReleaseNotes();
 
+  // Pega o usuário logado para verificar o cargo
+  const userJson = localStorage.getItem('@CRM:user');
+  const user = userJson ? JSON.parse(userJson) : null;
+  const userRole = user?.role ? user.role.toUpperCase() : '';
 
-  const canManageReleases = true; 
+  // Bloqueio do botão: Apenas DEV ou DIRETORIA
+  const canManageReleases = userRole === 'DEV' || userRole === 'DIRETORIA'; 
 
   const handleCreateSubmit = async (data: CreateReleaseDTO) => {
     const success = await createNote(data);
@@ -27,7 +32,7 @@ export default function WhatsNew({ onClose }: WhatsNewProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm transition-all">
+    <div className="fixed inset-0 z-70 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm transition-all">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         
         {/* Cabeçalho dinâmico */}
@@ -46,7 +51,7 @@ export default function WhatsNew({ onClose }: WhatsNewProps) {
           </h3>
           
           <div className="flex items-center gap-2">
-            {/* Renderiza o botão Add apenas se for Admin/Dev e não estiver já na tela de criação */}
+            {/* Renderiza o botão Add apenas se for Admin/Dev/Diretoria e não estiver já na tela de criação */}
             {!isCreating && canManageReleases && (
               <button 
                 onClick={() => setIsCreating(true)} 

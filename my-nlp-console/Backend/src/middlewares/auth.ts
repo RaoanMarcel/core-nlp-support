@@ -3,6 +3,13 @@ import jwt from 'jsonwebtoken';
 
 const SECRET_KEY = process.env.JWT_SECRET || 'minha_chave_super_secreta_123';
 
+export interface TokenPayload {
+  userId: string;
+  nome: string;
+  roleId: string | null;
+  permissions: string[];
+}
+
 export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
 
@@ -10,17 +17,31 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
     return res.status(401).json({ error: 'Token não fornecido. Faça login.' });
   }
 
-  // O padrão é "Bearer <token>"
   const token = authHeader.split(' ')[1];
 
   try {
-    const decoded = jwt.verify(token, SECRET_KEY) as { userId: string, nome: string };
+    const decoded = jwt.verify(token, SECRET_KEY) as TokenPayload;
     
-    // Injeta os dados do usuário na requisição para os controllers usarem
     (req as any).user = decoded; 
     
     return next();
   } catch (error) {
     return res.status(401).json({ error: 'Token inválido ou expirado. Sessão encerrada.' });
   }
+};
+
+
+export const checkPermission = (requiredPermission: string) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const user = (req as any).user as TokenPayload;
+
+    // Se o usuário não tiver permissões ou não incluir a necessária, é bloqueado com 403
+    if (!user || !user.permissions.includes(requiredPermission)) {
+      return res.status(403).json({ 
+        error: 'Acesso Negado: Você não tem privilégios suficientes para executar esta ação.' 
+      });
+    }
+
+    next();
+  };
 };

@@ -8,17 +8,27 @@ const SECRET_KEY = process.env.JWT_SECRET || 'minha_chave_super_secreta_123';
 
 export class AuthController {
   
-  login = async (req: Request, res: Response): Promise<any> => {
+  login = async (req: Request, res: Response): Promise<Response | void> => {
     try {
       const { usuario, senha } = req.body;
 
-      // 1. Busca o usuário
-      const user = await prisma.user.findUnique({ where: { usuario } });
+      const user = await prisma.user.findUnique({ 
+      where: { usuario },
+      include: {
+        role: {
+          include: {
+            permissions: {
+              include: { permission: true }
+            }
+          }
+        }
+      }
+    });
+
       if (!user) {
         return res.status(401).json({ error: 'Usuário ou senha inválidos' });
       }
 
-      // 2. Compara a senha digitada com o Hash do banco
       const senhaValida = await bcrypt.compare(senha, user.senha);
       if (!senhaValida) {
         return res.status(401).json({ error: 'Usuário ou senha inválidos' });
@@ -32,9 +42,15 @@ export class AuthController {
         });
       }
 
-      // 4. Se não for primeiro acesso, gera o Token normalmente
+      const userPermissions = user.role?.permissions.map(rp => rp.permission.slug) || [];
+
       const token = jwt.sign(
-        { userId: user.id, nome: user.nome }, 
+        { 
+          userId: user.id, 
+          nome: user.nome,
+          roleId: user.roleId,
+          permissions: userPermissions
+        }, 
         SECRET_KEY, 
         { expiresIn: '12h' }
       );
@@ -42,42 +58,59 @@ export class AuthController {
       return res.json({
         message: 'Login bem-sucedido',
         token,
-        user: { id: user.id, nome: user.nome, usuario: user.usuario }
+        user: { 
+          id: user.id, 
+          nome: user.nome, 
+          usuario: user.usuario,
+          role: user.role?.nome || null,
+          permissions: user.role?.permissions.map(p => p.permission.slug) || []
+        }
       });
 
     } catch (error) {
-      console.error(error);
+      console.error("Erro no AuthController.login:", error);
       return res.status(500).json({ error: 'Erro interno ao fazer login' });
     }
   };
 
-  // ROTA NOVA: Trocar a senha do primeiro acesso e já fazer login
-  alterarSenhaPrimeiroAcesso = async (req: Request, res: Response): Promise<any> => {
+  alterarSenhaPrimeiroAcesso = async (req: Request, res: Response): Promise<Response | void> => {
     try {
       const { usuario, senhaAtual, novaSenha } = req.body;
 
       const user = await prisma.user.findUnique({ where: { usuario } });
       if (!user) return res.status(404).json({ error: 'Usuário não encontrado' });
 
-      // Confirma se ele realmente sabe a senha atual que você deu para ele
       const senhaValida = await bcrypt.compare(senhaAtual, user.senha);
       if (!senhaValida) return res.status(401).json({ error: 'Senha atual incorreta' });
 
-      // Criptografa a nova senha
       const hashNovaSenha = await bcrypt.hash(novaSenha, 10);
 
-      // Atualiza o banco: nova senha e tira a flag de primeiro acesso
       const usuarioAtualizado = await prisma.user.update({
         where: { id: user.id },
         data: { 
           senha: hashNovaSenha,
           primeiroAcesso: false 
+        },
+        include: {
+          role: {
+            include: {
+              permissions: {
+                include: { permission: true }
+              }
+            }
+          }
         }
       });
 
-      // Já gera o token para ele não precisar logar de novo
+      const userPermissions = usuarioAtualizado.role?.permissions.map(rp => rp.permission.slug) || [];
+
       const token = jwt.sign(
-        { userId: usuarioAtualizado.id, nome: usuarioAtualizado.nome }, 
+        { 
+          userId: usuarioAtualizado.id, 
+          nome: usuarioAtualizado.nome,
+          roleId: usuarioAtualizado.roleId,
+          permissions: userPermissions
+        }, 
         SECRET_KEY, 
         { expiresIn: '12h' }
       );
@@ -85,19 +118,24 @@ export class AuthController {
       return res.json({
         message: 'Senha alterada e login bem-sucedido!',
         token,
-        user: { id: usuarioAtualizado.id, nome: usuarioAtualizado.nome, usuario: usuarioAtualizado.usuario }
+        user: { 
+          id: usuarioAtualizado.id, 
+          nome: usuarioAtualizado.nome, 
+          usuario: usuarioAtualizado.usuario,
+          role: usuarioAtualizado.role?.nome || null,
+          permissions: userPermissions
+        }
       });
 
     } catch (error) {
-      console.error(error);
+      console.error("Erro no AuthController.alterarSenhaPrimeiroAcesso:", error);
       return res.status(500).json({ error: 'Erro ao alterar a senha' });
     }
   };
 
-  // Rota auxiliar para você cadastrar sua equipe
-  registrar = async (req: Request, res: Response): Promise<any> => {
+  registrar = async (req: Request, res: Response): Promise<Response | void> => {
     try {
-      const { nome, usuario, senha } = req.body;
+      const { nome, usuario, senha, roleId } = req.body; 
 
       const existe = await prisma.user.findUnique({ where: { usuario } });
       if (existe) return res.status(400).json({ error: 'Usuário já existe' });
@@ -105,13 +143,17 @@ export class AuthController {
       const hashSenha = await bcrypt.hash(senha, 10);
 
       const novoUsuario = await prisma.user.create({
-        // Por padrão o Prisma já vai colocar primeiroAcesso como true!
-        data: { nome, usuario, senha: hashSenha }
+        data: { 
+          nome, 
+          usuario, 
+          senha: hashSenha,
+          ...(roleId && { roleId })
+        }
       });
 
-      return res.status(201).json({ message: 'Usuário criado!', id: novoUsuario.id });
+      return res.status(201).json({ message: 'Usuário criado com sucesso!', id: novoUsuario.id });
     } catch (error) {
-      console.error(error);
+      console.error("Erro no AuthController.registrar:", error);
       return res.status(500).json({ error: 'Erro ao criar usuário' });
     }
   };

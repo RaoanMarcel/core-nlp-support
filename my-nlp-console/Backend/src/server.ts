@@ -6,6 +6,8 @@ import contratosRoutes from './routes/Contratos.routes';
 import ordersRoutes from './routes/Quote.routes';
 import orderRoutes from './routes/Order.routes';
 import releaseNotesRouter from './routes/releaseNotes.routes';
+import rolesRoutes from './routes/Roles.routes';
+import usersRoutes from './routes/Users.routes';
 
 
 const app = express();
@@ -44,6 +46,8 @@ app.use('/relatorios', authMiddleware, relatoriosRoutes);
 app.use('/quotes', authMiddleware, ordersRoutes); 
 app.use('/orders', authMiddleware, orderRoutes);
 app.use('/release-notes', authMiddleware, releaseNotesRouter);
+app.use('/roles', authMiddleware, rolesRoutes);
+app.use('/users', authMiddleware, usersRoutes);
 
 app.get('/ping', (req, res) => {
   res.status(200).json({ message: 'Pong! Servidor acordado.' });

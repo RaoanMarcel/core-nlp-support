@@ -25,7 +25,12 @@ export default function ProspectList() {
   const currentUser = userStr ? JSON.parse(userStr) : null;
   const currentUserId = currentUser?.id || '';
 
-  // Coerção forçada (Type Casting): Dizemos ao TS para calar a boca e aceitar a ref
+  const hasPermission = (permissionSlug: string) => {
+    return currentUser?.permissions?.includes(permissionSlug);
+  };
+  const canImportCSV = hasPermission('prospects:import');
+  const canInteract = hasPermission('prospects:interact');
+
   useClickOutside(dropdownRef as React.RefObject<any>, () => {
     setIsBairroDropdownOpen(false);
     if (filters.bairroSearchTerm.trim() === '') filters.setFiltroBairro('TODOS');
@@ -59,6 +64,11 @@ export default function ProspectList() {
   };
 
   const handleCardClick = async (prospect: Prospect) => {
+    if (!canInteract) {
+      alert('Acesso Negado: Você não tem permissão para atender ou interagir com clientes.');
+      return;
+    }
+
     if (prospect.status === 'EM_ATENDIMENTO') return; 
     
     if (['APROVADO', 'REPROVADO', 'POSSIBILIDADE', 'RETORNAR'].includes(prospect.status)) {      
@@ -141,17 +151,20 @@ export default function ProspectList() {
                 <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${filters.filtroWLE ? 'translate-x-5' : 'translate-x-1'}`} />
               </div>
             </button>
-            <div className="hidden sm:block w-px h-6 bg-slate-200"></div>
-
-            {/* UPLOAD CSV */}
-            <div className="w-full sm:w-auto">
-              <input type="file" accept=".csv" className="hidden" ref={fileInputRef} onChange={handleFileUpload} />
-              <button onClick={() => fileInputRef.current?.click()} disabled={isImporting}
-                className="w-full sm:w-auto flex justify-center items-center gap-2 bg-blue-900 hover:bg-blue-800 text-white px-5 py-2 rounded-lg text-sm font-bold transition-all disabled:opacity-50">
-                {isImporting ? <RefreshCw size={18} className="animate-spin" /> : <UploadCloud size={18} />}
-                {isImporting ? 'Enviando...' : 'Importar'}
-              </button>
-            </div>
+            
+            {canImportCSV && (
+              <>
+                <div className="hidden sm:block w-px h-6 bg-slate-200"></div>
+                <div className="w-full sm:w-auto">
+                  <input type="file" accept=".csv" className="hidden" ref={fileInputRef} onChange={handleFileUpload} />
+                  <button onClick={() => fileInputRef.current?.click()} disabled={isImporting}
+                    className="w-full sm:w-auto flex justify-center items-center gap-2 bg-blue-900 hover:bg-blue-800 text-white px-5 py-2 rounded-lg text-sm font-bold transition-all disabled:opacity-50">
+                    {isImporting ? <RefreshCw size={18} className="animate-spin" /> : <UploadCloud size={18} />}
+                    {isImporting ? 'Enviando...' : 'Importar'}
+                  </button>
+                </div>
+              </>
+            )}
 
           </div>
         </div>

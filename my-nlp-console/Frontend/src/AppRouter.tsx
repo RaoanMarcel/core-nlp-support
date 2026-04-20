@@ -9,9 +9,18 @@ import Login from './features/Auth/Login';
 import Relatorios from './features/Reports';
 import QuoteDetails from './features/Quotes/QuoteDetails';
 import Quotes from './features/Quotes';
-
-// 1. Importamos a nova página de Configurações
 import Configuracoes from './features/Configuracoes'; 
+
+const RotaProtegida = ({ children, permissaoNecessaria }: { children: React.ReactNode, permissaoNecessaria: string }) => {
+  const userStr = localStorage.getItem('@CRM:user');
+  const user = userStr ? JSON.parse(userStr) : null;
+
+  if (!user || (user.role !== 'DEV' && !user.permissions?.includes(permissaoNecessaria))) {
+    return <Navigate to="/" replace />;
+  }
+
+  return <>{children}</>;
+};
 
 export default function AppRouter() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
@@ -48,12 +57,47 @@ export default function AppRouter() {
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/fila" element={<TicketQueue />} />
-            <Route path="/relatorios" element={<Relatorios />} />
             <Route path="/base" element={<KnowledgeBase />} />            
-            <Route path="/contratos" element={<ProspectList />} />
-            <Route path="/orcamentos" element={<Quotes />} />
-            <Route path="/orcamentos/:id" element={<QuoteDetails />} />
+            
+            {/* Rota aberta para todos editarem o próprio perfil */}
             <Route path="/configuracoes" element={<Configuracoes />} />
+
+            {/* ROTAS PROTEGIDAS NA URL */}
+            <Route 
+              path="/orcamentos" 
+              element={
+                <RotaProtegida permissaoNecessaria="quotes:view">
+                  <Quotes />
+                </RotaProtegida>
+              } 
+            />
+            
+            <Route 
+              path="/orcamentos/:id" 
+              element={
+                <RotaProtegida permissaoNecessaria="quotes:view">
+                  <QuoteDetails />
+                </RotaProtegida>
+              } 
+            />
+
+            <Route 
+              path="/contratos" 
+              element={
+                <RotaProtegida permissaoNecessaria="prospects:view">
+                  <ProspectList />
+                </RotaProtegida>
+              } 
+            />
+
+            <Route 
+              path="/relatorios" 
+              element={
+                <RotaProtegida permissaoNecessaria="reports:view">
+                  <Relatorios />
+                </RotaProtegida>
+              } 
+            />
 
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
