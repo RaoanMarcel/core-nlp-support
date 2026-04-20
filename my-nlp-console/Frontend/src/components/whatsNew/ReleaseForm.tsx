@@ -35,9 +35,9 @@ export default function ReleaseForm({ onSubmit, onCancel, isSubmitting }: Releas
             className="w-full p-3 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-medium"
             value={formData.categoria} onChange={e => setFormData({...formData, categoria: e.target.value as CreateReleaseDTO['categoria']})}
           >
-            <option value="NOVIDADE">✨ Novidade</option>
-            <option value="MELHORIA">📈 Melhoria</option>
-            <option value="FIX">🔧 Correção (Fix)</option>
+            <option value="NOVIDADE"> Novidade</option>
+            <option value="MELHORIA"> Melhoria</option>
+            <option value="FIX"> Correção (Fix)</option>
           </select>
         </div>
       </div>
