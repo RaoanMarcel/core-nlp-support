@@ -10,7 +10,7 @@ router.get('/', authMiddleware, releaseNotesController.index);
 
 router.post('/', 
   authMiddleware, 
-  checkPermission('sistema:releases:gerenciar'), 
+  checkPermission('release:create'), 
   releaseNotesController.create
 );
 
