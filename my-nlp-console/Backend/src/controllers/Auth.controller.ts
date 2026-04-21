@@ -63,7 +63,9 @@ export class AuthController {
           nome: user.nome, 
           usuario: user.usuario,
           role: user.role?.nome || null,
-          permissions: user.role?.permissions.map(p => p.permission.slug) || []
+          permissions: user.role?.permissions.map(p => p.permission.slug) || [],
+          theme: user.theme, 
+          shape: user.shape  
         }
       });
 
@@ -123,7 +125,9 @@ export class AuthController {
           nome: usuarioAtualizado.nome, 
           usuario: usuarioAtualizado.usuario,
           role: usuarioAtualizado.role?.nome || null,
-          permissions: userPermissions
+          permissions: userPermissions,
+          theme: usuarioAtualizado.theme, 
+          shape: usuarioAtualizado.shape
         }
       });
 

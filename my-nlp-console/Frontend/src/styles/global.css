@@ -1,5 +1,70 @@
 @import "tailwindcss";
 
+@theme {
+  --color-theme-base: var(--bg-base);
+  --color-theme-panel: var(--bg-panel);
+  --color-theme-text: var(--text-main);
+  --color-theme-muted: var(--text-muted);
+  --color-theme-border: var(--border-color);
+  --color-theme-accent: var(--accent-main);
+  --color-theme-accent-soft: var(--accent-soft);
+
+  --radius-shape: var(--radius-default);
+  --radius-shape-lg: var(--radius-panel);
+
+  --animate-progress: progress 2s ease-in-out infinite;
+}
+
+@keyframes progress {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(0%); }
+}
+
+:root, [data-theme="OCEAN"] {
+  --bg-base: #f4f5f7;
+  --bg-panel: #ffffff;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --border-color: #e2e8f0;
+  --accent-main: #335cb4; 
+  --accent-soft: #dbeafe;
+}
+
+[data-theme="MIDNIGHT"] {
+  --bg-base: #17171b;       /* Fundo*/
+  --bg-panel: #18181b;      /* Painéis*/
+  --text-main: #fafafa;     /* Texto principal*/
+  --text-muted: #a1a1aa;    /* Textos secundários*/
+  --border-color: #27272a;  /* Bordas*/
+  --accent-main: #4b9ec2;   
+  --accent-soft: #082f49;
+}
+
+[data-theme="COFFEE"] {
+  --bg-base: #e4ded1;       /* Fundo*/
+  --bg-panel: #f4f1ea;      /* Painéis*/
+  --text-main: #41291c;     /* Texto principal*/
+  --text-muted: #66554a;    /* Textos secundários*/
+  --border-color: #d2ccc1;  /* Bordas*/
+  --accent-main: #492d17;   
+  --accent-soft: #f0dfba;
+}
+
+:root, [data-shape="MODERN"] {
+  --radius-default: 0.5rem;  
+  --radius-panel: 1rem;      
+}
+
+[data-shape="SHARP"] {
+  --radius-default: 0px;
+  --radius-panel: 0px;
+}
+
+[data-shape="SOFT"] {
+  --radius-default: 1rem;     
+  --radius-panel: 1.5rem;    
+}
+
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }

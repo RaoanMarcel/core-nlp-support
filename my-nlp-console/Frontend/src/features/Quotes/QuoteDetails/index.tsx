@@ -194,35 +194,35 @@ export default function QuoteDetails() {
   const currentStatus = (quote.status?.toUpperCase() || 'RASCUNHO');
   const currentStepIdx = steps.indexOf(currentStatus);
 
-  return (
+return (
     <>
-      <div className="h-full flex flex-col bg-[#f8fafc] font-sans overflow-hidden">
+      <div className="h-full flex flex-col bg-theme-base font-sans overflow-hidden">
 
-        <header className="bg-white border-b border-slate-200 px-6 py-4 shrink-0 z-20 shadow-sm">
+        <header className="bg-theme-panel border-b border-theme-border px-6 py-4 shrink-0 z-20 shadow-sm">
           <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             
             <div className="flex items-start gap-4 md:ml-5">
               <button 
                 onClick={() => navigate('/orcamentos')}
-                className="relative z-30 p-2 mt-1 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-full transition-colors"
+                className="relative z-30 p-2 mt-1 text-theme-muted hover:text-theme-text hover:bg-theme-base rounded-full transition-colors"
                 title="Voltar para Orçamentos"
               >
                 <ArrowLeft size={20} />
               </button>
               
               <div>
-                <div className="text-slate-400 text-[11px] mb-1 font-medium uppercase tracking-wider">
+                <div className="text-theme-muted text-[11px] mb-1 font-medium uppercase tracking-wider">
                   <span 
                     onClick={() => navigate('/orcamentos')}
-                    className="relative z-30 cursor-pointer hover:text-blue-600 transition-colors"
+                    className="relative z-30 cursor-pointer hover:text-theme-accent transition-colors"
                     title="Voltar para Orçamentos"
                   >
                     Orçamentos
-                  </span> / <span className="text-slate-500">{quote.nomeCliente}</span> / Orçamento #{formattedId}
+                  </span> / <span className="text-theme-muted">{quote.nomeCliente}</span> / Orçamento #{formattedId}
                 </div>
                 
                 <div className="flex flex-col xl:flex-row xl:items-center gap-4 xl:gap-8">
-                  <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+                  <h1 className="text-2xl font-black text-theme-text tracking-tight">
                     Orçamento #{formattedId}
                   </h1>
                   
@@ -239,16 +239,16 @@ export default function QuoteDetails() {
                             className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all ${
                               !isCurrent ? 'cursor-pointer hover:-translate-y-0.5 hover:shadow-sm' : 'cursor-default'
                             } ${
-                              isCurrent ? 'bg-blue-600 text-white shadow-sm ring-2 ring-blue-600/30 ring-offset-1' : 
+                              isCurrent ? 'bg-theme-accent text-white shadow-sm ring-2 ring-theme-accent/30 ring-offset-1' : 
                               isCompleted ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' : 
-                              'bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600'
+                              'bg-theme-base text-theme-muted hover:bg-theme-border hover:text-theme-text'
                             }`}
                           >
                             {(isCompleted || isCurrent) && <Check size={12} />}
                             {step}
                           </button>
                           {idx < steps.length - 1 && (
-                            <div className={`w-6 h-0.5 rounded ${idx < currentStepIdx ? 'bg-emerald-200' : 'bg-slate-200'}`} />
+                            <div className={`w-6 h-0.5 rounded ${idx < currentStepIdx ? 'bg-emerald-200' : 'bg-theme-border'}`} />
                           )}
                         </React.Fragment>
                       );
@@ -261,7 +261,7 @@ export default function QuoteDetails() {
             <div className="flex items-center gap-3 w-full sm:w-auto">
               <button 
                 onClick={() => setIsEditModalOpen(true)}
-                className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-white border border-slate-200 hover:border-slate-300 text-slate-700 px-4 py-2 rounded-lg text-sm font-bold transition-all"
+                className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-theme-panel border border-theme-border hover:border-theme-text text-theme-text px-4 py-2 rounded-shape-lg text-sm font-bold transition-all"
               >
                 <Pencil size={16} />
                 Editar
@@ -269,7 +269,7 @@ export default function QuoteDetails() {
               
               <button 
                 onClick={() => setIsSendModalOpen(true)} 
-                className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-bold transition-all shadow-sm hover:shadow-md active:scale-95"
+                className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-theme-accent hover:opacity-90 text-white px-5 py-2 rounded-shape-lg text-sm font-bold transition-all shadow-sm hover:shadow-md active:scale-95"
               >
                 <Send size={16} />
                 Enviar Proposta
@@ -284,9 +284,9 @@ export default function QuoteDetails() {
             {/* COLUNA PRINCIPAL (2/3) */}
             <div className="xl:col-span-2 flex flex-col gap-6">
               
-              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden shrink-0">
-                <div className="px-6 py-3 border-b border-slate-100 bg-slate-50/50">
-                  <h2 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+              <div className="bg-theme-panel rounded-shape-lg border border-theme-border shadow-sm overflow-hidden shrink-0">
+                <div className="px-6 py-3 border-b border-theme-border bg-theme-base/50">
+                  <h2 className="text-[11px] font-bold text-theme-muted uppercase tracking-widest flex items-center gap-2">
                     <Building size={14} />
                     Dados do Cliente
                   </h2>
@@ -294,17 +294,17 @@ export default function QuoteDetails() {
                 <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="space-y-4">
                     <div>
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Empresa</label>
-                      <p className="text-sm font-bold text-slate-900">{quote.nomeCliente}</p>
+                      <label className="text-[10px] font-bold text-theme-muted uppercase tracking-wider block mb-1">Empresa</label>
+                      <p className="text-sm font-bold text-theme-text">{quote.nomeCliente}</p>
                     </div>
                     <div>
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">CNPJ</label>
+                      <label className="text-[10px] font-bold text-theme-muted uppercase tracking-wider block mb-1">CNPJ</label>
                       <div className="flex items-center gap-2 group">
-                        <p className="text-sm font-semibold text-slate-700">{quote.cnpj || 'Não informado'}</p>
+                        <p className="text-sm font-semibold text-theme-text">{quote.cnpj || 'Não informado'}</p>
                         {quote.cnpj && (
                           <button 
                             onClick={() => handleCopyCnpj(quote.cnpj!)}
-                            className="p-1 hover:bg-slate-100 rounded text-slate-400 hover:text-blue-600 transition-all"
+                            className="p-1 hover:bg-theme-base rounded-shape text-theme-muted hover:text-theme-accent transition-all"
                             title="Copiar apenas números"
                           >
                             {copiedCnpj ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
@@ -315,113 +315,113 @@ export default function QuoteDetails() {
                   </div>
                   <div className="space-y-4">
                     <div>
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Contato Direto</label>
+                        <label className="text-[10px] font-bold text-theme-muted uppercase tracking-wider block mb-2">Contato Direto</label>
                         <div className="flex flex-col gap-3">
                         {quote.email && (
                             <a 
                             href={`mailto:${quote.email}`} 
-                            className="inline-flex items-center gap-2 text-sm text-slate-700 hover:text-blue-600 transition-colors group w-fit"
+                            className="inline-flex items-center gap-2 text-sm text-theme-text hover:text-theme-accent transition-colors group w-fit"
                             >
-                            <Mail size={16} className="text-slate-400 group-hover:text-blue-600 transition-colors shrink-0" />
+                            <Mail size={16} className="text-theme-muted group-hover:text-theme-accent transition-colors shrink-0" />
                             <span className="font-semibold">{quote.email}</span>
-                            <ExternalLink size={14} className="text-slate-400 opacity-0 group-hover:opacity-100 group-hover:text-blue-600 transition-all duration-300 -ml-0.5" />
+                            <ExternalLink size={14} className="text-theme-muted opacity-0 group-hover:opacity-100 group-hover:text-theme-accent transition-all duration-300 -ml-0.5" />
                             </a>
                         )}
                         
                         {quote.telefonePrincipal && (
                             <a 
                             href={`tel:${quote.telefonePrincipal.replace(/\D/g, '')}`} 
-                            className="inline-flex items-center gap-2 text-sm text-slate-700 hover:text-blue-600 transition-colors group w-fit"
+                            className="inline-flex items-center gap-2 text-sm text-theme-text hover:text-theme-accent transition-colors group w-fit"
                             >
-                            <Phone size={16} className="text-slate-400 group-hover:text-blue-600 transition-colors shrink-0" />
+                            <Phone size={16} className="text-theme-muted group-hover:text-theme-accent transition-colors shrink-0" />
                             <span className="font-semibold">{quote.telefonePrincipal}</span>
-                            <ExternalLink size={14} className="text-slate-400 opacity-0 group-hover:opacity-100 group-hover:text-blue-600 transition-all duration-300 -ml-0.5" />
+                            <ExternalLink size={14} className="text-theme-muted opacity-0 group-hover:opacity-100 group-hover:text-theme-accent transition-all duration-300 -ml-0.5" />
                             </a>
                         )}
                         </div>
                     </div>
                     
                     <div>
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Localização</label>
+                        <label className="text-[10px] font-bold text-theme-muted uppercase tracking-wider block mb-2">Localização</label>
                         {quote.endereco ? (
                         <a 
-                            href={`http://maps.google.com/?q=$$${encodeURIComponent(quote.endereco)}`} 
+                            href={`http://googleusercontent.com/maps.google.com/?q=${encodeURIComponent(quote.endereco)}`} 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 text-sm text-slate-700 hover:text-blue-600 transition-colors group w-fit"
+                            className="inline-flex items-center gap-2 text-sm text-theme-text hover:text-theme-accent transition-colors group w-fit"
                         >
-                            <MapPin size={16} className="text-slate-400 group-hover:text-blue-600 shrink-0 transition-colors" />
+                            <MapPin size={16} className="text-theme-muted group-hover:text-theme-accent shrink-0 transition-colors" />
                             <span className="font-semibold">{quote.endereco}</span>
-                            <ExternalLink size={14} className="text-slate-400 opacity-0 group-hover:opacity-100 group-hover:text-blue-600 transition-all duration-300 -ml-0.5 shrink-0" />
+                            <ExternalLink size={14} className="text-theme-muted opacity-0 group-hover:opacity-100 group-hover:text-theme-accent transition-all duration-300 -ml-0.5 shrink-0" />
                         </a>
                         ) : (
-                        <p className="text-sm text-slate-400 italic px-1">Endereço não informado</p>
+                        <p className="text-sm text-theme-muted italic px-1">Endereço não informado</p>
                         )}
                     </div>
                     </div>
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden shrink-0">
-                <div className="px-6 py-3 border-b border-slate-100 bg-slate-50/50">
-                  <h2 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+              <div className="bg-theme-panel rounded-shape-lg border border-theme-border shadow-sm overflow-hidden shrink-0">
+                <div className="px-6 py-3 border-b border-theme-border bg-theme-base/50">
+                  <h2 className="text-[11px] font-bold text-theme-muted uppercase tracking-widest flex items-center gap-2">
                     <CheckSquare size={14} />
                     Escopo do Projeto
                   </h2>
                 </div>
                 <div className="p-6 flex flex-wrap gap-2">
                   {modulos.map((modulo: string) => (
-                    <span key={modulo} className="px-3 py-1 bg-slate-50 border border-slate-200 text-slate-600 rounded text-[11px] font-bold uppercase tracking-tight">
+                    <span key={modulo} className="px-3 py-1 bg-theme-base border border-theme-border text-theme-text rounded-shape text-[11px] font-bold uppercase tracking-tight">
                       {modulo}
                     </span>
                   ))}
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col flex-1 min-h-75">
-                <div className="px-6 py-3 border-b border-slate-100 shrink-0">
-                  <h2 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+              <div className="bg-theme-panel rounded-shape-lg border border-theme-border shadow-sm flex flex-col flex-1 min-h-75">
+                <div className="px-6 py-3 border-b border-theme-border shrink-0">
+                  <h2 className="text-[11px] font-bold text-theme-muted uppercase tracking-widest flex items-center gap-2">
                     <Pencil size={14} />
                     Anotações
                   </h2>
                 </div>
                 
                 <div className="flex-1 flex flex-col overflow-hidden">
-                  <div className="grid grid-cols-[80px_130px_1fr] gap-4 px-6 py-2 border-b border-slate-100 bg-slate-50 sticky top-0 z-10 shrink-0">
-                    <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Data</div>
-                    <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Usuário</div>
-                    <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Anotação</div>
+                  <div className="grid grid-cols-[80px_130px_1fr] gap-4 px-6 py-2 border-b border-theme-border bg-theme-base sticky top-0 z-10 shrink-0">
+                    <div className="text-[10px] font-black uppercase tracking-widest text-theme-muted">Data</div>
+                    <div className="text-[10px] font-black uppercase tracking-widest text-theme-muted">Usuário</div>
+                    <div className="text-[10px] font-black uppercase tracking-widest text-theme-muted">Anotação</div>
                   </div>
 
                   <div className="flex-1 overflow-y-auto">
                     {quote.interesses && (
-                      <div className="grid grid-cols-[80px_130px_1fr] gap-4 px-6 py-2.5 border-b border-slate-100 items-start hover:bg-slate-50/50 transition-colors">
-                        <div className="text-[11px] text-slate-500 pt-0.5">{formatarData(quote.createdAt)}</div>
-                        <div className="text-[11px] font-semibold text-slate-700 truncate pt-0.5">Sistema</div>
-                        <div className="text-[12px] text-slate-700 leading-relaxed">
-                          <span className="font-bold mr-1 text-slate-900">Interesses:</span>
+                      <div className="grid grid-cols-[80px_130px_1fr] gap-4 px-6 py-2.5 border-b border-theme-border items-start hover:bg-theme-base transition-colors">
+                        <div className="text-[11px] text-theme-muted pt-0.5">{formatarData(quote.createdAt)}</div>
+                        <div className="text-[11px] font-semibold text-theme-text truncate pt-0.5">Sistema</div>
+                        <div className="text-[12px] text-theme-text leading-relaxed">
+                          <span className="font-bold mr-1">Interesses:</span>
                           {quote.interesses}
                         </div>
                       </div>
                     )}
 
                     {quote.observacoes && (
-                      <div className="grid grid-cols-[80px_130px_1fr] gap-4 px-6 py-2.5 border-b border-slate-100 items-start hover:bg-slate-50/50 transition-colors">
-                        <div className="text-[11px] text-slate-500 pt-0.5">{formatarData(quote.createdAt)}</div>
-                        <div className="text-[11px] font-semibold text-slate-700 truncate pt-0.5">Sistema</div>
-                        <div className="text-[12px] text-slate-700 leading-relaxed">
-                          <span className="font-bold mr-1 text-slate-900">Obs. Iniciais:</span>
+                      <div className="grid grid-cols-[80px_130px_1fr] gap-4 px-6 py-2.5 border-b border-theme-border items-start hover:bg-theme-base transition-colors">
+                        <div className="text-[11px] text-theme-muted pt-0.5">{formatarData(quote.createdAt)}</div>
+                        <div className="text-[11px] font-semibold text-theme-text truncate pt-0.5">Sistema</div>
+                        <div className="text-[12px] text-theme-text leading-relaxed">
+                          <span className="font-bold mr-1">Obs. Iniciais:</span>
                           {quote.observacoes}
                         </div>
                       </div>
                     )}
 
                     {quote.notas?.map((nota: IQuoteNote) => (
-                      <div key={nota.id} className="grid grid-cols-[80px_130px_1fr] gap-4 px-6 py-2.5 border-b border-slate-100 items-start hover:bg-slate-50/50 transition-colors group">
-                        <div className="text-[11px] text-slate-500 pt-0.5">{formatarData(nota.createdAt)}</div>
-                        <div className="text-[11px] font-semibold text-slate-700 truncate pt-0.5">{nota.usuario}</div>
-                        <div className="text-[12px] text-slate-700 relative w-full">
-                          <div className="px-1 -mx-1 rounded whitespace-pre-wrap leading-relaxed border border-transparent">
+                      <div key={nota.id} className="grid grid-cols-[80px_130px_1fr] gap-4 px-6 py-2.5 border-b border-theme-border items-start hover:bg-theme-base transition-colors group">
+                        <div className="text-[11px] text-theme-muted pt-0.5">{formatarData(nota.createdAt)}</div>
+                        <div className="text-[11px] font-semibold text-theme-text truncate pt-0.5">{nota.usuario}</div>
+                        <div className="text-[12px] text-theme-text relative w-full">
+                          <div className="px-1 -mx-1 rounded-shape whitespace-pre-wrap leading-relaxed border border-transparent">
                             {nota.texto}
                           </div>
                         </div>
@@ -429,35 +429,35 @@ export default function QuoteDetails() {
                     ))}
 
                     {(!quote.notas?.length && !quote.interesses && !quote.observacoes) && (
-                      <div className="py-8 text-center text-xs text-slate-400 font-medium">
+                      <div className="py-8 text-center text-xs text-theme-muted font-medium">
                         Nenhum registro encontrado.
                       </div>
                     )}
                   </div>
                 </div>
 
-                <div className="px-6 py-4 border-t border-slate-100 bg-white shrink-0 rounded-b-xl flex flex-col gap-2">
+                <div className="px-6 py-4 border-t border-theme-border bg-theme-panel shrink-0 rounded-b-shape-lg flex flex-col gap-2">
                   <div className="relative flex items-end gap-2">
                     <textarea
                       value={newNote}
                       onChange={(e) => setNewNote(e.target.value)}
                       onKeyDown={handleNewNoteKeyDown}
                       placeholder="Adicionar anotação..."
-                      className="w-full bg-slate-50 border border-slate-200 text-[12px] text-slate-700 rounded-lg px-4 py-2.5 min-h-11 max-h-30 resize-none focus:outline-none focus:ring-1 focus:ring-blue-500 focus:bg-white transition-all custom-scrollbar"
+                      className="w-full bg-theme-base border border-theme-border text-[12px] text-theme-text rounded-shape-lg px-4 py-2.5 min-h-11 max-h-30 resize-none focus:outline-none focus:ring-1 focus:ring-theme-accent focus:bg-theme-panel transition-all custom-scrollbar"
                       rows={1}
                       disabled={isSubmittingNote}
                     />
                     <button
                       onClick={handleSubmitNote}
                       disabled={!newNote.trim() || isSubmittingNote}
-                      className="h-11 px-4 bg-slate-900 text-white rounded-lg hover:bg-slate-800 disabled:opacity-50 disabled:hover:bg-slate-900 transition-colors shrink-0 flex items-center justify-center font-bold text-[11px] uppercase tracking-wider"
+                      className="h-11 px-4 bg-theme-text text-theme-panel rounded-shape-lg hover:opacity-90 disabled:opacity-50 transition-colors shrink-0 flex items-center justify-center font-bold text-[11px] uppercase tracking-wider"
                     >
                       {isSubmittingNote ? <Loader2 size={16} className="animate-spin" /> : 'Salvar'}
                     </button>
                   </div>
-                  <div className="text-[10px] text-slate-400 flex items-center gap-1.5 ml-1">
+                  <div className="text-[10px] text-theme-muted flex items-center gap-1.5 ml-1">
                     <span>* Ao terminar de digitar pressione</span>
-                    <span className="font-bold flex items-center gap-0.5 px-1 bg-slate-100 rounded border border-slate-200">
+                    <span className="font-bold flex items-center gap-0.5 px-1 bg-theme-base rounded-shape border border-theme-border">
                       Enter <CornerDownLeft size={10} />
                     </span>
                   </div>
@@ -469,17 +469,17 @@ export default function QuoteDetails() {
             {/* COLUNA LATERAL (1/3) */}
             <div className="space-y-6">
               
-              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden top-6">
-                <div className="px-6 py-4 border-b border-slate-100 bg-slate-900">
-                  <h2 className="text-[11px] font-bold text-slate-200 uppercase tracking-widest flex items-center gap-2">
-                    <DollarSign size={14} className="text-blue-400" />
+              <div className="bg-theme-panel rounded-shape-lg border border-theme-border shadow-sm overflow-hidden top-6">
+                <div className="px-6 py-4 border-b border-theme-border bg-theme-base">
+                  <h2 className="text-[11px] font-bold text-theme-text uppercase tracking-widest flex items-center gap-2">
+                    <DollarSign size={14} className="text-theme-accent" />
                     Resumo Financeiro
                   </h2>
                 </div>
                 <div className="p-6 space-y-4">
                   <div className="flex justify-between items-center text-sm font-medium">
-                    <span className="text-slate-600">Valor de Tabela</span>
-                    <span className={quote.valorNegociado ? 'line-through text-slate-400' : 'text-slate-900'}>
+                    <span className="text-theme-muted">Valor de Tabela</span>
+                    <span className={quote.valorNegociado ? 'line-through text-theme-muted' : 'text-theme-text'}>
                       {formatarMoeda(quote.valorBase || 0)}
                     </span>
                   </div>
@@ -491,9 +491,9 @@ export default function QuoteDetails() {
                     </div>
                   )}
 
-                  <div className="pt-4 border-t border-slate-100">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Total a Pagar / Mês</label>
-                    <p className="text-4xl font-black text-slate-900 tracking-tighter">
+                  <div className="pt-4 border-t border-theme-border">
+                    <label className="text-[10px] font-bold text-theme-muted uppercase tracking-widest block mb-1">Total a Pagar / Mês</label>
+                    <p className="text-4xl font-black text-theme-text tracking-tighter">
                       {formatarMoeda(quote.valorNegociado || quote.valorBase || 0)}
                     </p>
                   </div>
@@ -503,7 +503,7 @@ export default function QuoteDetails() {
                       {/* BOTAO PARA GERAR O PEDIDO */}
                       <button 
                         onClick={() => setIsConfirmOrderModalOpen(true)}
-                        className="w-full mt-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black py-2 rounded-xl transition-all shadow-md hover:shadow-xl hover:-translate-y-0.5 flex items-center justify-center gap-2 active:scale-95"
+                        className="w-full mt-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black py-2 rounded-shape-lg transition-all shadow-md hover:shadow-xl hover:-translate-y-0.5 flex items-center justify-center gap-2 active:scale-95"
                       >
                         <CheckCircle2 size={20} />
                         GERAR PEDIDO
@@ -511,7 +511,7 @@ export default function QuoteDetails() {
 
                       <button 
                         onClick={() => setForceStatusModal({ isOpen: true, targetStatus: 'REJEITADO' })}
-                        className="w-full mt-3 py-1 text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg text-[9px] font-black uppercase tracking-widest transition-colors flex items-center justify-center"
+                        className="w-full mt-3 py-1 text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-shape-lg text-[9px] font-black uppercase tracking-widest transition-colors flex items-center justify-center"
                       >
                         Orçamento Rejeitado
                       </button>
@@ -519,13 +519,13 @@ export default function QuoteDetails() {
                   )}
 
                   {currentStatus === 'APROVADO' && (
-                    <div className="w-full mt-4 bg-emerald-100 text-emerald-700 font-black py-3 rounded-xl flex items-center justify-center gap-2 uppercase text-sm border border-emerald-200">
+                    <div className="w-full mt-4 bg-emerald-100 text-emerald-700 font-black py-3 rounded-shape-lg flex items-center justify-center gap-2 uppercase text-sm border border-emerald-200">
                       <CheckCircle2 size={18} /> Orçamento Aprovado
                     </div>
                   )}
                   
                   {currentStatus === 'REJEITADO' && (
-                    <div className="w-full mt-4 bg-rose-100 text-rose-700 font-black py-3 rounded-xl flex items-center justify-center uppercase text-sm border border-rose-200">
+                    <div className="w-full mt-4 bg-rose-100 text-rose-700 font-black py-3 rounded-shape-lg flex items-center justify-center uppercase text-sm border border-rose-200">
                       Orçamento Rejeitado
                     </div>
                   )}
@@ -533,15 +533,15 @@ export default function QuoteDetails() {
               </div>
 
               {/* LINHA DO TEMPO */}
-              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                <div className="px-6 py-3 border-b border-slate-100 bg-slate-50/50">
-                  <h2 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+              <div className="bg-theme-panel rounded-shape-lg border border-theme-border shadow-sm overflow-hidden">
+                <div className="px-6 py-3 border-b border-theme-border bg-theme-base/50">
+                  <h2 className="text-[11px] font-bold text-theme-muted uppercase tracking-widest flex items-center gap-2">
                     <Clock size={14} />
                     Histórico de Ações
                   </h2>
                 </div>
                 <div className="p-6">
-                  <div className="relative pl-6 border-l-2 border-slate-100 space-y-8">
+                  <div className="relative pl-6 border-l-2 border-theme-border space-y-8">
                     
                     {quote.historico && quote.historico.length > 0 ? (
                       quote.historico.map((item, index) => {
@@ -549,23 +549,23 @@ export default function QuoteDetails() {
                         
                         return (
                           <div key={item.id} className={`relative ${!isLatest ? 'opacity-60' : ''}`}>
-                            <div className={`absolute -left-7.75 border-4 border-white w-3.5 h-3.5 rounded-full top-1 ${isLatest ? 'bg-blue-600 shadow-sm' : 'bg-slate-300'}`}></div>
+                            <div className={`absolute -left-7.75 border-4 border-theme-panel w-3.5 h-3.5 rounded-full top-1 ${isLatest ? 'bg-theme-accent shadow-sm' : 'bg-theme-border'}`}></div>
                             
-                            <div className={isLatest ? "bg-white border border-slate-100 p-3 rounded-lg shadow-sm" : "p-1"}>
-                              <p className={`text-xs font-bold ${isLatest ? 'text-slate-900' : 'text-slate-800'}`}>
+                            <div className={isLatest ? "bg-theme-panel border border-theme-border p-3 rounded-shape-lg shadow-sm" : "p-1"}>
+                              <p className={`text-xs font-bold ${isLatest ? 'text-theme-text' : 'text-theme-muted'}`}>
                                 {item.acao}
                               </p>
-                              <div className="flex items-center gap-1.5 mt-1 text-slate-400">
+                              <div className="flex items-center gap-1.5 mt-1 text-theme-muted">
                                 <User size={10} />
                                 <span className="text-[9px] font-bold uppercase tracking-tighter">{item.usuario}</span>
-                                <span className="text-[9px]">&bull; {formatarData(item.createdAt)}</span>
+                                <span className="text-[9px]">• {formatarData(item.createdAt)}</span>
                               </div>
                             </div>
                           </div>
                         )
                       })
                     ) : (
-                      <p className="text-xs text-slate-400 font-medium italic py-4">Nenhum histórico registrado.</p>
+                      <p className="text-xs text-theme-muted font-medium italic py-4">Nenhum histórico registrado.</p>
                     )}
 
                   </div>
@@ -578,8 +578,8 @@ export default function QuoteDetails() {
       </div>
 
       {forceStatusModal.isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm transition-all">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-theme-text/40 backdrop-blur-sm transition-all">
+          <div className="bg-theme-panel rounded-shape-lg shadow-xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             <div className="px-6 py-4 bg-amber-50 border-b border-amber-100">
               <h3 className="text-sm font-black text-amber-900 uppercase tracking-widest flex items-center gap-2">
                 Ação Restrita
@@ -591,14 +591,14 @@ export default function QuoteDetails() {
             
             <div className="p-6 space-y-4">
               <div>
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Confirme sua senha</label>
+                <label className="text-[10px] font-bold text-theme-muted uppercase tracking-wider block mb-2">Confirme sua senha</label>
                 <input 
                   type="password"
                   autoFocus
                   value={forcePassword}
                   onChange={(e) => setForcePassword(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleForceStatus()}
-                  className="w-full bg-slate-50 border border-slate-300 text-sm text-slate-900 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                  className="w-full bg-theme-base border border-theme-border text-sm text-theme-text rounded-shape-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-theme-accent/20 focus:border-theme-accent transition-all"
                   placeholder="••••••••"
                 />
                 {forceError && <p className="text-xs font-semibold text-rose-500 mt-2">{forceError}</p>}
@@ -608,14 +608,14 @@ export default function QuoteDetails() {
                 <button 
                   onClick={() => { setForceStatusModal({ isOpen: false, targetStatus: '' }); setForcePassword(''); setForceError(''); }}
                   disabled={isForcingStatus}
-                  className="flex-1 px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100 rounded-lg transition-colors"
+                  className="flex-1 px-4 py-2 text-xs font-bold text-theme-muted hover:bg-theme-base rounded-shape-lg transition-colors"
                 >
                   CANCELAR
                 </button>
                 <button 
                   onClick={handleForceStatus}
                   disabled={isForcingStatus || !forcePassword}
-                  className="flex-1 bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition-all disabled:opacity-50 flex items-center justify-center"
+                  className="flex-1 bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-shape-lg text-xs font-bold transition-all disabled:opacity-50 flex items-center justify-center"
                 >
                   {isForcingStatus ? <Loader2 size={16} className="animate-spin" /> : 'AUTORIZAR'}
                 </button>
@@ -639,13 +639,12 @@ export default function QuoteDetails() {
           />
         )}
 
-        {/* MODAL: EDIÇÃO DE ORÇAMENTO (Corrigido sem onSuccess) */}
+        {/* MODAL: EDIÇÃO DE ORÇAMENTO */}
         {isEditModalOpen && (
           <QuoteModal
             quote={quote}
             onClose={() => {
               setIsEditModalOpen(false);
-              // Recarrega os dados ao fechar o modal por segurança
               fetchQuoteDetails(); 
             }}
           />

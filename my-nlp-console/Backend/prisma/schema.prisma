@@ -67,6 +67,9 @@
 
     roleId          String?
     role            Role?    @relation(fields: [roleId], references: [id])
+
+    theme           Theme    @default(OCEAN)
+    shape           Shape    @default(MODERN)
   }
 
   model HistoricoAtendimento {
@@ -204,4 +207,16 @@ model RolePermission {
   permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
 
   @@id([roleId, permissionId])
+}
+
+enum Theme {
+  OCEAN
+  MIDNIGHT
+  COFFEE
+}
+
+enum Shape {
+  SHARP
+  MODERN
+  SOFT
 }

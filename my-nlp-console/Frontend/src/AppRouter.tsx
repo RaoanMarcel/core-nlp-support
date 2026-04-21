@@ -28,20 +28,33 @@ export default function AppRouter() {
 
   useEffect(() => {
     const token = localStorage.getItem('@CRM:token');
+    const userStr = localStorage.getItem('@CRM:user'); 
+
     if (token) {
       setIsAuthenticated(true);
+      
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        if (user.theme) document.documentElement.setAttribute('data-theme', user.theme);
+        if (user.shape) document.documentElement.setAttribute('data-shape', user.shape);
+      }
     }
     setIsLoading(false);
   }, []);
 
   const handleLoginSuccess = (token: string, user: any) => {
     setIsAuthenticated(true);
+    // Aplica o tema imediatamente após o login também
+    if (user.theme) document.documentElement.setAttribute('data-theme', user.theme);
+    if (user.shape) document.documentElement.setAttribute('data-shape', user.shape);
   };
 
   const handleLogout = () => {
     localStorage.removeItem('@CRM:token');
     localStorage.removeItem('@CRM:user');
     setIsAuthenticated(false);
+    document.documentElement.removeAttribute('data-theme');
+    document.documentElement.removeAttribute('data-shape');
   };
 
   return (
@@ -59,10 +72,8 @@ export default function AppRouter() {
             <Route path="/fila" element={<TicketQueue />} />
             <Route path="/base" element={<KnowledgeBase />} />            
             
-            {/* Rota aberta para todos editarem o próprio perfil */}
             <Route path="/configuracoes" element={<Configuracoes />} />
 
-            {/* ROTAS PROTEGIDAS NA URL */}
             <Route 
               path="/orcamentos" 
               element={

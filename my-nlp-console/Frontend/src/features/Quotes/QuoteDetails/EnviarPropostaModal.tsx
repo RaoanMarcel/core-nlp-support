@@ -71,54 +71,69 @@ export default function EnviarPropostaModal({ quote, usuarioAtual, onClose, onSu
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl flex flex-col max-h-[90vh] overflow-hidden zoom-in-95 animate-in">
+    <div 
+      className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 sm:p-6 font-sans animate-in fade-in duration-200 backdrop-blur-sm"
+      onClick={(e) => e.target === e.currentTarget && !loadingWhatsApp && !loadingEmail && onClose()}
+    >
+      {/* Container principal usando classes do seu sistema de temas */}
+      <div className="bg-theme-panel border border-theme-border rounded-shape-lg shadow-2xl w-full max-w-4xl flex flex-col max-h-[95vh] overflow-hidden zoom-in-95 animate-in transition-colors">
         
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-slate-50/50">
+        {/* Header - Padrão do sistema */}
+        <div className="px-6 py-4 border-b border-theme-border bg-theme-panel flex justify-between items-center shrink-0 transition-colors">
           <div>
-            <h2 className="text-xl font-black text-slate-800 tracking-tight">Enviar Proposta</h2>
-            <p className="text-xs font-semibold text-slate-400 mt-1 uppercase tracking-wider">Orçamento #{String(quote.id).padStart(4, '0')}</p>
+            <h2 className="text-lg font-semibold text-theme-text leading-none transition-colors">
+              Enviar Proposta
+            </h2>
+            <p className="text-sm text-theme-muted mt-1.5 transition-colors uppercase tracking-wider font-semibold">
+              Orçamento #{String(quote.id).padStart(4, '0')}
+            </p>
           </div>
-          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-full transition-colors">
+          <button 
+            onClick={onClose} 
+            className="p-1.5 text-theme-muted hover:text-rose-500 hover:bg-theme-base rounded-md transition-colors"
+          >
             <X size={20} />
           </button>
         </div>
 
-        {/* Body (Grid dividido em Whats e Email) */}
-        <div className="flex-1 overflow-y-auto p-6 grid grid-cols-1 lg:grid-cols-2 gap-8 custom-scrollbar">
+        {/* Body */}
+        <div className="p-6 overflow-y-auto flex-1 bg-theme-panel transition-colors custom-scrollbar grid grid-cols-1 lg:grid-cols-2 gap-8">
           
           {/* Coluna WhatsApp */}
-          <div className="flex flex-col gap-4 lg:border-r lg:border-slate-100 lg:pr-8">
-            <div className="flex items-center gap-2 text-emerald-600 font-black tracking-tight mb-2">
-              <MessageCircle size={20} />
+          <div className="flex flex-col gap-4 lg:border-r lg:border-theme-border lg:pr-8 transition-colors">
+            <div className="flex items-center gap-2 text-emerald-500 font-bold tracking-tight mb-2 border-b border-theme-border pb-2 transition-colors">
+              <MessageCircle size={18} />
               <h3>Via WhatsApp</h3>
             </div>
             
             <div>
-              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Número do Cliente</label>
+              <label className="block text-sm font-medium text-theme-text mb-1 transition-colors">
+                Número do Cliente
+              </label>
               <input 
                 type="text" 
                 value={telefone}
                 onChange={(e) => setTelefone(e.target.value)}
                 placeholder="(00) 00000-0000"
-                className="w-full bg-slate-50 border border-slate-200 text-sm text-slate-700 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                className="w-full bg-theme-base border border-theme-border text-theme-text placeholder:text-theme-muted rounded-md px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-theme-accent focus:border-theme-accent transition-all"
               />
             </div>
 
             <div className="flex-1 flex flex-col">
-              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Mensagem</label>
+              <label className="block text-sm font-medium text-theme-text mb-1 transition-colors">
+                Mensagem
+              </label>
               <textarea 
                 value={textoWhats}
                 onChange={(e) => setTextoWhats(e.target.value)}
-                className="w-full flex-1 min-h-55 bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all resize-none custom-scrollbar"
+                className="w-full flex-1 min-h-[220px] bg-theme-base border border-theme-border text-theme-text placeholder:text-theme-muted rounded-md px-3 py-3 text-sm outline-none focus:ring-1 focus:ring-theme-accent focus:border-theme-accent transition-all resize-none custom-scrollbar"
               />
             </div>
 
             <button 
               onClick={handleEnviarWhatsApp}
               disabled={loadingWhatsApp || !telefone}
-              className="mt-4 w-full flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white py-3 rounded-xl font-bold transition-all disabled:opacity-50 active:scale-95 shadow-sm"
+              className="mt-4 w-full flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white py-2.5 rounded-md font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 shadow-sm"
             >
               {loadingWhatsApp ? <Loader2 size={18} className="animate-spin" /> : <MessageCircle size={18} />}
               Abrir WhatsApp Web
@@ -127,35 +142,39 @@ export default function EnviarPropostaModal({ quote, usuarioAtual, onClose, onSu
 
           {/* Coluna E-mail */}
           <div className="flex flex-col gap-4 lg:pl-2">
-            <div className="flex items-center gap-2 text-blue-600 font-black tracking-tight mb-2">
-              <Mail size={20} />
+            <div className="flex items-center gap-2 text-blue-500 font-bold tracking-tight mb-2 border-b border-theme-border pb-2 transition-colors">
+              <Mail size={18} />
               <h3>Via E-mail</h3>
             </div>
             
             <div>
-              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">E-mail do Cliente</label>
+              <label className="block text-sm font-medium text-theme-text mb-1 transition-colors">
+                E-mail do Cliente
+              </label>
               <input 
                 type="email" 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="cliente@empresa.com.br"
-                className="w-full bg-slate-50 border border-slate-200 text-sm text-slate-700 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                className="w-full bg-theme-base border border-theme-border text-theme-text placeholder:text-theme-muted rounded-md px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-theme-accent focus:border-theme-accent transition-all"
               />
             </div>
 
             <div className="flex-1 flex flex-col">
-              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Corpo do E-mail</label>
+              <label className="block text-sm font-medium text-theme-text mb-1 transition-colors">
+                Corpo do E-mail
+              </label>
               <textarea 
                 value={textoEmail}
                 onChange={(e) => setTextoEmail(e.target.value)}
-                className="w-full flex-1 min-h-55 bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none custom-scrollbar"
+                className="w-full flex-1 min-h-[220px] bg-theme-base border border-theme-border text-theme-text placeholder:text-theme-muted rounded-md px-3 py-3 text-sm outline-none focus:ring-1 focus:ring-theme-accent focus:border-theme-accent transition-all resize-none custom-scrollbar"
               />
             </div>
 
             <button 
               onClick={handleEnviarEmail}
               disabled={loadingEmail || !email}
-              className="mt-4 w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold transition-all disabled:opacity-50 active:scale-95 shadow-sm"
+              className="mt-4 w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white py-2.5 rounded-md font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 shadow-sm"
             >
               {loadingEmail ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
               {loadingEmail ? 'Enviando...' : 'Disparar E-mail'}

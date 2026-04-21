@@ -32,21 +32,21 @@ export default function WhatsNew({ onClose }: WhatsNewProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-70 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm transition-all">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-70 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm transition-all">
+      <div className="bg-theme-panel border border-theme-border rounded-shape-lg shadow-xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         
         {/* Cabeçalho dinâmico */}
-        <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100 bg-slate-50 shrink-0">
-          <h3 className="font-black text-slate-800 flex items-center gap-2">
+        <div className="flex justify-between items-center px-6 py-4 border-b border-theme-border bg-theme-base/50 shrink-0">
+          <h3 className="font-black text-theme-text flex items-center gap-2">
             {isCreating ? (
               <>
-                <button onClick={() => setIsCreating(false)} className="p-1.5 hover:bg-slate-200 rounded-md transition-colors mr-2">
-                  <ArrowLeft size={18} className="text-slate-500" />
+                <button onClick={() => setIsCreating(false)} className="p-1.5 hover:bg-theme-base text-theme-muted hover:text-theme-text rounded-shape transition-colors mr-2">
+                  <ArrowLeft size={18} />
                 </button>
                 Nova Atualização
               </>
             ) : (
-              <><Sparkles size={18} className="text-blue-600" /> O que há de novo?</>
+              <><Sparkles size={18} className="text-theme-accent" /> O que há de novo?</>
             )}
           </h3>
           
@@ -55,20 +55,20 @@ export default function WhatsNew({ onClose }: WhatsNewProps) {
             {!isCreating && canManageReleases && (
               <button 
                 onClick={() => setIsCreating(true)} 
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 font-bold text-sm rounded-lg transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-theme-accent-soft text-theme-accent hover:bg-theme-accent/20 font-bold text-sm rounded-shape transition-colors"
               >
                 <Plus size={16} /> Adicionar
               </button>
             )}
             
-            <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-200 rounded-full transition-colors ml-2">
+            <button onClick={onClose} className="p-2 text-theme-muted hover:text-theme-text hover:bg-theme-base rounded-full transition-colors ml-2">
               <X size={18} />
             </button>
           </div>
         </div>
 
         {/* Corpo do Modal (Formulário ou Lista) */}
-        <div className="p-6 overflow-y-auto custom-scrollbar flex-1 bg-[#f8fafc]">
+        <div className="p-6 overflow-y-auto custom-scrollbar flex-1 bg-theme-base/30">
           {isCreating ? (
             <ReleaseForm 
               onSubmit={handleCreateSubmit} 

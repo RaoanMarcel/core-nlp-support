@@ -30,7 +30,7 @@ export default function AccessControlModal({ onClose }: AccessControlModalProps)
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isSaving, setIsSaving] = useState<boolean>(false);
 
-  // Estados para Criação de Novo Cargo (O substituto do Prompt)
+  // Estados para Criação de Novo Cargo
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [newRoleName, setNewRoleName] = useState('');
 
@@ -105,7 +105,6 @@ export default function AccessControlModal({ onClose }: AccessControlModalProps)
       setActiveRoleId(novaRole.id);
       setActiveTab('permissions');
       
-      // Limpar e fechar
       setNewRoleName('');
       setIsCreateModalOpen(false);
     } catch (error: any) {
@@ -134,45 +133,45 @@ export default function AccessControlModal({ onClose }: AccessControlModalProps)
   const availableUsers = users.filter(u => u.roleId !== activeRoleId);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 backdrop-blur-sm bg-slate-900/60 transition-all">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 backdrop-blur-sm bg-black/50 transition-all">
       <div 
         ref={modalRef}
-        className="w-full max-w-6xl bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden max-h-[90vh] animate-in fade-in zoom-in-95 duration-200 relative"
+        className="w-full max-w-6xl bg-theme-panel rounded-shape-lg shadow-2xl flex flex-col overflow-hidden max-h-[90vh] animate-in fade-in zoom-in-95 duration-200 relative border border-theme-border"
       >
         
         {/* MINI MODAL: CRIAR NOVO CARGO */}
         {isCreateModalOpen && (
-          <div className="absolute inset-0 z-60 flex items-center justify-center bg-slate-900/40 backdrop-blur-[2px] p-4">
+          <div className="absolute inset-0 z-60 flex items-center justify-center bg-black/40 backdrop-blur-[2px] p-4">
             <form 
               onSubmit={handleConfirmCreateRole}
-              className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden animate-in slide-in-from-bottom-4 duration-300"
+              className="bg-theme-panel rounded-shape-lg shadow-2xl w-full max-w-sm overflow-hidden animate-in slide-in-from-bottom-4 duration-300 border border-theme-border"
             >
               <div className="p-6">
                 <div className="flex items-center gap-3 mb-4">
-                  <h3 className="font-bold text-lg text-slate-800">Novo Cargo</h3>
+                  <h3 className="font-bold text-lg text-theme-text">Novo Cargo</h3>
                 </div>
-                <p className="text-sm text-slate-500 mb-4">Como você deseja chamar este novo nível de acesso?</p>
+                <p className="text-sm text-theme-muted mb-4">Como você deseja chamar este novo nível de acesso?</p>
                 <input 
                   autoFocus
                   type="text"
                   placeholder="Ex: Comercial"
                   value={newRoleName}
                   onChange={(e) => setNewRoleName(e.target.value)}
-                  className="w-full border border-slate-200 rounded-lg px-4 py-3 text-slate-700 outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                  className="w-full border border-theme-border bg-theme-base rounded-shape px-4 py-3 text-theme-text outline-none focus:ring-2 focus:ring-theme-accent transition-all placeholder:text-theme-muted"
                 />
               </div>
-              <div className="flex border-t border-slate-100">
+              <div className="flex border-t border-theme-border">
                 <button 
                   type="button"
                   onClick={() => setIsCreateModalOpen(false)}
-                  className="flex-1 px-6 py-4 text-sm font-semibold text-slate-500 hover:bg-slate-50 transition-colors"
+                  className="flex-1 px-6 py-4 text-sm font-semibold text-theme-muted hover:bg-theme-base transition-colors"
                 >
                   Cancelar
                 </button>
                 <button 
                   type="submit"
                   disabled={!newRoleName.trim()}
-                  className="flex-1 px-6 py-4 text-sm font-bold text-blue-600 hover:bg-blue-50 disabled:opacity-50 transition-colors border-l border-slate-100"
+                  className="flex-1 px-6 py-4 text-sm font-bold text-theme-accent hover:bg-theme-accent-soft disabled:opacity-50 transition-colors border-l border-theme-border"
                 >
                   Criar Cargo
                 </button>
@@ -182,36 +181,36 @@ export default function AccessControlModal({ onClose }: AccessControlModalProps)
         )}
 
         {/* HEADER */}
-        <div className="flex items-center justify-between px-8 py-6 border-b border-slate-100 bg-slate-50/50">
+        <div className="flex items-center justify-between px-8 py-6 border-b border-theme-border bg-theme-base/50">
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-emerald-100/50 text-emerald-600 rounded-xl">
+            <div className="p-3 bg-theme-accent-soft text-theme-accent rounded-shape">
               <ShieldAlert size={24} />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-slate-900">Matriz de Permissões</h2>
-              <p className="text-sm text-slate-500">Configure os acessos e vincule sua equipe.</p>
+              <h2 className="text-xl font-bold text-theme-text">Matriz de Permissões</h2>
+              <p className="text-sm text-theme-muted">Configure os acessos e vincule sua equipe.</p>
             </div>
           </div>
-          <button onClick={onClose} disabled={isSaving} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors disabled:opacity-50">
+          <button onClick={onClose} disabled={isSaving} className="p-2 text-theme-muted hover:text-theme-text hover:bg-theme-base rounded-full transition-colors disabled:opacity-50">
             <X size={24} />
           </button>
         </div>
 
         {isLoading ? (
-          <div className="flex-1 flex flex-col items-center justify-center p-12 text-slate-400">
-            <Loader2 className="w-8 h-8 animate-spin mb-4 text-blue-600" />
+          <div className="flex-1 flex flex-col items-center justify-center p-12 text-theme-muted">
+            <Loader2 className="w-8 h-8 animate-spin mb-4 text-theme-accent" />
             <p className="text-sm font-medium">Carregando dados do sistema...</p>
           </div>
         ) : (
           <div className="flex-1 flex overflow-hidden">
             
             {/* COLUNA ESQUERDA: LISTA DE CARGOS */}
-            <div className="w-1/3 border-r border-slate-100 bg-slate-50/30 flex flex-col">
-              <div className="p-4 border-b border-slate-100 flex justify-between items-center">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Cargos ({roles.length})</span>
+            <div className="w-1/3 border-r border-theme-border bg-theme-base/30 flex flex-col">
+              <div className="p-4 border-b border-theme-border flex justify-between items-center">
+                <span className="text-xs font-bold text-theme-muted uppercase tracking-wider">Cargos ({roles.length})</span>
                 <button 
                   onClick={() => setIsCreateModalOpen(true)} 
-                  className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 transition-colors"
+                  className="text-xs font-bold text-theme-accent hover:opacity-80 flex items-center gap-1 transition-opacity"
                 >
                   <Plus size={14} /> NOVO
                 </button>
@@ -223,21 +222,21 @@ export default function AccessControlModal({ onClose }: AccessControlModalProps)
                     <button
                       key={role.id}
                       onClick={() => setActiveRoleId(role.id)}
-                      className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all ${
+                      className={`w-full flex items-center justify-between px-4 py-3 rounded-shape transition-all ${
                         activeRoleId === role.id 
-                          ? 'bg-blue-600 text-white shadow-md' 
-                          : 'bg-white border border-slate-200 text-slate-700 hover:border-blue-300 hover:shadow-sm'
+                          ? 'bg-theme-accent text-white shadow-md border border-theme-accent' 
+                          : 'bg-theme-panel border border-theme-border text-theme-text hover:border-theme-accent/50 hover:shadow-sm'
                       }`}
                     >
                       <span className="font-semibold text-sm">{role.nome}</span>
                       <div className="flex gap-1">
                         <span className={`text-[10px] px-2 py-1 rounded-full font-bold flex items-center gap-1 ${
-                          activeRoleId === role.id ? 'bg-blue-500 text-white' : 'bg-slate-100 text-slate-500'
+                          activeRoleId === role.id ? 'bg-white/20 text-white' : 'bg-theme-base text-theme-muted'
                         }`}>
                            {role.permissions.length} perms
                         </span>
                         <span className={`text-[10px] px-2 py-1 rounded-full font-bold flex items-center gap-1 ${
-                          activeRoleId === role.id ? 'bg-blue-500 text-white' : 'bg-amber-100 text-amber-600'
+                          activeRoleId === role.id ? 'bg-white/20 text-white' : 'bg-amber-500/10 text-amber-600'
                         }`}>
                            <Users size={10} /> {userCount}
                         </span>
@@ -249,18 +248,18 @@ export default function AccessControlModal({ onClose }: AccessControlModalProps)
             </div>
 
             {/* COLUNA DIREITA: ABAS (PERMISSÕES / USUÁRIOS) */}
-            <div className="w-2/3 flex flex-col bg-white">
-              <div className="px-6 pt-6 border-b border-slate-100 bg-white sticky top-0 z-10">
+            <div className="w-2/3 flex flex-col bg-theme-panel">
+              <div className="px-6 pt-6 border-b border-theme-border bg-theme-panel sticky top-0 z-10">
                 <div className="flex justify-between items-start mb-6">
                   <div>
-                    <h3 className="text-lg font-bold text-slate-900">{activeRole?.nome}</h3>
-                    <p className="text-sm text-slate-500">Configure os detalhes deste cargo.</p>
+                    <h3 className="text-lg font-bold text-theme-text">{activeRole?.nome}</h3>
+                    <p className="text-sm text-theme-muted">Configure os detalhes deste cargo.</p>
                   </div>
                   {activeTab === 'permissions' && (
                     <button 
                       onClick={handleSaveChanges}
                       disabled={isSaving || !activeRole}
-                      className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white px-5 py-2.5 rounded-lg font-semibold text-sm transition-all shadow-sm hover:shadow"
+                      className="flex items-center gap-2 bg-theme-accent hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed text-white px-5 py-2.5 rounded-shape font-semibold text-sm transition-all shadow-sm"
                     >
                       {isSaving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
                       Salvar Permissões
@@ -272,7 +271,7 @@ export default function AccessControlModal({ onClose }: AccessControlModalProps)
                   <button 
                     onClick={() => setActiveTab('permissions')}
                     className={`pb-3 font-semibold text-sm flex items-center gap-2 border-b-2 transition-colors ${
-                      activeTab === 'permissions' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'
+                      activeTab === 'permissions' ? 'border-theme-accent text-theme-accent' : 'border-transparent text-theme-muted hover:text-theme-text'
                     }`}
                   >
                     <KeyRound size={16} /> Acessos do Cargo
@@ -280,32 +279,32 @@ export default function AccessControlModal({ onClose }: AccessControlModalProps)
                   <button 
                     onClick={() => setActiveTab('users')}
                     className={`pb-3 font-semibold text-sm flex items-center gap-2 border-b-2 transition-colors ${
-                      activeTab === 'users' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'
+                      activeTab === 'users' ? 'border-theme-accent text-theme-accent' : 'border-transparent text-theme-muted hover:text-theme-text'
                     }`}
                   >
                     <Users size={16} /> Usuários Vinculados
-                    <span className="bg-slate-100 text-slate-600 py-0.5 px-2 rounded-full text-xs">{usersInActiveRole.length}</span>
+                    <span className="bg-theme-base text-theme-text py-0.5 px-2 rounded-full text-xs">{usersInActiveRole.length}</span>
                   </button>
                 </div>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-8 custom-scrollbar bg-slate-50/30">
+              <div className="flex-1 overflow-y-auto p-8 custom-scrollbar bg-theme-base/30">
                 {activeTab === 'permissions' && (
                   <div className="space-y-8">
                     {Object.entries(permissionsByModule).map(([modulo, perms]) => (
                       <div key={modulo}>
-                        <h4 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 pb-2 border-b border-slate-200">
+                        <h4 className="text-sm font-bold text-theme-muted uppercase tracking-wider mb-4 pb-2 border-b border-theme-border">
                           Módulo: {modulo}
                         </h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           {perms.map(perm => {
                             const isChecked = activeRole?.permissions.includes(perm.slug) || false;
                             return (
-                              <label key={perm.id} className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${isChecked ? 'border-blue-600 bg-blue-50/50' : 'border-slate-200 hover:border-slate-300 bg-white'}`}>
-                                <input type="checkbox" className="mt-0.5 w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer" checked={isChecked} onChange={() => togglePermission(perm.slug)} />
+                              <label key={perm.id} className={`flex items-start gap-3 p-4 rounded-shape-lg border cursor-pointer transition-all ${isChecked ? 'border-theme-accent bg-theme-accent-soft/30' : 'border-theme-border hover:border-theme-accent/30 bg-theme-panel'}`}>
+                                <input type="checkbox" className="mt-0.5 w-4 h-4 text-theme-accent rounded border-theme-border focus:ring-theme-accent cursor-pointer bg-theme-base" checked={isChecked} onChange={() => togglePermission(perm.slug)} />
                                 <div>
-                                  <p className={`text-sm font-bold ${isChecked ? 'text-blue-900' : 'text-slate-700'}`}>{perm.descricao}</p>
-                                  <p className="text-[10px] text-slate-400 mt-1 font-mono bg-slate-100 px-1.5 py-0.5 rounded inline-block">{perm.slug}</p>
+                                  <p className={`text-sm font-bold ${isChecked ? 'text-theme-text' : 'text-theme-text/80'}`}>{perm.descricao}</p>
+                                  <p className="text-[10px] text-theme-muted mt-1 font-mono bg-theme-base px-1.5 py-0.5 rounded inline-block">{perm.slug}</p>
                                 </div>
                               </label>
                             );
@@ -318,26 +317,26 @@ export default function AccessControlModal({ onClose }: AccessControlModalProps)
 
                 {activeTab === 'users' && (
                   <div className="max-w-2xl mx-auto space-y-6">
-                    <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-                      <div className="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
-                        <h4 className="font-semibold text-slate-700">Equipe Atual ({usersInActiveRole.length})</h4>
+                    <div className="bg-theme-panel border border-theme-border rounded-shape-lg overflow-hidden shadow-sm">
+                      <div className="p-4 border-b border-theme-border bg-theme-base flex justify-between items-center">
+                        <h4 className="font-semibold text-theme-text">Equipe Atual ({usersInActiveRole.length})</h4>
                       </div>
                       
                       {usersInActiveRole.length === 0 ? (
-                        <div className="p-8 text-center text-slate-400 text-sm">
+                        <div className="p-8 text-center text-theme-muted text-sm">
                           Nenhum usuário vinculado a este cargo ainda.
                         </div>
                       ) : (
-                        <div className="divide-y divide-slate-100">
+                        <div className="divide-y divide-theme-border">
                           {usersInActiveRole.map(user => (
-                            <div key={user.id} className="flex justify-between items-center p-4 hover:bg-slate-50">
+                            <div key={user.id} className="flex justify-between items-center p-4 hover:bg-theme-base/50 transition-colors">
                               <div>
-                                <p className="font-bold text-slate-800 text-sm">{user.nome}</p>
-                                <p className="text-xs text-slate-500">@{user.usuario}</p>
+                                <p className="font-bold text-theme-text text-sm">{user.nome}</p>
+                                <p className="text-xs text-theme-muted">@{user.usuario}</p>
                               </div>
                               <button 
                                 onClick={() => handleAssignUser(user.id, null)}
-                                className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg flex items-center gap-2 text-sm font-semibold transition-colors"
+                                className="text-red-500 hover:text-red-400 hover:bg-red-500/10 p-2 rounded-shape flex items-center gap-2 text-sm font-semibold transition-colors"
                               >
                                 <UserMinus size={16} /> Remover
                               </button>
@@ -347,12 +346,12 @@ export default function AccessControlModal({ onClose }: AccessControlModalProps)
                       )}
                     </div>
 
-                    <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-                      <h4 className="font-semibold text-slate-700 mb-2">Vincular novo usuário</h4>
-                      <p className="text-sm text-slate-500 mb-4">Selecione um usuário abaixo para atribuir este cargo.</p>
+                    <div className="bg-theme-panel border border-theme-border rounded-shape-lg p-6 shadow-sm">
+                      <h4 className="font-semibold text-theme-text mb-2">Vincular novo usuário</h4>
+                      <p className="text-sm text-theme-muted mb-4">Selecione um usuário abaixo para atribuir este cargo.</p>
                       
                       <select 
-                        className="w-full border border-slate-300 rounded-lg p-3 text-slate-700 outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full border border-theme-border bg-theme-base rounded-shape p-3 text-theme-text outline-none focus:ring-2 focus:ring-theme-accent focus:border-theme-accent transition-all"
                         onChange={(e) => {
                           if (e.target.value) {
                             handleAssignUser(e.target.value, activeRoleId);
@@ -361,9 +360,9 @@ export default function AccessControlModal({ onClose }: AccessControlModalProps)
                         }}
                         defaultValue=""
                       >
-                        <option value="" disabled>Selecione um usuário...</option>
+                        <option value="" disabled className="bg-theme-panel">Selecione um usuário...</option>
                         {availableUsers.map(user => (
-                          <option key={user.id} value={user.id}>
+                          <option key={user.id} value={user.id} className="bg-theme-panel">
                             {user.nome} (@{user.usuario}) - {user.roleId ? 'Mudar cargo' : 'Sem cargo'}
                           </option>
                         ))}

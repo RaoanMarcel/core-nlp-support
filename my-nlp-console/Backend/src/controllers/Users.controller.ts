@@ -4,7 +4,6 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 export class UsersController {
-  // Retorna todos os usuários (sem a senha, por segurança)
   listar = async (req: Request, res: Response): Promise<Response> => {
     try {
       const users = await prisma.user.findMany({
@@ -18,11 +17,10 @@ export class UsersController {
     }
   };
 
-  // Atualiza o cargo de um usuário específico
   atribuirCargo = async (req: Request, res: Response): Promise<Response> => {
     try {
       const { id } = req.params;
-      const { roleId } = req.body; // Pode ser null para remover o cargo
+      const { roleId } = req.body;
 
       await prisma.user.update({
         where: { id },
@@ -33,6 +31,47 @@ export class UsersController {
     } catch (error) {
       console.error("Erro ao atribuir cargo:", error);
       return res.status(500).json({ error: 'Erro ao alterar o cargo do usuário.' });
+    }
+  };
+
+  atualizarPreferencias = async (req: Request, res: Response): Promise<Response> => {
+    try {
+      const { id } = req.params;
+      const { theme, shape } = req.body;
+
+      if (!theme && !shape) {
+        return res.status(400).json({ error: 'Nenhuma preferência informada para atualização.' });
+      }
+
+      const usuarioAtualizado = await prisma.user.update({
+        where: { id },
+        data: { 
+          ...(theme && { theme }),
+          ...(shape && { shape })
+        },
+        select: {
+          id: true,
+          theme: true,
+          shape: true
+        }
+      });
+
+      const io = req.app.get('io');
+      if (io) {
+        io.emit(`user:${id}:settings_updated`, { 
+          theme: usuarioAtualizado.theme, 
+          shape: usuarioAtualizado.shape 
+        });
+      }
+
+      return res.json({ 
+        message: 'Preferências atualizadas com sucesso!', 
+        settings: usuarioAtualizado 
+      });
+
+    } catch (error) {
+      console.error("Erro ao atualizar preferências:", error);
+      return res.status(500).json({ error: 'Erro interno ao atualizar preferências do usuário.' });
     }
   };
 }
