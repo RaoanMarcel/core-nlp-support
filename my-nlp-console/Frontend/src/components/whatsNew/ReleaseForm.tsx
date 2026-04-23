@@ -19,8 +19,10 @@ export default function ReleaseForm({ onSubmit, onCancel, isSubmitting }: Releas
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
-      <div className="grid grid-cols-2 gap-5">
+    <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
+      
+      {/* Quebra o grid em mobile (grid-cols-1) e usa 2 colunas em telas maiores (sm:grid-cols-2) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
         <div>
           <label className="block text-sm font-bold text-theme-text mb-1">Versão</label>
           <input 
@@ -41,6 +43,7 @@ export default function ReleaseForm({ onSubmit, onCancel, isSubmitting }: Releas
           </select>
         </div>
       </div>
+      
       <div>
         <label className="block text-sm font-bold text-theme-text mb-1">Título</label>
         <input 
@@ -49,6 +52,7 @@ export default function ReleaseForm({ onSubmit, onCancel, isSubmitting }: Releas
           value={formData.titulo} onChange={e => setFormData({...formData, titulo: e.target.value})}
         />
       </div>
+      
       <div>
         <label className="block text-sm font-bold text-theme-text mb-1">Descrição</label>
         <textarea 
@@ -57,11 +61,22 @@ export default function ReleaseForm({ onSubmit, onCancel, isSubmitting }: Releas
           value={formData.descricao} onChange={e => setFormData({...formData, descricao: e.target.value})}
         />
       </div>
-      <div className="pt-4 border-t border-theme-border flex justify-end gap-3">
-        <button type="button" onClick={onCancel} disabled={isSubmitting} className="px-5 py-2.5 text-theme-muted font-bold hover:text-theme-text hover:bg-theme-base rounded-shape transition-colors">
+      
+      {/* Botões full-width no mobile, com o botão primário no topo da zona de toque */}
+      <div className="pt-4 border-t border-theme-border flex flex-col-reverse sm:flex-row justify-end gap-3">
+        <button 
+          type="button" 
+          onClick={onCancel} 
+          disabled={isSubmitting} 
+          className="w-full sm:w-auto px-5 py-3 sm:py-2.5 text-theme-muted font-bold hover:text-theme-text hover:bg-theme-base rounded-shape transition-colors text-center"
+        >
           Cancelar
         </button>
-        <button type="submit" disabled={isSubmitting} className="flex items-center gap-2 bg-theme-accent hover:opacity-90 text-white font-bold px-6 py-2.5 rounded-shape disabled:opacity-70 transition-colors">
+        <button 
+          type="submit" 
+          disabled={isSubmitting} 
+          className="w-full sm:w-auto flex items-center justify-center gap-2 bg-theme-accent hover:opacity-90 text-white font-bold px-6 py-3 sm:py-2.5 rounded-shape disabled:opacity-70 transition-colors"
+        >
           {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Save size={18} /> Publicar</>}
         </button>
       </div>

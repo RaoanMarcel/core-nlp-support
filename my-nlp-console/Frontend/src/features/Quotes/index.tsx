@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, FileText, X, Calendar, RefreshCw, ChevronRight, UserPlus, Box, Clock, CheckCircle2 } from 'lucide-react';
+import { Plus, Search, FileText, X, Calendar, RefreshCw, ChevronRight, Box, Clock, CheckCircle2 } from 'lucide-react';
 import QuoteModal from './QuoteModal';
 import type { IQuote } from './types';
 import { api } from '../../services/api';
@@ -103,7 +103,7 @@ export default function QuotesPage() {
     };
     const cls = configs[status] || configs.RASCUNHO;
     return (
-      <span className={`${cls} px-2 py-1 rounded text-xs font-bold uppercase tracking-widest transition-colors`}>
+      <span className={`${cls} px-2 py-1 rounded text-[10px] sm:text-xs font-bold uppercase tracking-widest transition-colors whitespace-nowrap`}>
         {status.toLowerCase()}
       </span>
     );
@@ -136,12 +136,12 @@ export default function QuotesPage() {
       <div className="flex items-center gap-1.5 mt-2 flex-wrap">
         <Box size={14} className="text-theme-muted mr-1 hidden sm:block transition-colors" />
         {mostrar.map((mod, idx) => (
-          <span key={idx} className="bg-theme-base border border-theme-border text-theme-muted px-2 py-0.5 rounded text-[11px] font-semibold transition-colors">
+          <span key={idx} className="bg-theme-base border border-theme-border text-theme-muted px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-semibold transition-colors">
             {mod}
           </span>
         ))}
         {restantes > 0 && (
-          <span className="bg-theme-base border border-theme-border text-theme-muted px-2 py-0.5 rounded text-[11px] font-semibold transition-colors">
+          <span className="bg-theme-base border border-theme-border text-theme-muted px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-semibold transition-colors">
             +{restantes}
           </span>
         )}
@@ -158,7 +158,7 @@ export default function QuotesPage() {
         {/* HEADER */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 shrink-0">
           <div className="w-full sm:w-auto">
-            <h1 className="text-2xl md:text-3xl font-black text-theme-text tracking-tight transition-colors">
+            <h1 className="text-2xl md:text-3xl font-black text-theme-text tracking-tight transition-colors line-clamp-1">
               Visualizando: {statusFiltro === 'TODOS' ? 'TODOS' : statusFiltro}
             </h1>
             <p className="text-theme-muted text-sm md:text-base mt-1 transition-colors">{quotesList.length} registros encontrados</p>
@@ -167,7 +167,7 @@ export default function QuotesPage() {
           {canCreateQuote && (
             <button 
               onClick={() => handleOpenNewQuote()}
-              className="hidden md:flex bg-theme-accent hover:opacity-90 text-white px-5 py-2.5 rounded-shape-lg font-bold items-center gap-2 transition-all active:scale-95 shadow-sm text-sm whitespace-nowrap"
+              className="w-full sm:w-auto flex justify-center bg-theme-accent hover:opacity-90 text-white px-5 py-3 sm:py-2.5 rounded-shape-lg font-bold items-center gap-2 transition-all active:scale-95 shadow-sm text-sm whitespace-nowrap"
             >
               <Plus size={18} />
               Novo Orçamento
@@ -181,7 +181,7 @@ export default function QuotesPage() {
             <h3 className="text-xs font-bold text-emerald-600 uppercase tracking-wider flex items-center gap-2 transition-colors">
               <CheckCircle2 size={14} className="text-emerald-600" />
               Interessados
-              <span className="bg-emerald-500/90 text-emerald-600 text-[10px] px-2 py-0.5 rounded-full ml-1">
+              <span className="bg-emerald-500/90 text-white text-[10px] px-2 py-0.5 rounded-full ml-1">
                 {leadsAguardando.length}
               </span>
             </h3>
@@ -197,26 +197,25 @@ export default function QuotesPage() {
                 <div 
                   key={lead.id}
                   onClick={() => handleOpenNewQuote(lead)}
-                  className="snap-start min-w-45 w-45 sm:max-w-55 bg-emerald-500/5 border border-emerald-500/20 rounded-shape-lg p-3 cursor-pointer hover:bg-emerald-500/10 hover:border-emerald-500/40 hover:shadow-md transition-all group flex flex-col gap-1.5 shrink-0"
+                  className="snap-start w-50 sm:w-60 bg-emerald-500/5 border border-emerald-500/20 rounded-shape-lg p-3 cursor-pointer hover:bg-emerald-500/10 hover:border-emerald-500/40 hover:shadow-md transition-all group flex flex-col gap-1.5 shrink-0"
                 >
                   <div className="flex items-start justify-between">
-                    <h4 className="font-bold text-emerald-600 text-xs truncate pr-2 group-hover:text-emerald-500 transition-colors" title={lead.nome}>
+                    <h4 className="font-bold text-emerald-600 text-sm truncate pr-2 group-hover:text-emerald-500 transition-colors" title={lead.nome}>
                       {lead.nome}
                     </h4>
                   </div>
                   {lead.cnpj && (
-                    <p className="text-[10px] font-mono text-emerald-600/70 truncate">{lead.cnpj}</p>
+                    <p className="text-[11px] font-mono text-emerald-600/70 truncate">{lead.cnpj}</p>
                   )}
-                  <div className="flex items-center justify-between mt-auto pt-1">
+                  <div className="flex items-center justify-between mt-auto pt-2">
                     <div className="flex items-center gap-1">
-                      <Clock size={10} className="text-emerald-600 shrink-0" />
-                      <span className="text-[10px] font-semibold text-emerald-600/90 truncate">
+                      <Clock size={12} className="text-emerald-600 shrink-0" />
+                      <span className="text-[11px] font-semibold text-emerald-600/90 truncate">
                         {formatarTempoRelativo(lead.updatedAt)}
                       </span>
                     </div>
-                    {/* 🔒 SELO "ORÇAR" APENAS SE TIVER PERMISSÃO */}
                     {canCreateQuote && (
-                      <span className="text-[9px] uppercase font-bold bg-emerald-500/10 text-emerald-600 px-1.5 py-0.5 rounded shrink-0">
+                      <span className="text-[10px] uppercase font-bold bg-emerald-500/20 text-emerald-700 px-2 py-1 rounded shrink-0">
                         Orçar
                       </span>
                     )}
@@ -234,7 +233,7 @@ export default function QuotesPage() {
               <button
                 key={status}
                 onClick={() => setStatusFiltro(status)}
-                className={`px-3 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all border shrink-0 ${
+                className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all border shrink-0 ${
                   statusFiltro === status 
                     ? 'bg-theme-text border-theme-text text-theme-base shadow-sm' 
                     : 'bg-theme-panel border-theme-border text-theme-text hover:bg-theme-base'
@@ -264,21 +263,22 @@ export default function QuotesPage() {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto shrink-0">
-              <div className="flex items-center justify-between sm:justify-start gap-2 bg-theme-panel border border-theme-border rounded-shape-lg px-3 py-2.5 shadow-sm w-full sm:w-auto transition-colors">
-                <Calendar size={16} className="text-theme-muted shrink-0 transition-colors" />
+              {/* Box de data ajustado para quebrar linha ou ficar lado a lado corretamente no mobile */}
+              <div className="flex flex-row items-center gap-2 bg-theme-panel border border-theme-border rounded-shape-lg px-3 py-2.5 shadow-sm w-full sm:w-auto transition-colors">
+                <Calendar size={16} className="text-theme-muted shrink-0 hidden sm:block transition-colors" />
                 <input 
                   type="date" 
                   value={dataInicio}
                   onChange={(e) => setDataInicio(e.target.value)}
-                  className="bg-transparent text-sm outline-none text-theme-text w-full sm:w-auto transition-colors color-scheme-dynamic"
+                  className="bg-transparent text-sm outline-none text-theme-text w-full sm:w-auto transition-colors flex-1"
                   style={{ colorScheme: 'var(--color-scheme, light)' }}
                 />
-                <span className="text-theme-border transition-colors">-</span>
+                <span className="text-theme-border font-bold transition-colors">-</span>
                 <input 
                   type="date" 
                   value={dataFim}
                   onChange={(e) => setDataFim(e.target.value)}
-                  className="bg-transparent text-sm outline-none text-theme-text w-full sm:w-auto transition-colors color-scheme-dynamic"
+                  className="bg-transparent text-sm outline-none text-theme-text w-full sm:w-auto transition-colors flex-1"
                   style={{ colorScheme: 'var(--color-scheme, light)' }}
                 />
               </div>
@@ -306,13 +306,13 @@ export default function QuotesPage() {
         </div>
 
         {/* LISTA */}
-        <div className="flex-1 overflow-y-auto bg-theme-panel border border-theme-border shadow-sm rounded-shape-lg min-h-0 transition-colors">
+        <div className="flex-1 overflow-y-auto bg-theme-panel border border-theme-border shadow-sm rounded-shape-lg min-h-0 transition-colors custom-scrollbar">
           {isLoading && quotesList.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full min-h-50">
+            <div className="flex flex-col items-center justify-center h-full min-h-60">
               <div className="w-8 h-8 border-4 border-theme-accent border-t-transparent rounded-full animate-spin"></div>
             </div>
           ) : quotesList.length === 0 ? (
-            <div className="flex flex-col items-center justify-center p-8 text-center h-full min-h-50">
+            <div className="flex flex-col items-center justify-center p-8 text-center h-full min-h-60">
               <FileText size={48} className="text-theme-muted/50 mb-4 transition-colors" />
               <h3 className="text-lg font-bold text-theme-text transition-colors">Nada por aqui</h3>
               <p className="text-theme-muted text-sm mt-1 transition-colors">Ajuste os filtros ou crie um novo orçamento.</p>
@@ -323,37 +323,45 @@ export default function QuotesPage() {
                 <div 
                   key={quote.id} 
                   onClick={() => navigate(`/orcamentos/${quote.id}`)} 
-                  className={`group flex items-center justify-between bg-theme-panel border-b border-theme-border hover:bg-theme-base cursor-pointer transition-colors px-3 sm:px-4 py-3 border-l-4 ${getStatusBorderClass(quote.status)}`}
+                  className={`group flex items-center justify-between bg-theme-panel border-b border-theme-border hover:bg-theme-base cursor-pointer transition-colors px-3 sm:px-5 py-4 border-l-4 ${getStatusBorderClass(quote.status)}`}
                 >
                   <div className="flex-1 min-w-0 pr-2 sm:pr-4">
-                    <div className="flex flex-wrap items-center gap-1 sm:gap-2 mb-1">
+                    {/* Linha 1: ID, Data e Badge(no desktop) */}
+                    <div className="flex flex-wrap items-center gap-2 mb-1.5">
                       <span className="text-xs font-mono font-bold text-theme-muted transition-colors">#{String(quote.id).padStart(4, '0')}</span>
                       <span className="text-xs text-theme-border hidden sm:inline transition-colors">•</span>
-                      <span className="text-[10px] sm:text-[11px] text-theme-muted transition-colors">
+                      <span className="text-[11px] sm:text-[12px] text-theme-muted transition-colors">
                         {formatarTempoRelativo((quote as any).createdAt || (quote as any).updatedAt)}
                       </span>
+                      {/* Mostra Badge aqui somente no desktop */}
                       <div className="hidden sm:block ml-2">{getStatusBadge(quote.status)}</div>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between">
-                      <h4 className="font-bold text-theme-text text-sm md:text-base truncate pr-2 sm:pr-3 transition-colors">
+                    {/* Linha 2: Nome e Valor */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-1">
+                      <h4 className="font-bold text-theme-text text-base md:text-lg truncate pr-2 sm:pr-3 transition-colors">
                         {quote.nomeCliente}
                       </h4>
-                      <span className="font-black text-theme-text text-sm md:text-base whitespace-nowrap mt-0.5 sm:mt-0 transition-colors">
+                      <span className="font-black text-theme-text text-sm sm:text-base whitespace-nowrap mt-1 sm:mt-0 transition-colors">
                         {formatarMoeda(quote.valorNegociado || quote.valorBase)}
                       </span>
                     </div>
 
-                    <div className="flex flex-col gap-0.5 mt-0.5 sm:mt-0">
+                    {/* Linha 3: CNPJ e Badge(no mobile) */}
+                    <div className="flex items-center justify-between mt-1 sm:mt-0">
                       <span className="text-xs text-theme-muted truncate transition-colors">
                         {quote.cnpj || 'Consumidor Final'}
                       </span>
+                      {/* Mostra Badge aqui somente no mobile */}
+                      <div className="block sm:hidden shrink-0 ml-2">
+                        {getStatusBadge(quote.status)}
+                      </div>
                     </div>
 
                     {renderModulosTags((quote as any).modulos)}
                   </div>
 
-                  <div className="flex items-center pl-1 sm:pl-2 border-l border-transparent md:group-hover:border-theme-border transition-colors shrink-0">
+                  <div className="flex items-center pl-2 sm:pl-4 border-l border-transparent md:group-hover:border-theme-border transition-colors shrink-0">
                     <ChevronRight size={20} className="text-theme-muted group-hover:text-theme-accent transition-colors" />
                   </div>
                 </div>

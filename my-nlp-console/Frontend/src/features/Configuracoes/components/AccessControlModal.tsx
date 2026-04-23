@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Plus, Save, ShieldAlert, Loader2, Users, KeyRound, UserMinus, Briefcase } from 'lucide-react';
+import { X, Plus, Save, ShieldAlert, Loader2, Users, KeyRound, UserMinus } from 'lucide-react';
 import { useClickOutside } from '../../../hooks/useClickOutside';
+import { useToast } from '../../../contexts/ToastContext'; // Importando o Toast customizado!
 import type { IRole, IPermission } from '../../../types/access.types';
 import { api } from '../../../services/api';
 
@@ -18,23 +19,21 @@ interface IUser {
 export default function AccessControlModal({ onClose }: AccessControlModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
   useClickOutside(modalRef as React.RefObject<HTMLDivElement>, onClose);
+  
+  const { addToast } = useToast(); // Iniciando o Hook
 
-  // Estados dos Dados
   const [roles, setRoles] = useState<IRole[]>([]);
   const [permissions, setPermissions] = useState<IPermission[]>([]);
   const [users, setUsers] = useState<IUser[]>([]);
   
-  // Estados de UI
   const [activeRoleId, setActiveRoleId] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'permissions' | 'users'>('permissions');
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isSaving, setIsSaving] = useState<boolean>(false);
 
-  // Estados para Criação de Novo Cargo
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [newRoleName, setNewRoleName] = useState('');
 
-  // Busca inicial dos dados
   useEffect(() => {
     const fetchMatrixData = async () => {
       try {
@@ -49,17 +48,15 @@ export default function AccessControlModal({ onClose }: AccessControlModalProps)
         setPermissions(permsRes.data);
         setUsers(usersRes.data);
 
-        if (rolesRes.data.length > 0) {
-          setActiveRoleId(rolesRes.data[0].id);
-        }
+        if (rolesRes.data.length > 0) setActiveRoleId(rolesRes.data[0].id);
       } catch (error) {
-        console.error("Erro ao carregar dados:", error);
+        addToast('Erro ao carregar dados do sistema.', 'error');
       } finally {
         setIsLoading(false);
       }
     };
     fetchMatrixData();
-  }, []);
+  }, [addToast]);
 
   const activeRole = roles.find(r => r.id === activeRoleId);
 
@@ -84,9 +81,9 @@ export default function AccessControlModal({ onClose }: AccessControlModalProps)
         nome: activeRole.nome,
         permissions: activeRole.permissions
       });
-      alert('Matriz de permissões atualizada com sucesso!');
+      addToast('Permissões atualizadas com sucesso!', 'success');
     } catch (error) {
-      alert('Erro ao salvar as permissões.');
+      addToast('Erro ao salvar as permissões.', 'error');
     } finally {
       setIsSaving(false);
     }
@@ -107,8 +104,9 @@ export default function AccessControlModal({ onClose }: AccessControlModalProps)
       
       setNewRoleName('');
       setIsCreateModalOpen(false);
+      addToast('Novo cargo criado!', 'success');
     } catch (error: any) {
-      alert(error.response?.data?.error || "Erro ao criar o cargo.");
+      addToast(error.response?.data?.error || "Erro ao criar o cargo.", 'error');
     } finally {
       setIsLoading(false);
     }
@@ -118,8 +116,9 @@ export default function AccessControlModal({ onClose }: AccessControlModalProps)
     try {
       await api.put(`/users/${userId}/role`, { roleId });
       setUsers(prev => prev.map(u => u.id === userId ? { ...u, roleId } : u));
+      addToast(roleId ? 'Usuário vinculado!' : 'Usuário desvinculado!', 'success');
     } catch (error) {
-      alert("Erro ao alterar cargo do usuário.");
+      addToast("Erro ao alterar cargo do usuário.", 'error');
     }
   };
 
@@ -133,23 +132,20 @@ export default function AccessControlModal({ onClose }: AccessControlModalProps)
   const availableUsers = users.filter(u => u.roleId !== activeRoleId);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 backdrop-blur-sm bg-black/50 transition-all">
+    <div className="fixed inset-0 z-80 flex items-center justify-center p-2 sm:p-6 backdrop-blur-sm bg-black/50 transition-all">
       <div 
         ref={modalRef}
-        className="w-full max-w-6xl bg-theme-panel rounded-shape-lg shadow-2xl flex flex-col overflow-hidden max-h-[90vh] animate-in fade-in zoom-in-95 duration-200 relative border border-theme-border"
+        className="w-full max-w-6xl h-[95vh] sm:h-auto sm:max-h-[90vh] bg-theme-panel rounded-shape-lg shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200 relative border border-theme-border"
       >
         
-        {/* MINI MODAL: CRIAR NOVO CARGO */}
         {isCreateModalOpen && (
-          <div className="absolute inset-0 z-60 flex items-center justify-center bg-black/40 backdrop-blur-[2px] p-4">
+          <div className="absolute inset-0 z-90 flex items-center justify-center bg-black/40 backdrop-blur-[2px] p-4">
             <form 
               onSubmit={handleConfirmCreateRole}
               className="bg-theme-panel rounded-shape-lg shadow-2xl w-full max-w-sm overflow-hidden animate-in slide-in-from-bottom-4 duration-300 border border-theme-border"
             >
-              <div className="p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <h3 className="font-bold text-lg text-theme-text">Novo Cargo</h3>
-                </div>
+              <div className="p-5 sm:p-6">
+                <h3 className="font-bold text-lg text-theme-text mb-2">Novo Cargo</h3>
                 <p className="text-sm text-theme-muted mb-4">Como você deseja chamar este novo nível de acesso?</p>
                 <input 
                   autoFocus
@@ -164,14 +160,14 @@ export default function AccessControlModal({ onClose }: AccessControlModalProps)
                 <button 
                   type="button"
                   onClick={() => setIsCreateModalOpen(false)}
-                  className="flex-1 px-6 py-4 text-sm font-semibold text-theme-muted hover:bg-theme-base transition-colors"
+                  className="flex-1 px-6 py-3 sm:py-4 text-sm font-semibold text-theme-muted hover:bg-theme-base transition-colors"
                 >
                   Cancelar
                 </button>
                 <button 
                   type="submit"
                   disabled={!newRoleName.trim()}
-                  className="flex-1 px-6 py-4 text-sm font-bold text-theme-accent hover:bg-theme-accent-soft disabled:opacity-50 transition-colors border-l border-theme-border"
+                  className="flex-1 px-6 py-3 sm:py-4 text-sm font-bold text-theme-accent hover:bg-theme-accent-soft disabled:opacity-50 transition-colors border-l border-theme-border"
                 >
                   Criar Cargo
                 </button>
@@ -181,18 +177,18 @@ export default function AccessControlModal({ onClose }: AccessControlModalProps)
         )}
 
         {/* HEADER */}
-        <div className="flex items-center justify-between px-8 py-6 border-b border-theme-border bg-theme-base/50">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-theme-accent-soft text-theme-accent rounded-shape">
-              <ShieldAlert size={24} />
+        <div className="flex items-center justify-between px-4 py-3 sm:px-8 sm:py-6 border-b border-theme-border bg-theme-base/50 shrink-0">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="p-2 sm:p-3 bg-theme-accent-soft text-theme-accent rounded-shape shrink-0">
+              <ShieldAlert size={20} className="sm:w-6 sm:h-6" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-theme-text">Matriz de Permissões</h2>
-              <p className="text-sm text-theme-muted">Configure os acessos e vincule sua equipe.</p>
+              <h2 className="text-base sm:text-xl font-bold text-theme-text leading-tight">Matriz de Permissões</h2>
+              <p className="text-xs sm:text-sm text-theme-muted hidden sm:block">Configure os acessos e vincule sua equipe.</p>
             </div>
           </div>
           <button onClick={onClose} disabled={isSaving} className="p-2 text-theme-muted hover:text-theme-text hover:bg-theme-base rounded-full transition-colors disabled:opacity-50">
-            <X size={24} />
+            <X size={20} className="sm:w-6 sm:h-6" />
           </button>
         </div>
 
@@ -202,40 +198,41 @@ export default function AccessControlModal({ onClose }: AccessControlModalProps)
             <p className="text-sm font-medium">Carregando dados do sistema...</p>
           </div>
         ) : (
-          <div className="flex-1 flex overflow-hidden">
+          // ESTRATÉGIA MOBILE: Flex-col no celular (lista em cima, tabs embaixo) e Flex-row no desktop (sidebar na esquerda)
+          <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
             
-            {/* COLUNA ESQUERDA: LISTA DE CARGOS */}
-            <div className="w-1/3 border-r border-theme-border bg-theme-base/30 flex flex-col">
-              <div className="p-4 border-b border-theme-border flex justify-between items-center">
-                <span className="text-xs font-bold text-theme-muted uppercase tracking-wider">Cargos ({roles.length})</span>
+            {/* CARGOS: Barra superior no mobile (rolável horizontalmente), Sidebar no desktop */}
+            <div className="w-full md:w-1/3 border-b md:border-b-0 md:border-r border-theme-border bg-theme-base/30 flex flex-col shrink-0 md:shrink">
+              <div className="p-3 md:p-4 border-b border-theme-border flex justify-between items-center shrink-0">
+                <span className="text-[10px] md:text-xs font-bold text-theme-muted uppercase tracking-wider">Cargos ({roles.length})</span>
                 <button 
                   onClick={() => setIsCreateModalOpen(true)} 
-                  className="text-xs font-bold text-theme-accent hover:opacity-80 flex items-center gap-1 transition-opacity"
+                  className="text-[10px] md:text-xs font-bold text-theme-accent hover:opacity-80 flex items-center gap-1 transition-opacity"
                 >
                   <Plus size={14} /> NOVO
                 </button>
               </div>
-              <div className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
+              <div className="flex flex-row md:flex-col overflow-x-auto md:overflow-y-auto p-3 md:p-4 gap-2 md:gap-2 custom-scrollbar shrink-0 md:flex-1">
                 {roles.map(role => {
                   const userCount = users.filter(u => u.roleId === role.id).length;
                   return (
                     <button
                       key={role.id}
                       onClick={() => setActiveRoleId(role.id)}
-                      className={`w-full flex items-center justify-between px-4 py-3 rounded-shape transition-all ${
+                      className={`w-45 md:w-full shrink-0 flex flex-col md:flex-row md:items-center justify-between p-3 rounded-shape transition-all text-left ${
                         activeRoleId === role.id 
                           ? 'bg-theme-accent text-white shadow-md border border-theme-accent' 
                           : 'bg-theme-panel border border-theme-border text-theme-text hover:border-theme-accent/50 hover:shadow-sm'
                       }`}
                     >
-                      <span className="font-semibold text-sm">{role.nome}</span>
-                      <div className="flex gap-1">
-                        <span className={`text-[10px] px-2 py-1 rounded-full font-bold flex items-center gap-1 ${
+                      <span className="font-semibold text-sm mb-1 md:mb-0 truncate pr-2">{role.nome}</span>
+                      <div className="flex gap-1 shrink-0 mt-1 md:mt-0">
+                        <span className={`text-[10px] px-1.5 py-0.5 md:px-2 md:py-1 rounded-full font-bold flex items-center gap-1 ${
                           activeRoleId === role.id ? 'bg-white/20 text-white' : 'bg-theme-base text-theme-muted'
                         }`}>
                            {role.permissions.length} perms
                         </span>
-                        <span className={`text-[10px] px-2 py-1 rounded-full font-bold flex items-center gap-1 ${
+                        <span className={`text-[10px] px-1.5 py-0.5 md:px-2 md:py-1 rounded-full font-bold flex items-center gap-1 ${
                           activeRoleId === role.id ? 'bg-white/20 text-white' : 'bg-amber-500/10 text-amber-600'
                         }`}>
                            <Users size={10} /> {userCount}
@@ -247,30 +244,30 @@ export default function AccessControlModal({ onClose }: AccessControlModalProps)
               </div>
             </div>
 
-            {/* COLUNA DIREITA: ABAS (PERMISSÕES / USUÁRIOS) */}
-            <div className="w-2/3 flex flex-col bg-theme-panel">
-              <div className="px-6 pt-6 border-b border-theme-border bg-theme-panel sticky top-0 z-10">
-                <div className="flex justify-between items-start mb-6">
+            {/* CONTEÚDO PRINCIPAL (Permissões ou Usuários) */}
+            <div className="w-full md:w-2/3 flex flex-col bg-theme-panel flex-1 min-h-0">
+              <div className="px-4 pt-4 md:px-6 md:pt-6 border-b border-theme-border bg-theme-panel shrink-0">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4 md:mb-6 gap-3">
                   <div>
-                    <h3 className="text-lg font-bold text-theme-text">{activeRole?.nome}</h3>
-                    <p className="text-sm text-theme-muted">Configure os detalhes deste cargo.</p>
+                    <h3 className="text-base md:text-lg font-bold text-theme-text">{activeRole?.nome}</h3>
+                    <p className="text-xs md:text-sm text-theme-muted">Configure os detalhes deste cargo.</p>
                   </div>
                   {activeTab === 'permissions' && (
                     <button 
                       onClick={handleSaveChanges}
                       disabled={isSaving || !activeRole}
-                      className="flex items-center gap-2 bg-theme-accent hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed text-white px-5 py-2.5 rounded-shape font-semibold text-sm transition-all shadow-sm"
+                      className="w-full sm:w-auto flex justify-center items-center gap-2 bg-theme-accent hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2.5 rounded-shape font-semibold text-sm transition-all shadow-sm"
                     >
-                      {isSaving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+                      {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
                       Salvar Permissões
                     </button>
                   )}
                 </div>
 
-                <div className="flex gap-6">
+                <div className="flex gap-4 md:gap-6 overflow-x-auto custom-scrollbar">
                   <button 
                     onClick={() => setActiveTab('permissions')}
-                    className={`pb-3 font-semibold text-sm flex items-center gap-2 border-b-2 transition-colors ${
+                    className={`pb-3 font-semibold text-xs md:text-sm flex items-center gap-1.5 border-b-2 transition-colors whitespace-nowrap ${
                       activeTab === 'permissions' ? 'border-theme-accent text-theme-accent' : 'border-transparent text-theme-muted hover:text-theme-text'
                     }`}
                   >
@@ -278,33 +275,34 @@ export default function AccessControlModal({ onClose }: AccessControlModalProps)
                   </button>
                   <button 
                     onClick={() => setActiveTab('users')}
-                    className={`pb-3 font-semibold text-sm flex items-center gap-2 border-b-2 transition-colors ${
+                    className={`pb-3 font-semibold text-xs md:text-sm flex items-center gap-1.5 border-b-2 transition-colors whitespace-nowrap ${
                       activeTab === 'users' ? 'border-theme-accent text-theme-accent' : 'border-transparent text-theme-muted hover:text-theme-text'
                     }`}
                   >
                     <Users size={16} /> Usuários Vinculados
-                    <span className="bg-theme-base text-theme-text py-0.5 px-2 rounded-full text-xs">{usersInActiveRole.length}</span>
+                    <span className="bg-theme-base text-theme-text py-0.5 px-2 rounded-full text-[10px] md:text-xs">{usersInActiveRole.length}</span>
                   </button>
                 </div>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-8 custom-scrollbar bg-theme-base/30">
+              {/* ÁREA DE ROLAGEM PRINCIPAL */}
+              <div className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar bg-theme-base/30">
                 {activeTab === 'permissions' && (
-                  <div className="space-y-8">
+                  <div className="space-y-6 md:space-y-8 pb-10">
                     {Object.entries(permissionsByModule).map(([modulo, perms]) => (
                       <div key={modulo}>
-                        <h4 className="text-sm font-bold text-theme-muted uppercase tracking-wider mb-4 pb-2 border-b border-theme-border">
-                          Módulo: {modulo}
+                        <h4 className="text-xs md:text-sm font-bold text-theme-muted uppercase tracking-wider mb-3 md:mb-4 pb-2 border-b border-theme-border">
+                          {modulo}
                         </h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                           {perms.map(perm => {
                             const isChecked = activeRole?.permissions.includes(perm.slug) || false;
                             return (
-                              <label key={perm.id} className={`flex items-start gap-3 p-4 rounded-shape-lg border cursor-pointer transition-all ${isChecked ? 'border-theme-accent bg-theme-accent-soft/30' : 'border-theme-border hover:border-theme-accent/30 bg-theme-panel'}`}>
+                              <label key={perm.id} className={`flex items-start gap-3 p-3 md:p-4 rounded-shape-lg border cursor-pointer transition-all ${isChecked ? 'border-theme-accent bg-theme-accent-soft/30' : 'border-theme-border hover:border-theme-accent/30 bg-theme-panel'}`}>
                                 <input type="checkbox" className="mt-0.5 w-4 h-4 text-theme-accent rounded border-theme-border focus:ring-theme-accent cursor-pointer bg-theme-base" checked={isChecked} onChange={() => togglePermission(perm.slug)} />
                                 <div>
-                                  <p className={`text-sm font-bold ${isChecked ? 'text-theme-text' : 'text-theme-text/80'}`}>{perm.descricao}</p>
-                                  <p className="text-[10px] text-theme-muted mt-1 font-mono bg-theme-base px-1.5 py-0.5 rounded inline-block">{perm.slug}</p>
+                                  <p className={`text-sm font-bold leading-tight ${isChecked ? 'text-theme-text' : 'text-theme-text/80'}`}>{perm.descricao}</p>
+                                  <p className="text-[10px] text-theme-muted mt-1.5 font-mono bg-theme-base px-1.5 py-0.5 rounded inline-block">{perm.slug}</p>
                                 </div>
                               </label>
                             );
@@ -316,27 +314,27 @@ export default function AccessControlModal({ onClose }: AccessControlModalProps)
                 )}
 
                 {activeTab === 'users' && (
-                  <div className="max-w-2xl mx-auto space-y-6">
+                  <div className="max-w-2xl mx-auto space-y-4 md:space-y-6 pb-10">
                     <div className="bg-theme-panel border border-theme-border rounded-shape-lg overflow-hidden shadow-sm">
-                      <div className="p-4 border-b border-theme-border bg-theme-base flex justify-between items-center">
-                        <h4 className="font-semibold text-theme-text">Equipe Atual ({usersInActiveRole.length})</h4>
+                      <div className="p-3 md:p-4 border-b border-theme-border bg-theme-base flex justify-between items-center">
+                        <h4 className="font-semibold text-theme-text text-sm md:text-base">Equipe Atual ({usersInActiveRole.length})</h4>
                       </div>
                       
                       {usersInActiveRole.length === 0 ? (
-                        <div className="p-8 text-center text-theme-muted text-sm">
+                        <div className="p-6 md:p-8 text-center text-theme-muted text-sm">
                           Nenhum usuário vinculado a este cargo ainda.
                         </div>
                       ) : (
                         <div className="divide-y divide-theme-border">
                           {usersInActiveRole.map(user => (
-                            <div key={user.id} className="flex justify-between items-center p-4 hover:bg-theme-base/50 transition-colors">
+                            <div key={user.id} className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-3 md:p-4 hover:bg-theme-base/50 transition-colors gap-3 sm:gap-0">
                               <div>
                                 <p className="font-bold text-theme-text text-sm">{user.nome}</p>
                                 <p className="text-xs text-theme-muted">@{user.usuario}</p>
                               </div>
                               <button 
                                 onClick={() => handleAssignUser(user.id, null)}
-                                className="text-red-500 hover:text-red-400 hover:bg-red-500/10 p-2 rounded-shape flex items-center gap-2 text-sm font-semibold transition-colors"
+                                className="w-full sm:w-auto justify-center text-red-500 bg-red-50 sm:bg-transparent border border-red-100 sm:border-transparent hover:bg-red-500/10 p-2 rounded-shape flex items-center gap-2 text-sm font-semibold transition-colors"
                               >
                                 <UserMinus size={16} /> Remover
                               </button>
@@ -346,12 +344,12 @@ export default function AccessControlModal({ onClose }: AccessControlModalProps)
                       )}
                     </div>
 
-                    <div className="bg-theme-panel border border-theme-border rounded-shape-lg p-6 shadow-sm">
-                      <h4 className="font-semibold text-theme-text mb-2">Vincular novo usuário</h4>
-                      <p className="text-sm text-theme-muted mb-4">Selecione um usuário abaixo para atribuir este cargo.</p>
+                    <div className="bg-theme-panel border border-theme-border rounded-shape-lg p-4 md:p-6 shadow-sm">
+                      <h4 className="font-semibold text-theme-text mb-1 text-sm md:text-base">Vincular novo usuário</h4>
+                      <p className="text-xs md:text-sm text-theme-muted mb-4">Selecione um usuário para atribuir este cargo.</p>
                       
                       <select 
-                        className="w-full border border-theme-border bg-theme-base rounded-shape p-3 text-theme-text outline-none focus:ring-2 focus:ring-theme-accent focus:border-theme-accent transition-all"
+                        className="w-full border border-theme-border bg-theme-base rounded-shape p-3 text-sm md:text-base text-theme-text outline-none focus:ring-2 focus:ring-theme-accent focus:border-theme-accent transition-all"
                         onChange={(e) => {
                           if (e.target.value) {
                             handleAssignUser(e.target.value, activeRoleId);

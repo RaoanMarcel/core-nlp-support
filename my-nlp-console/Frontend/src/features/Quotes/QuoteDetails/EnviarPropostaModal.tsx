@@ -126,7 +126,7 @@ export default function EnviarPropostaModal({ quote, usuarioAtual, onClose, onSu
               <textarea 
                 value={textoWhats}
                 onChange={(e) => setTextoWhats(e.target.value)}
-                className="w-full flex-1 min-h-[220px] bg-theme-base border border-theme-border text-theme-text placeholder:text-theme-muted rounded-md px-3 py-3 text-sm outline-none focus:ring-1 focus:ring-theme-accent focus:border-theme-accent transition-all resize-none custom-scrollbar"
+                className="w-full flex-1 min-h-55 bg-theme-base border border-theme-border text-theme-text placeholder:text-theme-muted rounded-md px-3 py-3 text-sm outline-none focus:ring-1 focus:ring-theme-accent focus:border-theme-accent transition-all resize-none custom-scrollbar"
               />
             </div>
 
@@ -167,7 +167,7 @@ export default function EnviarPropostaModal({ quote, usuarioAtual, onClose, onSu
               <textarea 
                 value={textoEmail}
                 onChange={(e) => setTextoEmail(e.target.value)}
-                className="w-full flex-1 min-h-[220px] bg-theme-base border border-theme-border text-theme-text placeholder:text-theme-muted rounded-md px-3 py-3 text-sm outline-none focus:ring-1 focus:ring-theme-accent focus:border-theme-accent transition-all resize-none custom-scrollbar"
+                className="w-full flex-1 min-h-55 bg-theme-base border border-theme-border text-theme-text placeholder:text-theme-muted rounded-md px-3 py-3 text-sm outline-none focus:ring-1 focus:ring-theme-accent focus:border-theme-accent transition-all resize-none custom-scrollbar"
               />
             </div>
 
