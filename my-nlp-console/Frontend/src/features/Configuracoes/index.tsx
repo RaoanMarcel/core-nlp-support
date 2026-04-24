@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Sparkles, ChevronRight, Settings, ShieldCheck, Check } from 'lucide-react';
 import WhatsNewModal from '../../components/whatsNew';
 import AccessControlModal from './components/AccessControlModal';
+import PlansManager from './components/PlansManager';
 import { api } from '../../services/api';
 import { socket } from '../../services/socket';
 
@@ -69,6 +70,8 @@ export default function Configuracoes() {
   };
 
   const podeGerenciarAcessos = userRole === 'DEV' || userRole === 'DIRETORIA';
+  const podeGerenciarPlanos = userRole === 'DEV' || userRole === 'DIRETORIA';
+  
 
   return (
     <div className="flex-1 h-full bg-theme-base overflow-y-auto custom-scrollbar transition-colors duration-300 pb-20 sm:pb-0">
@@ -179,6 +182,20 @@ export default function Configuracoes() {
                 </div>
                 <ChevronRight size={20} className="text-theme-muted group-hover:text-emerald-500 transition-colors shrink-0" />
               </button>
+            </div>
+          </section>
+        )}
+
+        {podeGerenciarPlanos && (
+          <section className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-8 pb-8 sm:pb-10 border-b border-theme-border transition-colors duration-300">
+            <div className="lg:col-span-4">
+              <h2 className="text-lg font-black text-theme-text transition-colors duration-300">Planos e Serviços</h2>
+              <p className="text-sm text-theme-muted mt-1 sm:mt-2 leading-relaxed sm:pr-4 transition-colors duration-300">
+                Configure os valores base, limites de usuários e módulos dos planos.
+              </p>
+            </div>
+            <div className="lg:col-span-8 flex flex-col gap-4">
+              <PlansManager />
             </div>
           </section>
         )}

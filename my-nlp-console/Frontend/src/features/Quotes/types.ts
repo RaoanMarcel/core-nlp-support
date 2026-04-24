@@ -1,3 +1,4 @@
+// Frontend/src/features/Quotes/types.ts
 export interface IModulo {
   id: string;
   nome: string;
@@ -30,6 +31,8 @@ export interface IQuote {
   telefonePrincipal?: string;
   telefoneSecundario?: string;
   modulos: string[];
+  usuariosExtras: number;
+  valorUsuarioExtra: number; 
   plano: 'MENSAL' | 'ANUAL';
   valorBase: number;
   valorNegociado: number; 
@@ -38,5 +41,5 @@ export interface IQuote {
   status: 'RASCUNHO' | 'EM_NEGOCIACAO' | 'APROVADO' | 'REJEITADO'; 
   createdAt: string;
   notas?: IQuoteNote[];
-  historico?: IQuoteHistory[]; // Agora ele encontra a interface logo acima!
+  historico?: IQuoteHistory[];
 }

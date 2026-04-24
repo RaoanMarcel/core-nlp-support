@@ -220,3 +220,16 @@ enum Shape {
   MODERN
   SOFT
 }
+
+model Plan {
+  id                 String   @id @default(uuid())
+  nome               String
+  modulosInclusos    String[]
+  quantidadeUsuarios Int
+  descricao          String?  @db.Text
+  valorBase          Float
+  percentualPorCnpj  Float
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}

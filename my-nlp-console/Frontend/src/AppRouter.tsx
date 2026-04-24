@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { ToastProvider } from './contexts/ToastContext'; 
 import AppLayout from './components/SidebarLayout';
 import Dashboard from './components/Dashboard';
 import TicketQueue from './components/TicketQueue';
@@ -44,7 +45,6 @@ export default function AppRouter() {
 
   const handleLoginSuccess = (token: string, user: any) => {
     setIsAuthenticated(true);
-    // Aplica o tema imediatamente após o login também
     if (user.theme) document.documentElement.setAttribute('data-theme', user.theme);
     if (user.shape) document.documentElement.setAttribute('data-shape', user.shape);
   };
@@ -58,62 +58,64 @@ export default function AppRouter() {
   };
 
   return (
-    <HashRouter>
-      {isLoading ? (
-        <div className="min-h-screen bg-[#f4f5f7] flex items-center justify-center">
-          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-        </div>
-      ) : !isAuthenticated ? (
-        <Login onLoginSuccess={handleLoginSuccess} />
-      ) : (
-        <AppLayout onLogout={handleLogout}>
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/fila" element={<TicketQueue />} />
-            <Route path="/base" element={<KnowledgeBase />} />            
-            
-            <Route path="/configuracoes" element={<Configuracoes />} />
+    <ToastProvider>
+      <HashRouter>
+        {isLoading ? (
+          <div className="min-h-screen bg-[#f4f5f7] flex items-center justify-center">
+            <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        ) : !isAuthenticated ? (
+          <Login onLoginSuccess={handleLoginSuccess} />
+        ) : (
+          <AppLayout onLogout={handleLogout}>
+            <Routes>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/fila" element={<TicketQueue />} />
+              <Route path="/base" element={<KnowledgeBase />} />            
+              
+              <Route path="/configuracoes" element={<Configuracoes />} />
 
-            <Route 
-              path="/orcamentos" 
-              element={
-                <RotaProtegida permissaoNecessaria="quotes:view">
-                  <Quotes />
-                </RotaProtegida>
-              } 
-            />
-            
-            <Route 
-              path="/orcamentos/:id" 
-              element={
-                <RotaProtegida permissaoNecessaria="quotes:view">
-                  <QuoteDetails />
-                </RotaProtegida>
-              } 
-            />
+              <Route 
+                path="/orcamentos" 
+                element={
+                  <RotaProtegida permissaoNecessaria="quotes:view">
+                    <Quotes />
+                  </RotaProtegida>
+                } 
+              />
+              
+              <Route 
+                path="/orcamentos/:id" 
+                element={
+                  <RotaProtegida permissaoNecessaria="quotes:view">
+                    <QuoteDetails />
+                  </RotaProtegida>
+                } 
+              />
 
-            <Route 
-              path="/contratos" 
-              element={
-                <RotaProtegida permissaoNecessaria="prospects:view">
-                  <ProspectList />
-                </RotaProtegida>
-              } 
-            />
+              <Route 
+                path="/contratos" 
+                element={
+                  <RotaProtegida permissaoNecessaria="prospects:view">
+                    <ProspectList />
+                  </RotaProtegida>
+                } 
+              />
 
-            <Route 
-              path="/relatorios" 
-              element={
-                <RotaProtegida permissaoNecessaria="reports:view">
-                  <Relatorios />
-                </RotaProtegida>
-              } 
-            />
+              <Route 
+                path="/relatorios" 
+                element={
+                  <RotaProtegida permissaoNecessaria="reports:view">
+                    <Relatorios />
+                  </RotaProtegida>
+                } 
+              />
 
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </AppLayout>
-      )}
-    </HashRouter>
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </AppLayout>
+        )}
+      </HashRouter>
+    </ToastProvider>
   );
 }

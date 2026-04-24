@@ -1,3 +1,4 @@
+// Frontend/src/features/Quotes/QuoteDetails/useQuoteDetails.ts
 import { useState } from 'react';
 import type { IQuote } from '../types';
 import { QuoteService } from '../../../services/quote.service';
@@ -26,7 +27,7 @@ export const useQuoteDetails = (quote: IQuote, onUpdate: (fields: Partial<IQuote
     }
   };
 
-const updateBackend = async (fields: Partial<IQuote>) => {
+  const updateBackend = async (fields: Partial<IQuote>) => {
     setIsUpdating(true);
     try {
       await QuoteService.update(Number(quote.id), fields);

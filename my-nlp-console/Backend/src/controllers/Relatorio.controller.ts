@@ -4,13 +4,9 @@ import { PrismaClient, StatusAtendimento } from '@prisma/client';
 const prisma = new PrismaClient();
 
 export class RelatorioController {
-  
-  // ==========================================
-  // NOVA FUNÇÃO: ESTATÍSTICAS PARA O DASHBOARD
-  // ==========================================
+
   obterRelatorioStats = async (req: Request, res: Response) => {
     try {
-      // Agrega os totais por status para alimentar os gráficos/cards do relatório
       const stats = await prisma.prospect.groupBy({
         by: ['status'],
         _count: {
@@ -18,7 +14,6 @@ export class RelatorioController {
         }
       });
 
-      // Busca os últimos atendimentos convertidos em "Possibilidade" para uma tabela rápida
       const ultimasPossibilidades = await prisma.prospect.findMany({
         where: { status: 'POSSIBILIDADE' as StatusAtendimento }, 
         take: 5,
