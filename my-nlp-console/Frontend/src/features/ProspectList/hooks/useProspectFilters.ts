@@ -41,7 +41,8 @@ export function useProspectFilters(prospects: Prospect[]) {
     possibilidade: filteredProspects.filter(p => p.status === 'POSSIBILIDADE'),
     aprovados: filteredProspects.filter(p => p.status === 'APROVADO'),
     reprovados: filteredProspects.filter(p => p.status === 'REPROVADO'),
-    retornar: filteredProspects.filter(p => p.status === 'RETORNAR')
+    retornar: filteredProspects.filter(p => p.status === 'RETORNAR'),
+    cnpjBaixado: filteredProspects.filter(p => p.status === 'CNPJ_BAIXADO')
   }), [filteredProspects]);
 
   return {

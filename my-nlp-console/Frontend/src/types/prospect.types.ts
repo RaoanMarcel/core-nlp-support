@@ -10,7 +10,7 @@ export interface Prospect {
   cep?: string;      
   modulosAtuais: string;
   telefone: string;
-  status: 'PENDENTE' | 'EM_ATENDIMENTO' | 'APROVADO' | 'REPROVADO' | 'POSSIBILIDADE' | 'RETORNAR';
+  status: 'PENDENTE' | 'EM_ATENDIMENTO' | 'APROVADO' | 'REPROVADO' | 'POSSIBILIDADE' | 'RETORNAR' | 'CNPJ_BAIXADO';
   lockedBy?: string;
   
   simplesNacional?: string;

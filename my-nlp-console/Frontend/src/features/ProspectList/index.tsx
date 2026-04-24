@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import Papa from 'papaparse';
-import { UploadCloud, Search, RefreshCw, Inbox, PlayCircle, CheckCircle2, XCircle, Target, Clock, MapPin, ChevronDown } from 'lucide-react';
+import { UploadCloud, Search, RefreshCw, Inbox, PlayCircle, CheckCircle2, XCircle, Target, Clock, MapPin, ChevronDown, FileX } from 'lucide-react';
 import type { Prospect } from '../../types/prospect.types';
 import { useProspects } from './hooks/useProspects';
 import { useProspectFilters } from './hooks/useProspectFilters';
@@ -8,6 +8,7 @@ import { useClickOutside } from '../../hooks/useClickOutside';
 import { PaginatedSection } from './components/PaginatedSection';
 import { prospectService } from '../../services/prospect.service';
 import ProspectModal from './components/ProspectModal';
+
 
 export default function ProspectList() {
   const { prospects, fetchProspects, updateProspectLocal } = useProspects();
@@ -178,7 +179,7 @@ export default function ProspectList() {
         <PaginatedSection title="Possibilidades" icon={<Target size={20} className="text-blue-500" />} data={filters.groupedProspects.possibilidade} emptyMessage="Nenhuma possibilidade de venda." onCardClick={handleCardClick} />
         <PaginatedSection title="Interessados" icon={<CheckCircle2 size={20} className="text-green-500" />} data={filters.groupedProspects.aprovados} emptyMessage="Nenhuma venda aprovada." onCardClick={handleCardClick} />
         <PaginatedSection title="Não Interessados" icon={<XCircle size={20} className="text-red-500" />} data={filters.groupedProspects.reprovados} emptyMessage="Nenhum cliente reprovado." onCardClick={handleCardClick} />
-
+        <PaginatedSection title="CNPJ Baixado" icon={<FileX size={20} className="text-slate-500" />} data={filters.groupedProspects.cnpjBaixado} emptyMessage="Nenhum CNPJ baixado na receita." onCardClick={handleCardClick} />  
       </div>
 
       {isModalOpen && selectedProspect && (

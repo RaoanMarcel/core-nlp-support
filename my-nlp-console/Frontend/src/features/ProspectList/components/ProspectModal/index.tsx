@@ -1,5 +1,5 @@
 import React from 'react';
-import { Phone, Mail, Building, FileText, ArrowLeft, CheckCircle2, XCircle, Edit3, Save, Target, History as HistoryIcon, Clock, User, DollarSign } from 'lucide-react';
+import { Phone, Mail, Building, FileText, ArrowLeft, CheckCircle2, XCircle, Edit3, Save, Target, History as HistoryIcon, Clock, User, DollarSign, FileX } from 'lucide-react';
 import type { Prospect } from '../../../../types/prospect.types';
 import type { ModalProps, Historico, ContactFormState } from './types';
 import { getSituacaoColor, formatarData, formatarMoeda } from '../../../../utils/utils';
@@ -13,7 +13,8 @@ const StatusBadge = ({ status }: { status: string }) => {
     REPROVADO: { cls: 'bg-red-500/10 text-red-600 border-red-500/20', label: 'Não Interessado' },
     POSSIBILIDADE: { cls: 'bg-blue-500/10 text-blue-600 border-blue-500/20', label: 'Possibilidade' },
     RETORNAR: { cls: 'bg-violet-500/10 text-violet-600 border-violet-500/20', label: 'Retornar' },
-    PENDENTE: { cls: 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20 animate-pulse', label: 'Em Atendimento' }
+    PENDENTE: { cls: 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20 animate-pulse', label: 'Em Atendimento' },
+    CNPJ_BAIXADO: { cls: 'bg-slate-500/10 text-slate-600 border-slate-500/20', label: 'CNPJ Baixado' }
   };
   const config = configs[status] || configs.PENDENTE;
   
@@ -248,7 +249,7 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
                     Ação Rápida: Salvar e Alterar Status
                   </span>
                   
-                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3">
                     <button 
                       onClick={() => saveInteracao({ status: 'APROVADO' })} 
                       disabled={loading.saving} 
@@ -279,6 +280,14 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
                       className="flex justify-center items-center gap-2 px-4 py-2.5 bg-red-500/10 text-red-600 border border-red-500/20 rounded-xl text-xs font-bold hover:bg-red-600 hover:text-white hover:shadow-md hover:-translate-y-0.5 transition-all w-full"
                     >
                       <XCircle size={16} strokeWidth={2.5} /> Não Interessado
+                    </button>
+
+                    <button 
+                      onClick={() => saveInteracao({ status: 'CNPJ_BAIXADO' })} 
+                      disabled={loading.saving} 
+                      className="flex justify-center items-center gap-2 px-4 py-2.5 bg-slate-500/10 text-slate-600 border border-slate-500/20 rounded-xl text-xs font-bold hover:bg-slate-600 hover:text-white hover:shadow-md hover:-translate-y-0.5 transition-all w-full"
+                    >
+                      <FileX size={16} strokeWidth={2.5} /> CNPJ Baixado
                     </button>
                   </div>
                 </div>
@@ -325,6 +334,11 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
                 <ArrowLeft size={16} /> Voltar
               </button>
               <div className="flex gap-2">
+                
+                <button onClick={() => finishAtendimento('CNPJ_BAIXADO')} disabled={loading.saving} className="flex items-center gap-1.5 px-3 py-2 text-sm border border-slate-500/20 text-slate-600 font-bold rounded-lg hover:bg-slate-500/10 transition-all">
+                  <FileX size={16} strokeWidth={2.5} /> Baixado
+                </button>
+
                 <button onClick={() => finishAtendimento('REPROVADO')} disabled={loading.saving} className="flex items-center gap-1.5 px-3 py-2 text-sm border border-red-500/20 text-red-600 font-bold rounded-lg hover:bg-red-500/10 transition-all">
                   <XCircle size={16} strokeWidth={2.5} /> Não interessado
                 </button>

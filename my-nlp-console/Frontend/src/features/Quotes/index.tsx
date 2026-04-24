@@ -5,9 +5,11 @@ import QuoteModal from './QuoteModal';
 import type { IQuote } from './types';
 import { api } from '../../services/api';
 import { formatarMoeda } from '../../utils/utils';
+import { useCan } from '../../hooks/useCan';
 
 export default function QuotesPage() {
   const navigate = useNavigate(); 
+  const { can } = useCan();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [quoteEditando, setQuoteEditando] = useState<IQuote | null>(null);
@@ -25,18 +27,14 @@ export default function QuotesPage() {
   const userStr = localStorage.getItem('@CRM:user');
   const currentUser = userStr ? JSON.parse(userStr) : null;
   
-  const hasPermission = (permissionSlug: string) => {
-    if (currentUser?.role === 'DEV') return true;
-    return currentUser?.permissions?.includes(permissionSlug);
-  };
-  
-  const canCreateQuote = hasPermission('quotes:create');
+  const canCreateQuote = can('quotes:create');
 
   const fetchQuotes = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await api.get('/quotes/consultar', {
+      // Ajustado para a rota padrão. Se o seu backend exige um caminho específico, ajuste aqui.
+      const response = await api.get('/quotes', {
         params: {
           termo: termo.trim() || undefined,
           status: statusFiltro !== 'TODOS' ? statusFiltro : undefined,
@@ -72,18 +70,48 @@ export default function QuotesPage() {
     }
   };
 
-  useEffect(() => {
-    fetchQuotes();
-    fetchLeadsAguardando();
-  }, [statusFiltro, dataInicio, dataFim]);  
-
-  const handleOpenNewQuote = (leadData: any = null) => {
+  const handleCreateDraftFromLead = (lead: any) => {
     if (!canCreateQuote) {
       alert('Acesso Negado: Você não tem permissão para criar ou orçar novos clientes.');
       return;
     }
 
-    setQuoteEditando(leadData ? { prospectInfo: leadData, ...leadData } : null);
+    // Cria um objeto parcial apenas com os dados que já temos do lead.
+    // Como não tem 'id', o QuoteModal vai entender que é um NOVO orçamento.
+    const preFilledQuote = {
+      nomeCliente: lead.nome || '',
+      cnpj: lead.cnpj || '',
+      email: lead.email || '',
+      telefonePrincipal: lead.telefone || '',
+      telefoneSecundario: lead.telefoneSecundario || '',
+      cep: lead.cep || '',
+      logradouro: lead.endereco || '',
+      bairro: lead.bairro || '',
+      cidade: lead.cidade || '',
+      uf: lead.estado || '',
+      observacoes: lead.observacoes || '',
+      status: 'RASCUNHO',
+      usuarioLogin: currentUser?.nome || 'Sistema',
+      valorBase: 0,
+      valorNegociado: 0
+    };
+
+    setQuoteEditando(preFilledQuote as unknown as IQuote);
+    setIsModalOpen(true);
+  };
+
+  useEffect(() => {
+    fetchQuotes();
+    fetchLeadsAguardando();
+  }, [statusFiltro, dataInicio, dataFim]);  
+
+  const handleOpenNewQuote = () => {
+    if (!canCreateQuote) {
+      alert('Acesso Negado: Você não tem permissão para criar ou orçar novos clientes.');
+      return;
+    }
+
+    setQuoteEditando(null);
     setIsModalOpen(true);
   };
 
@@ -196,7 +224,7 @@ export default function QuotesPage() {
               {leadsAguardando.map((lead) => (
                 <div 
                   key={lead.id}
-                  onClick={() => handleOpenNewQuote(lead)}
+                  onClick={() => handleCreateDraftFromLead(lead)}
                   className="snap-start w-50 sm:w-60 bg-emerald-500/5 border border-emerald-500/20 rounded-shape-lg p-3 cursor-pointer hover:bg-emerald-500/10 hover:border-emerald-500/40 hover:shadow-md transition-all group flex flex-col gap-1.5 shrink-0"
                 >
                   <div className="flex items-start justify-between">
@@ -263,7 +291,6 @@ export default function QuotesPage() {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto shrink-0">
-              {/* Box de data ajustado para quebrar linha ou ficar lado a lado corretamente no mobile */}
               <div className="flex flex-row items-center gap-2 bg-theme-panel border border-theme-border rounded-shape-lg px-3 py-2.5 shadow-sm w-full sm:w-auto transition-colors">
                 <Calendar size={16} className="text-theme-muted shrink-0 hidden sm:block transition-colors" />
                 <input 
@@ -326,18 +353,15 @@ export default function QuotesPage() {
                   className={`group flex items-center justify-between bg-theme-panel border-b border-theme-border hover:bg-theme-base cursor-pointer transition-colors px-3 sm:px-5 py-4 border-l-4 ${getStatusBorderClass(quote.status)}`}
                 >
                   <div className="flex-1 min-w-0 pr-2 sm:pr-4">
-                    {/* Linha 1: ID, Data e Badge(no desktop) */}
                     <div className="flex flex-wrap items-center gap-2 mb-1.5">
                       <span className="text-xs font-mono font-bold text-theme-muted transition-colors">#{String(quote.id).padStart(4, '0')}</span>
                       <span className="text-xs text-theme-border hidden sm:inline transition-colors">•</span>
                       <span className="text-[11px] sm:text-[12px] text-theme-muted transition-colors">
                         {formatarTempoRelativo((quote as any).createdAt || (quote as any).updatedAt)}
                       </span>
-                      {/* Mostra Badge aqui somente no desktop */}
                       <div className="hidden sm:block ml-2">{getStatusBadge(quote.status)}</div>
                     </div>
 
-                    {/* Linha 2: Nome e Valor */}
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-1">
                       <h4 className="font-bold text-theme-text text-base md:text-lg truncate pr-2 sm:pr-3 transition-colors">
                         {quote.nomeCliente}
@@ -347,12 +371,10 @@ export default function QuotesPage() {
                       </span>
                     </div>
 
-                    {/* Linha 3: CNPJ e Badge(no mobile) */}
                     <div className="flex items-center justify-between mt-1 sm:mt-0">
                       <span className="text-xs text-theme-muted truncate transition-colors">
                         {quote.cnpj || 'Consumidor Final'}
                       </span>
-                      {/* Mostra Badge aqui somente no mobile */}
                       <div className="block sm:hidden shrink-0 ml-2">
                         {getStatusBadge(quote.status)}
                       </div>
