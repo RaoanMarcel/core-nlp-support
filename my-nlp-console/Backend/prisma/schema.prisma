@@ -77,10 +77,10 @@
     prospectId    String
     prospect      Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
     
-    acao          String   // Ex: "Em Atendimento", "Atualizado", "Aprovado"
+    acao          String   
     observacoes   String?  @db.Text
     novosModulos  String[]
-    usuario       String   // Nome do usuário que fez a alteração
+    usuario       String   
     
     createdAt     DateTime @default(now())
   }
@@ -89,7 +89,6 @@ model Quote {
   id                 Int      @id @default(autoincrement())
   nomeCliente        String
   cnpj               String
-  endereco           String?
   email              String?
   telefonePrincipal  String?
   telefoneSecundario String?
@@ -99,6 +98,17 @@ model Quote {
   valorBase          Float
   valorNegociado     Float
   
+  usuariosExtras     Int      @default(0)
+  valorUsuarioExtra  Float    @default(0)
+
+  cep                String?
+  logradouro         String?
+  numero             String?
+  complemento        String?
+  bairro             String?
+  cidade             String?
+  uf                 String?
+  
   interesses         String?  @db.Text
   observacoes        String?  @db.Text
   
@@ -106,12 +116,11 @@ model Quote {
   
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
-  notas     QuoteNote[] 
-  historico QuoteHistory[]
+  notas              QuoteNote[] 
+  historico          QuoteHistory[]
 
-  order    Order?
+  order              Order?
 }
-
 model QuoteNote {
   id        String   @id @default(uuid())
   quoteId   Int

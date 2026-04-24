@@ -1,4 +1,3 @@
-// Frontend/src/features/Quotes/useQuoteModal.ts
 import { useState, useEffect, useMemo } from 'react';
 import { api } from '../../services/api';
 import { planService } from '../../services/plan.service';
@@ -11,20 +10,29 @@ export function useQuoteModal(quote: IQuote | null, onClose: () => void) {
   const [isLoading, setIsLoading] = useState(false);
   
   const [plans, setPlans] = useState<Plan[]>([]);
-  const [selectedPlanIds, setSelectedPlanIds] = useState<string[]>([]); // ✨ Agora é um Array
+  const [selectedPlanIds, setSelectedPlanIds] = useState<string[]>([]);
+
+  const [isLoadingCnpj, setIsLoadingCnpj] = useState(false);
+  const [isLoadingCep, setIsLoadingCep] = useState(false);
 
   const [formData, setFormData] = useState({
     nomeCliente: '',
     cnpj: '',
-    endereco: '',
+    cep: '',
+    logradouro: '',
+    numero: '',
+    complemento: '',
+    bairro: '',
+    cidade: '',
+    uf: '',
     email: '',
     telefonePrincipal: '',
     telefoneSecundario: '',
     interesses: '', 
     observacoes: '',
     plano: 'MENSAL' as 'MENSAL' | 'ANUAL',
-    usuariosExtras: 0, // ✨ NOVO
-    valorUsuarioExtra: 0, // ✨ NOVO
+    usuariosExtras: 0,
+    valorUsuarioExtra: 0, 
     valorNegociado: '' as number | string
   });
   
@@ -47,7 +55,13 @@ export function useQuoteModal(quote: IQuote | null, onClose: () => void) {
       setFormData({
         nomeCliente: quote.nomeCliente || '',
         cnpj: quote.cnpj || '',
-        endereco: quote.endereco || '',
+        cep: quote.cep || '',               
+        logradouro: quote.logradouro || '', 
+        numero: quote.numero || '',         
+        complemento: quote.complemento || '',
+        bairro: quote.bairro || '',         
+        cidade: quote.cidade || '',         
+        uf: quote.uf || '',
         email: quote.email || '',
         telefonePrincipal: quote.telefonePrincipal || '',
         telefoneSecundario: quote.telefoneSecundario || '',
@@ -63,7 +77,6 @@ export function useQuoteModal(quote: IQuote | null, onClose: () => void) {
     }
   }, [quote]);
 
-  // ✨ Seleciona os planos corretos se houver mais de um no histórico
   useEffect(() => {
     if (quote && plans.length > 0 && quote.modulos?.length > 0) {
       const matchedIds = plans
@@ -73,7 +86,6 @@ export function useQuoteModal(quote: IQuote | null, onClose: () => void) {
     }
   }, [quote, plans]);
 
-  // ✨ Alterna a seleção do plano
   const togglePlanSelection = (planId: string) => {
     setSelectedPlanIds(prev => 
       prev.includes(planId) 
@@ -82,7 +94,6 @@ export function useQuoteModal(quote: IQuote | null, onClose: () => void) {
     );
   };
 
-  // ✨ Cálculo dinâmico unindo Planos + Usuários Extras
   const valorTabela = useMemo(() => {
     let somaPlanos = 0;
     const planosSelecionados = plans.filter(p => selectedPlanIds.includes(p.id));
@@ -101,6 +112,63 @@ export function useQuoteModal(quote: IQuote | null, onClose: () => void) {
     ? Number(formData.valorNegociado) 
     : valorTabela;
 
+  const buscarCNPJ = async () => {
+    const cnpjLimpo = formData.cnpj?.replace(/\D/g, '');
+    if (!cnpjLimpo || cnpjLimpo.length !== 14) return;
+
+    setIsLoadingCnpj(true);
+    try {
+      const response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpjLimpo}`);
+      if (!response.ok) throw new Error('CNPJ não encontrado');
+      
+      const data = await response.json();
+      
+      setFormData(prev => ({
+        ...prev,
+        nomeCliente: data.razao_social || data.nome_fantasia || prev.nomeCliente,
+        telefonePrincipal: data.ddd_telefone_1 || prev.telefonePrincipal,
+        email: data.email || prev.email,
+        cep: data.cep || prev.cep,
+        logradouro: data.logradouro || prev.logradouro,
+        numero: data.numero || prev.numero,
+        complemento: data.complemento || prev.complemento,
+        bairro: data.bairro || prev.bairro,
+        cidade: data.municipio || prev.cidade,
+        uf: data.uf || prev.uf,
+      }));
+    } catch (error) {
+      console.error("Erro ao buscar CNPJ:", error);
+      alert("CNPJ não encontrado ou indisponível no momento.");
+    } finally {
+      setIsLoadingCnpj(false);
+    }
+  };
+
+  const buscarCEP = async (cepParaBuscar: string) => {
+    const cepLimpo = cepParaBuscar.replace(/\D/g, '');
+    if (cepLimpo.length !== 8) return;
+
+    setIsLoadingCep(true);
+    try {
+      const response = await fetch(`https://brasilapi.com.br/api/cep/v2/${cepLimpo}`);
+      if (!response.ok) throw new Error('CEP não encontrado');
+      
+      const data = await response.json();
+      
+      setFormData(prev => ({
+        ...prev,
+        logradouro: data.street || prev.logradouro,
+        bairro: data.neighborhood || prev.bairro,
+        cidade: data.city || prev.cidade,
+        uf: data.state || prev.uf,
+      }));
+    } catch (error) {
+      console.error("Erro ao buscar CEP:", error);
+    } finally {
+      setIsLoadingCep(false);
+    }
+  };
+
   const handleSave = async () => {
     try {
       setIsLoading(true);
@@ -108,7 +176,6 @@ export function useQuoteModal(quote: IQuote | null, onClose: () => void) {
       let modulosParaSalvar = quote?.modulos || [];
       if (selectedPlanIds.length > 0) {
         const planosSelecionados = plans.filter(p => selectedPlanIds.includes(p.id));
-        // ✨ Usa um Set para evitar módulos duplicados caso dois planos tenham o mesmo
         const nomesEModulos = new Set<string>();
         
         planosSelecionados.forEach(p => {
@@ -152,6 +219,10 @@ export function useQuoteModal(quote: IQuote | null, onClose: () => void) {
     isNegotiating,
     setIsNegotiating,
     isLoading,
+    isLoadingCnpj, 
+    isLoadingCep,
+    buscarCNPJ,
+    buscarCEP,    
     handleSave,
     isReadOnly: !!quote?.id && quote.status !== 'RASCUNHO' && quote.status !== 'EM_NEGOCIACAO'
   };

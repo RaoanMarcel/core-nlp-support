@@ -4,7 +4,6 @@ import nodemailer from 'nodemailer';
 
 const prisma = new PrismaClient();
 
-// Configure as variáveis de ambiente no seu .env: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   port: Number(process.env.SMTP_PORT) || 587,

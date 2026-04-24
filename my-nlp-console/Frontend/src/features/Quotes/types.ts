@@ -1,4 +1,3 @@
-// Frontend/src/features/Quotes/types.ts
 export interface IModulo {
   id: string;
   nome: string;
@@ -26,7 +25,13 @@ export interface IQuote {
   id: string;
   nomeCliente: string;
   cnpj: string;
-  endereco?: string;
+  cep?: string;
+  logradouro?: string;
+  numero?: string;
+  complemento?: string;
+  bairro?: string;
+  cidade?: string;
+  uf?: string;
   email?: string;
   telefonePrincipal?: string;
   telefoneSecundario?: string;

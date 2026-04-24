@@ -1,8 +1,7 @@
-// Frontend/src/features/Quotes/QuoteModal.tsx
 import React, { useEffect } from 'react';
 import { 
   X, Building, Search, Phone, Mail, MapPin, 
-  FileText, CheckSquare, Save, Calculator, Users
+  FileText, CheckSquare, Save, Calculator, Users, Loader2
 } from 'lucide-react';
 import { useQuoteModal } from './useQuoteModal'; 
 import type { IQuote } from './types';
@@ -25,7 +24,11 @@ export default function QuoteModal({ quote, onClose }: QuoteModalProps) {
     setIsNegotiating,
     isLoading,
     handleSave,
-    isReadOnly
+    isReadOnly,
+    isLoadingCnpj,
+    isLoadingCep,
+    buscarCNPJ,
+    buscarCEP
   } = useQuoteModal(quote, onClose);
 
   useEffect(() => {
@@ -36,6 +39,15 @@ export default function QuoteModal({ quote, onClose }: QuoteModalProps) {
 
   const handleChange = (field: string, value: string | number) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  // Função dedicada para o CEP para acionar a busca automaticamente
+  const handleCepChange = (value: string) => {
+    handleChange('cep', value);
+    const cepLimpo = value.replace(/\D/g, '');
+    if (cepLimpo.length === 8) {
+      buscarCEP(cepLimpo);
+    }
   };
 
   const formatarMoeda = (valor: number) => {
@@ -78,64 +90,148 @@ export default function QuoteModal({ quote, onClose }: QuoteModalProps) {
                 </h3>
                 
                 <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-theme-text mb-1 transition-colors">Nome da Empresa / Cliente *</label>
-                    <input 
-                      type="text" 
-                      value={formData.nomeCliente}
-                      onChange={(e) => handleChange('nomeCliente', e.target.value)}
-                      disabled={isReadOnly}
-                      className="w-full bg-theme-base border border-theme-border text-theme-text placeholder:text-theme-muted rounded-md px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-theme-accent focus:border-theme-accent disabled:opacity-60 transition-all"
-                      placeholder="Ex: Empresa Silva LTDA"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
+                  
+                  {/* CNPJ e Nome */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="sm:col-span-1">
                       <label className="block text-sm font-medium text-theme-text mb-1 transition-colors">CNPJ</label>
                       <div className="flex gap-2">
                         <input 
                           type="text" 
-                          value={formData.cnpj}
+                          value={formData.cnpj || ''}
                           onChange={(e) => handleChange('cnpj', e.target.value)}
-                          disabled={isReadOnly}
+                          disabled={isReadOnly || isLoadingCnpj}
                           className="w-full bg-theme-base border border-theme-border text-theme-text placeholder:text-theme-muted rounded-md px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-theme-accent focus:border-theme-accent disabled:opacity-60 transition-all"
-                          placeholder="00.000.000/0000-00"
+                          placeholder="Somente números"
                         />
                         <button 
+                          onClick={buscarCNPJ}
                           title="Buscar CNPJ na Receita"
-                          disabled={isReadOnly || formData.cnpj.length < 14}
-                          className="bg-theme-panel border border-theme-border hover:bg-theme-base disabled:opacity-50 text-theme-text px-3 rounded-md flex items-center justify-center transition-colors shadow-sm"
+                          disabled={isReadOnly || !formData.cnpj || formData.cnpj.length < 14 || isLoadingCnpj}
+                          className="bg-theme-panel border border-theme-border hover:bg-theme-base disabled:opacity-50 text-theme-text px-3 rounded-md flex items-center justify-center transition-colors shadow-sm min-w-[42px]"
                         >
-                          <Search size={16} />
+                          {isLoadingCnpj ? <Loader2 size={16} className="animate-spin text-theme-accent" /> : <Search size={16} />}
                         </button>
                       </div>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-theme-text mb-1 transition-colors">Endereço</label>
-                      <div className="relative">
-                        <MapPin size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-theme-muted transition-colors" />
+                    <div className="sm:col-span-2">
+                      <label className="block text-sm font-medium text-theme-text mb-1 transition-colors">Nome da Empresa / Cliente *</label>
+                      <input 
+                        type="text" 
+                        value={formData.nomeCliente || ''}
+                        onChange={(e) => handleChange('nomeCliente', e.target.value)}
+                        disabled={isReadOnly || isLoadingCnpj}
+                        className="w-full bg-theme-base border border-theme-border text-theme-text placeholder:text-theme-muted rounded-md px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-theme-accent focus:border-theme-accent disabled:opacity-60 transition-all"
+                        placeholder="Ex: Empresa Silva LTDA"
+                      />
+                    </div>
+                  </div>
+
+                  {/* ✨ NOVO GRID DE ENDEREÇO ESTUTURADO ✨ */}
+                  <div className="p-4 rounded-md border border-theme-border bg-theme-base/50 space-y-4 transition-colors">
+                    <h4 className="text-xs font-semibold text-theme-muted uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                      <MapPin size={14} /> Endereço
+                    </h4>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                      <div className="sm:col-span-1">
+                        <label className="block text-xs font-medium text-theme-text mb-1">CEP</label>
+                        <div className="relative">
+                          <input 
+                            type="text" 
+                            maxLength={9}
+                            value={formData.cep || ''}
+                            onChange={(e) => handleCepChange(e.target.value)}
+                            disabled={isReadOnly || isLoadingCnpj}
+                            className="w-full bg-theme-panel border border-theme-border text-theme-text placeholder:text-theme-muted rounded-md px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-theme-accent disabled:opacity-60 pr-8"
+                            placeholder="00000-000"
+                          />
+                          {isLoadingCep && <Loader2 size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 animate-spin text-theme-accent" />}
+                        </div>
+                      </div>
+                      <div className="sm:col-span-3">
+                        <label className="block text-xs font-medium text-theme-text mb-1">Logradouro (Rua/Av)</label>
                         <input 
                           type="text" 
-                          value={formData.endereco}
-                          onChange={(e) => handleChange('endereco', e.target.value)}
-                          disabled={isReadOnly}
-                          className="w-full pl-9 pr-3 py-2 bg-theme-base border border-theme-border text-theme-text placeholder:text-theme-muted rounded-md text-sm outline-none focus:ring-1 focus:ring-theme-accent focus:border-theme-accent disabled:opacity-60 transition-all"
-                          placeholder="Cidade / Estado"
+                          value={formData.logradouro || ''}
+                          onChange={(e) => handleChange('logradouro', e.target.value)}
+                          disabled={isReadOnly || isLoadingCnpj || isLoadingCep}
+                          className="w-full bg-theme-panel border border-theme-border text-theme-text rounded-md px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-theme-accent disabled:opacity-60"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
+                      <div className="sm:col-span-3">
+                        <label className="block text-xs font-medium text-theme-text mb-1">Número</label>
+                        <input 
+                          type="text" 
+                          value={formData.numero || ''}
+                          onChange={(e) => handleChange('numero', e.target.value)}
+                          disabled={isReadOnly || isLoadingCnpj}
+                          className="w-full bg-theme-panel border border-theme-border text-theme-text rounded-md px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-theme-accent disabled:opacity-60"
+                        />
+                      </div>
+                      <div className="sm:col-span-4">
+                        <label className="block text-xs font-medium text-theme-text mb-1">Complemento</label>
+                        <input 
+                          type="text" 
+                          value={formData.complemento || ''}
+                          onChange={(e) => handleChange('complemento', e.target.value)}
+                          disabled={isReadOnly || isLoadingCnpj}
+                          className="w-full bg-theme-panel border border-theme-border text-theme-text rounded-md px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-theme-accent disabled:opacity-60"
+                          placeholder="Sala, Andar..."
+                        />
+                      </div>
+                      <div className="sm:col-span-5">
+                        <label className="block text-xs font-medium text-theme-text mb-1">Bairro</label>
+                        <input 
+                          type="text" 
+                          value={formData.bairro || ''}
+                          onChange={(e) => handleChange('bairro', e.target.value)}
+                          disabled={isReadOnly || isLoadingCnpj || isLoadingCep}
+                          className="w-full bg-theme-panel border border-theme-border text-theme-text rounded-md px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-theme-accent disabled:opacity-60"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                      <div className="sm:col-span-3">
+                        <label className="block text-xs font-medium text-theme-text mb-1">Cidade</label>
+                        <input 
+                          type="text" 
+                          value={formData.cidade || ''}
+                          onChange={(e) => handleChange('cidade', e.target.value)}
+                          disabled={isReadOnly || isLoadingCnpj || isLoadingCep}
+                          className="w-full bg-theme-panel border border-theme-border text-theme-text rounded-md px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-theme-accent disabled:opacity-60"
+                        />
+                      </div>
+                      <div className="sm:col-span-1">
+                        <label className="block text-xs font-medium text-theme-text mb-1">UF</label>
+                        <input 
+                          type="text" 
+                          maxLength={2}
+                          value={formData.uf || ''}
+                          onChange={(e) => handleChange('uf', e.target.value.toUpperCase())}
+                          disabled={isReadOnly || isLoadingCnpj || isLoadingCep}
+                          className="w-full bg-theme-panel border border-theme-border text-theme-text rounded-md px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-theme-accent disabled:opacity-60 uppercase"
+                          placeholder="SP"
                         />
                       </div>
                     </div>
                   </div>
+                  {/* FIM DO GRID DE ENDEREÇO */}
 
+                  {/* Contatos */}
                   <div>
                     <label className="block text-sm font-medium text-theme-text mb-1 transition-colors">E-mail de Contato</label>
                     <div className="relative">
                       <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-theme-muted transition-colors" />
                       <input 
                         type="email" 
-                        value={formData.email}
+                        value={formData.email || ''}
                         onChange={(e) => handleChange('email', e.target.value)}
-                        disabled={isReadOnly}
+                        disabled={isReadOnly || isLoadingCnpj}
                         className="w-full pl-9 pr-3 py-2 bg-theme-base border border-theme-border text-theme-text placeholder:text-theme-muted rounded-md text-sm outline-none focus:ring-1 focus:ring-theme-accent focus:border-theme-accent disabled:opacity-60 transition-all"
                         placeholder="contato@empresa.com.br"
                       />
@@ -149,9 +245,9 @@ export default function QuoteModal({ quote, onClose }: QuoteModalProps) {
                         <Phone size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-theme-muted transition-colors" />
                         <input 
                           type="text" 
-                          value={formData.telefonePrincipal}
+                          value={formData.telefonePrincipal || ''}
                           onChange={(e) => handleChange('telefonePrincipal', e.target.value)}
-                          disabled={isReadOnly}
+                          disabled={isReadOnly || isLoadingCnpj}
                           className="w-full pl-9 pr-3 py-2 bg-theme-base border border-theme-border text-theme-text placeholder:text-theme-muted rounded-md text-sm outline-none focus:ring-1 focus:ring-theme-accent focus:border-theme-accent disabled:opacity-60 transition-all"
                           placeholder="(00) 00000-0000"
                         />
@@ -163,7 +259,7 @@ export default function QuoteModal({ quote, onClose }: QuoteModalProps) {
                         <Phone size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-theme-muted transition-colors" />
                         <input 
                           type="text" 
-                          value={(formData as any).telefoneSecundario || ''}
+                          value={formData.telefoneSecundario || ''}
                           onChange={(e) => handleChange('telefoneSecundario', e.target.value)}
                           disabled={isReadOnly}
                           className="w-full pl-9 pr-3 py-2 bg-theme-base border border-theme-border text-theme-text placeholder:text-theme-muted rounded-md text-sm outline-none focus:ring-1 focus:ring-theme-accent focus:border-theme-accent disabled:opacity-60 transition-all"
@@ -183,7 +279,7 @@ export default function QuoteModal({ quote, onClose }: QuoteModalProps) {
                   <div>
                     <label className="block text-sm font-medium text-theme-text mb-1 transition-colors">Interesses</label>
                     <textarea 
-                      value={formData.interesses}
+                      value={formData.interesses || ''}
                       onChange={(e) => handleChange('interesses', e.target.value)}
                       disabled={isReadOnly}
                       className="w-full h-20 bg-theme-base border border-theme-border text-theme-text placeholder:text-theme-muted rounded-md px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-theme-accent focus:border-theme-accent disabled:opacity-60 resize-none transition-all custom-scrollbar"
@@ -193,7 +289,7 @@ export default function QuoteModal({ quote, onClose }: QuoteModalProps) {
                   <div>
                     <label className="block text-sm font-medium text-theme-text mb-1 transition-colors">Observações Internas</label>
                     <textarea 
-                      value={formData.observacoes}
+                      value={formData.observacoes || ''}
                       onChange={(e) => handleChange('observacoes', e.target.value)}
                       disabled={isReadOnly}
                       className="w-full h-20 bg-theme-base border border-theme-border text-theme-text placeholder:text-theme-muted rounded-md px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-theme-accent focus:border-theme-accent disabled:opacity-60 resize-none transition-all custom-scrollbar"
@@ -297,7 +393,6 @@ export default function QuoteModal({ quote, onClose }: QuoteModalProps) {
                         value={formData.valorUsuarioExtra === 0 ? '' : (formData.valorUsuarioExtra ?? '')}
                         onChange={(e) => {
                           const val = e.target.value;
-                          // Se apagar tudo ou digitar negativo, fica vazio ('')
                           if (val === '' || Number(val) < 0) {
                             handleChange('valorUsuarioExtra', '');
                           } else {
@@ -393,7 +488,7 @@ export default function QuoteModal({ quote, onClose }: QuoteModalProps) {
           {!isReadOnly && (
             <button 
               onClick={handleSave}
-              disabled={isLoading || !formData.nomeCliente || !formData.telefonePrincipal || (selectedPlanIds.length === 0 && !quote?.id)} // ✨ Atualizado
+              disabled={isLoading || !formData.nomeCliente || !formData.telefonePrincipal || (selectedPlanIds.length === 0 && !quote?.id)} 
               className="flex items-center gap-2 px-5 py-2 bg-theme-accent hover:opacity-90 text-white text-sm font-bold rounded-md disabled:opacity-50 disabled:cursor-not-allowed shadow-sm transition-all active:scale-95"
             >
               <Save size={16} /> 

@@ -6,6 +6,7 @@ const prisma = new PrismaClient();
 
 export class QuoteController {
   
+  // Listagem simples (todos)
   async list(req: Request, res: Response) {
     try {
       const quotes = await prisma.quote.findMany({
@@ -18,6 +19,7 @@ export class QuoteController {
     }
   }
 
+  // Consulta com filtros
   async consultar(req: Request, res: Response) {
     try {
       const { termo, dataInicio, dataFim, status } = req.query;
@@ -70,6 +72,7 @@ export class QuoteController {
     }
   }
 
+  // Busca detalhada por ID
   async getById(req: Request, res: Response) {
     try {
       const { id } = req.params;
@@ -93,7 +96,6 @@ export class QuoteController {
     }
   }
 
-  // Adiciona Nota (Comentário humano)
   async addNote(req: Request, res: Response) {
     try {
       const { id } = req.params;
@@ -123,15 +125,17 @@ export class QuoteController {
     }
   }
 
-  // Cria um novo orçamento (Registrando no Histórico)
+  // Cria um novo orçamento
   async create(req: Request, res: Response) {
     try {
       const { 
-        nomeCliente, cnpj, endereco, email, 
+        nomeCliente, cnpj, email, 
         telefonePrincipal, telefoneSecundario, 
         modulos, plano, valorBase, valorNegociado,
         interesses, observacoes, status,
-        usuarioLogin // O ideal é passar isso no body a partir do Frontend
+        usuarioLogin,
+        usuariosExtras, valorUsuarioExtra,
+        cep, logradouro, numero, complemento, bairro, cidade, uf
       } = req.body;
 
       const cleanCnpj = cnpj ? cnpj.replace(/\D/g, '') : undefined;
@@ -140,7 +144,6 @@ export class QuoteController {
         data: {
           nomeCliente,
           cnpj: cleanCnpj,
-          endereco,
           email,
           telefonePrincipal,
           telefoneSecundario,
@@ -151,6 +154,15 @@ export class QuoteController {
           interesses,
           observacoes,
           status: status || 'RASCUNHO',
+          usuariosExtras: Number(usuariosExtras) || 0,
+          valorUsuarioExtra: Number(valorUsuarioExtra) || 0,
+          cep,
+          logradouro,
+          numero,
+          complemento,
+          bairro,
+          cidade,
+          uf,
           historico: {
             create: {
               acao: 'Orçamento Criado',
@@ -172,6 +184,7 @@ export class QuoteController {
     }
   }
 
+  // Atualiza orçamento existente
   async update(req: Request, res: Response) {
     try {
       const { id } = req.params;
@@ -180,7 +193,10 @@ export class QuoteController {
         telefonePrincipal, telefoneSecundario, 
         modulos, plano, valorBase, valorNegociado,
         interesses, observacoes, status,
-        usuarioLogin 
+        usuarioLogin,
+        // Novos campos
+        usuariosExtras, valorUsuarioExtra,
+        cep, logradouro, numero, complemento, bairro, cidade, uf
       } = req.body;
 
       const cleanCnpj = cnpj ? cnpj.replace(/\D/g, '') : undefined;
@@ -201,6 +217,15 @@ export class QuoteController {
           ...(interesses !== undefined && { interesses }),
           ...(observacoes !== undefined && { observacoes }),
           ...(status && { status }),
+          ...(usuariosExtras !== undefined && { usuariosExtras: Number(usuariosExtras) }),
+          ...(valorUsuarioExtra !== undefined && { valorUsuarioExtra: Number(valorUsuarioExtra) }),
+          ...(cep !== undefined && { cep }),
+          ...(logradouro !== undefined && { logradouro }),
+          ...(numero !== undefined && { numero }),
+          ...(complemento !== undefined && { complemento }),
+          ...(bairro !== undefined && { bairro }),
+          ...(cidade !== undefined && { cidade }),
+          ...(uf !== undefined && { uf }),
           historico: {
             create: {
               acao: 'Orçamento Atualizado',
@@ -236,13 +261,14 @@ export class QuoteController {
         io.emit('quote:deleted', { id: Number(id) });
       }
 
-      return res.status(204).send(); // 204 No Content
+      return res.status(204).send();
     } catch (error) {
       console.error('Erro ao deletar orçamento:', error);
       return res.status(400).json({ error: 'Erro ao deletar orçamento' });
     }
   }
   
+  // Forçar atualização de status com senha
   async forceStatusUpdate(req: Request, res: Response) {
     try {
       const { id } = req.params;
