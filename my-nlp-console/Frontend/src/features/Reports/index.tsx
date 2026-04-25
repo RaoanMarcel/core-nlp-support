@@ -1,13 +1,40 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { 
   Download, LayoutDashboard, TableProperties, FileSpreadsheet,
-  Loader2, Play, ChevronLeft, ChevronRight
+  Loader2, Play, ChevronLeft, ChevronRight, Lock
 } from 'lucide-react';
 import { useReports } from './hooks/useReports';
 import { REPORT_MODULES, ITEMS_PER_PAGE } from './constants';
+import { useCan } from '../../hooks/useCan';
 
 export default function Relatorios() {
   const { state, actions } = useReports();
+  const { can } = useCan();
+
+  const availableModules = Object.entries(REPORT_MODULES).filter(([key, config]) => 
+    can(config.requiredPermission)
+  );
+
+  useEffect(() => {
+    if (availableModules.length > 0 && !availableModules.find(([key]) => key === state.selectedModule)) {
+      state.setSelectedModule(availableModules[0][0]);
+    }
+  }, [availableModules, state.selectedModule, state.setSelectedModule]);
+
+  if (availableModules.length === 0) {
+    return (
+      <div className="flex-1 h-full bg-theme-base flex flex-col items-center justify-center p-8 transition-colors duration-300">
+        <div className="w-20 h-20 bg-rose-500/10 rounded-full flex items-center justify-center text-rose-500 mb-6">
+          <Lock size={32} />
+        </div>
+        <h1 className="text-2xl font-black text-theme-text mb-2">Acesso Restrito</h1>
+        <p className="text-theme-muted text-center max-w-md">
+          Você não tem permissão para visualizar nenhum dos relatórios disponíveis. 
+          Contate o administrador do sistema para liberar os acessos necessários.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 h-full bg-theme-base overflow-y-auto p-4 md:p-8 font-sans transition-colors duration-300">
@@ -40,7 +67,8 @@ export default function Relatorios() {
                 onChange={(e) => state.setSelectedModule(e.target.value)}
                 className="w-full text-sm font-medium text-theme-text bg-theme-panel border border-theme-border rounded-shape px-3 py-2 outline-none focus:ring-2 focus:ring-theme-accent/50 focus:border-theme-accent transition-all"
               >
-                {Object.entries(REPORT_MODULES).map(([key, config]) => (
+                {/* Loop apenas nos módulos permitidos */}
+                {availableModules.map(([key, config]) => (
                   <option key={key} value={key} className="bg-theme-panel">{config.label}</option>
                 ))}
               </select>
@@ -56,7 +84,7 @@ export default function Relatorios() {
                   <input 
                     type="date" value={state.startDate} onChange={(e) => state.setStartDate(e.target.value)}
                     className="w-full text-sm font-medium text-theme-text bg-theme-panel border border-theme-border rounded-shape px-3 py-2 outline-none focus:ring-2 focus:ring-theme-accent/50 transition-all color-scheme-dynamic"
-                    style={{ colorScheme: 'var(--color-scheme, light)' }} // Ajuda os calendários nativos do navegador a ficarem dark
+                    style={{ colorScheme: 'var(--color-scheme, light)' }} 
                   />
                 </div>
                 <div>
@@ -224,7 +252,7 @@ export default function Relatorios() {
         </div>
       </div>
 
-      {/* SESSÃO 3: EXPORTAÇÃO DE LOGS (MOCK) */}
+      {/* SESSÃO 3: EXPORTAÇÃO DE LOGS (Mantido aberto ou pode bloquear com can('reports:logs') se quiser) */}
       <div>
         <div className="bg-theme-panel border-2 border-emerald-500/20 rounded-shape-lg p-6 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden group hover:border-emerald-500/40 transition-colors duration-300">
           <div className="absolute right-0 top-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl -z-10 translate-x-1/2 -translate-y-1/2 opacity-60 group-hover:opacity-100 transition-opacity duration-700"></div>

@@ -101,14 +101,9 @@ export default function AppRouter() {
                   </RotaProtegida>
                 } 
               />
-
               <Route 
                 path="/relatorios" 
-                element={
-                  <RotaProtegida permissaoNecessaria="reports:view">
-                    <Relatorios />
-                  </RotaProtegida>
-                } 
+                element={<Relatorios />} 
               />
 
               <Route path="*" element={<Navigate to="/" replace />} />
