@@ -41,7 +41,6 @@ export default function QuoteModal({ quote, onClose }: QuoteModalProps) {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  // Função dedicada para o CEP para acionar a busca automaticamente
   const handleCepChange = (value: string) => {
     handleChange('cep', value);
     const cepLimpo = value.replace(/\D/g, '');
@@ -108,7 +107,7 @@ export default function QuoteModal({ quote, onClose }: QuoteModalProps) {
                           onClick={buscarCNPJ}
                           title="Buscar CNPJ na Receita"
                           disabled={isReadOnly || !formData.cnpj || formData.cnpj.length < 14 || isLoadingCnpj}
-                          className="bg-theme-panel border border-theme-border hover:bg-theme-base disabled:opacity-50 text-theme-text px-3 rounded-md flex items-center justify-center transition-colors shadow-sm min-w-[42px]"
+                          className="bg-theme-panel border border-theme-border hover:bg-theme-base disabled:opacity-50 text-theme-text px-3 rounded-md flex items-center justify-center transition-colors shadow-sm min-w-10.5"
                         >
                           {isLoadingCnpj ? <Loader2 size={16} className="animate-spin text-theme-accent" /> : <Search size={16} />}
                         </button>

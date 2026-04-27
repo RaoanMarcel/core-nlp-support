@@ -10,7 +10,8 @@ import {
   BookOpen,
   FileText,
   LogOut, 
-  Calculator 
+  Calculator,
+  Building2 // <-- NOVO ÍCONE IMPORTADO AQUI
 } from 'lucide-react';
 
 import logoSvg from '../assets/logo.svg?url';
@@ -44,6 +45,7 @@ export default function AppLayout({ children, onLogout }: AppLayoutProps) {
     { path: '/', label: 'Briefing Gerencial', icon: LayoutDashboard },
     { path: '/fila', label: 'Fila de Tickets', icon: Inbox },
     { path: '/base', label: 'Base Interna', icon: BookOpen },
+    { path: '/companies', label: 'Empresas', icon: Building2, requiredPermission: 'companies:view' }, // <-- NOVO MENU AQUI
     { path: '/contratos', label: 'Contratos', icon: FileText, requiredPermission: 'prospects:view' }, 
     { path: '/orcamentos', label: 'Orçamentos', icon: Calculator, requiredPermission: 'quotes:view' }, 
     { path: '/relatorios', label: 'Geração de Relatórios', icon: SlidersHorizontal},

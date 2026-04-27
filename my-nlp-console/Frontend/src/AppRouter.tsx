@@ -11,6 +11,7 @@ import Relatorios from './features/Reports';
 import QuoteDetails from './features/Quotes/QuoteDetails';
 import Quotes from './features/Quotes';
 import Configuracoes from './features/Configuracoes'; 
+import Companies from './features/Companies'; // <-- NOVA IMPORTAÇÃO AQUI
 
 const RotaProtegida = ({ children, permissaoNecessaria }: { children: React.ReactNode, permissaoNecessaria: string }) => {
   const userStr = localStorage.getItem('@CRM:user');
@@ -74,6 +75,16 @@ export default function AppRouter() {
               <Route path="/base" element={<KnowledgeBase />} />            
               
               <Route path="/configuracoes" element={<Configuracoes />} />
+
+              {/* NOVA ROTA DE COMPANHIAS PROTEGIDA */}
+              <Route 
+                path="/companies" 
+                element={
+                  <RotaProtegida permissaoNecessaria="companies:view">
+                    <Companies />
+                  </RotaProtegida>
+                } 
+              />
 
               <Route 
                 path="/orcamentos" 

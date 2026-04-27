@@ -20,7 +20,19 @@ export default function EnviarPropostaModal({ quote, usuarioAtual, onClose, onSu
 
   const valorFormatado = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(quote.valorNegociado || quote.valorBase || 0);
   
-  const templateInicial = `Olá, ${quote.nomeCliente}!\n\nConforme conversamos, segue nossa proposta detalhada:\n\nPlano: ${quote.plano}\nMódulos: ${quote.modulos.join(', ')}\nValor Mensal: ${valorFormatado}\n\nFico à disposição para tirarmos qualquer dúvida.\n\nAbraço,\n${usuarioAtual.nome}`;
+  const templateInicial = `Olá, ${quote.nomeCliente}!
+
+  Preparei uma proposta baseada no que você precisa hoje:
+
+  Plano: ${quote.plano}
+  Módulos incluídos: ${quote.modulos.join(', ')}
+  Investimento mensal: ${valorFormatado}
+
+  A ideia é te dar controle e previsibilidade no processo. Se quiser, ajustamos juntos para ficar 100% aderente à sua operação.
+
+  Fico à disposição.
+
+  ${usuarioAtual.nome}`;
 
   const [textoWhats, setTextoWhats] = useState(templateInicial);
   const [textoEmail, setTextoEmail] = useState(templateInicial);

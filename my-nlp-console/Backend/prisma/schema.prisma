@@ -1,10 +1,37 @@
-  generator client {
+generator client {
     provider = "prisma-client-js"
   }
 
   datasource db {
     provider = "postgresql"
     url      = env("DATABASE_URL")
+  }
+
+  model Company {
+    id                 String   @id @default(uuid())
+    cnpj               String   @unique
+    razaoSocial        String   
+    nomeFantasia       String?
+    email              String?
+    telefonePrincipal  String?
+    telefoneSecundario String?
+
+    cep                String?
+    logradouro         String?
+    numero             String?
+    complemento        String?
+    bairro             String?
+    cidade             String?
+    uf                 String?
+
+    observacoes        String?  @db.Text
+    ativo              Boolean  @default(true)
+
+    createdAt          DateTime @default(now())
+    updatedAt          DateTime @updatedAt
+
+    quotes             Quote[]
+    prospects          Prospect[]
   }
 
   enum StatusAtendimento {
@@ -19,24 +46,24 @@
 
   model Prospect {
     id                 String            @id @default(uuid())
+    
     cnpj               String            @unique
     nome               String
-    modulosAtuais      String?
     telefone           String?
-    
     simplesNacional    String?
     situacaoCadastral  String?
     telefoneSecundario String?
     email              String?
     atividadePrincipal String?
     telefoneBackup     String?
-    nomeFantasia String?
-    endereco     String?
-    bairro       String?
-    cidade       String?
-    estado       String?
-    cep          String?
-
+    nomeFantasia       String?
+    endereco           String?
+    bairro             String?
+    cidade             String?
+    estado             String?
+    cep                String?
+    
+    modulosAtuais      String?
     valor              Float?
 
     observacoes        String?           @db.Text
@@ -54,44 +81,56 @@
 
     historicos         HistoricoAtendimento[]
     orders             Order[]
+
+    companyId          String?
+    company            Company?          @relation(fields: [companyId], references: [id])
   }
 
   model User {
-    id              String   @id @default(uuid())
-    nome            String
-    usuario         String   @unique
-    senha           String   
-    primeiroAcesso  Boolean  @default(true)
-    createdAt       DateTime @default(now())
-    updatedAt       DateTime @updatedAt 
+    id                 String   @id @default(uuid())
+    nome               String
+    usuario            String   @unique
+    senha              String   
+    primeiroAcesso     Boolean  @default(true)
+    createdAt          DateTime @default(now())
+    updatedAt          DateTime @updatedAt 
 
-    roleId          String?
-    role            Role?    @relation(fields: [roleId], references: [id])
+    roleId             String?
+    role               Role?    @relation(fields: [roleId], references: [id])
 
-    theme           Theme    @default(OCEAN)
-    shape           Shape    @default(MODERN)
+    theme              Theme    @default(OCEAN)
+    shape              Shape    @default(MODERN)
   }
 
   model HistoricoAtendimento {
-    id            String   @id @default(uuid())
-    prospectId    String
-    prospect      Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+    id                 String   @id @default(uuid())
+    prospectId         String
+    prospect           Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
     
-    acao          String   
-    observacoes   String?  @db.Text
-    novosModulos  String[]
-    usuario       String   
+    acao               String   
+    observacoes        String?  @db.Text
+    novosModulos       String[]
+    usuario            String   
     
-    createdAt     DateTime @default(now())
+    createdAt          DateTime @default(now())
   }
 
 model Quote {
   id                 Int      @id @default(autoincrement())
+  
   nomeCliente        String
   cnpj               String
   email              String?
   telefonePrincipal  String?
   telefoneSecundario String?
+  cep                String?
+  logradouro         String?
+  numero             String?
+  complemento        String?
+  bairro             String?
+  cidade             String?
+  uf                 String?
+  
   modulos            String[]
   plano              String
   
@@ -101,14 +140,6 @@ model Quote {
   usuariosExtras     Int      @default(0)
   valorUsuarioExtra  Float    @default(0)
 
-  cep                String?
-  logradouro         String?
-  numero             String?
-  complemento        String?
-  bairro             String?
-  cidade             String?
-  uf                 String?
-  
   interesses         String?  @db.Text
   observacoes        String?  @db.Text
   
@@ -120,7 +151,11 @@ model Quote {
   historico          QuoteHistory[]
 
   order              Order?
+
+  companyId          String?
+  company            Company? @relation(fields: [companyId], references: [id])
 }
+
 model QuoteNote {
   id        String   @id @default(uuid())
   quoteId   Int
@@ -141,13 +176,13 @@ model QuoteHistory {
 }
 
 model Order {
-  id               String   @id @default(uuid())
-  orderNumber      Int      @unique @default(autoincrement()) 
+  id               String      @id @default(uuid())
+  orderNumber      Int         @unique @default(autoincrement()) 
   
-  quoteId          Int      @unique
-  quote            Quote    @relation(fields: [quoteId], references: [id])
+  quoteId          Int         @unique
+  quote            Quote       @relation(fields: [quoteId], references: [id])
   prospectId       String?     
-  prospect         Prospect? @relation(fields: [prospectId], references: [id])
+  prospect         Prospect?   @relation(fields: [prospectId], references: [id])
 
   valorTotal       Float
   modulos          String[]

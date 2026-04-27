@@ -9,6 +9,8 @@ import releaseNotesRouter from './routes/releaseNotes.routes';
 import rolesRoutes from './routes/Roles.routes';
 import usersRoutes from './routes/Users.routes';
 import planRoutes from './routes/Plan.routes';
+import { companyRoutes } from './routes/Company.routes';
+
 
 
 const app = express();
@@ -50,6 +52,7 @@ app.use('/release-notes', authMiddleware, releaseNotesRouter);
 app.use('/roles', authMiddleware, rolesRoutes);
 app.use('/users', authMiddleware, usersRoutes);
 app.use('/plans', authMiddleware, planRoutes);
+app.use('/companies', authMiddleware, companyRoutes);
 
 app.get('/ping', (req, res) => {
   res.status(200).json({ message: 'Pong! Servidor acordado.' });
