@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Building, Mail, Phone, MapPin, 
@@ -7,168 +7,71 @@ import {
   CornerDownLeft, Loader2 
 } from 'lucide-react';
 import type { IQuote, IQuoteNote } from '../types';
-import { QuoteService } from '../../../services/quote.service'; 
+import { useQuoteDetails } from './useQuoteDetails';
+import { useQuoteActions } from './useQuoteActions';
+import { formatarMoeda, formatarData } from '../../../utils/utils';
+
 import QuoteModal from '../QuoteModal'; 
 import EnviarPropostaModal from './EnviarPropostaModal'; 
 import ConfirmacaoAprovacaoModal from '../../Orders/ConfirmacaoAprovacaoModal';
-import { OrderService } from '../../../services/order.service';
 
 export default function QuoteDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   
-  const [quote, setQuote] = useState<IQuote | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [copiedCnpj, setCopiedCnpj] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-
   const [isSendModalOpen, setIsSendModalOpen] = useState(false);
-  
-  // Estados dos Modais de Pedido
   const [isConfirmOrderModalOpen, setIsConfirmOrderModalOpen] = useState(false);
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
   const [generatedLink, setGeneratedLink] = useState('');
-
-  const [newNote, setNewNote] = useState('');
-  const [isSubmittingNote, setIsSubmittingNote] = useState(false);
-
-  const [forceStatusModal, setForceStatusModal] = useState<{isOpen: boolean, targetStatus: string}>({ isOpen: false, targetStatus: '' });
+  
+  const [forceStatusModal, setForceStatusModal] = useState({ isOpen: false, targetStatus: '' });
   const [forcePassword, setForcePassword] = useState('');
-  const [isForcingStatus, setIsForcingStatus] = useState(false);
-  const [forceError, setForceError] = useState('');
+  const [newNote, setNewNote] = useState('');
 
-  let currentUser = { id: '', nome: 'Usuário Desconhecido', login: '' };
-  try {
-    const userStr = localStorage.getItem('@CRM:user');
-    if (userStr) currentUser = JSON.parse(userStr);
-  } catch (e) {
-    console.error('Erro ao ler utilizador', e);
-  }
+  // 2. INTEGRAÇÃO COM REGRAS DE NEGÓCIO (Hooks)
+  const { quote, setQuote, isLoading, refetch } = useQuoteDetails(id);
+  const { 
+    isSubmittingNote, isForcingStatus, forceError, copiedCnpj, setForceError,
+    handleCopyCnpj, handleSubmitNote, handleForceStatus, handleConfirmOrder 
+  } = useQuoteActions(quote, refetch);
 
-  const fetchQuoteDetails = async () => {
-    setIsLoading(true);
-    try {
-      const data = await QuoteService.getById(Number(id));
-      setQuote(data);
-    } catch (error) {
-      console.error("Erro ao buscar detalhes do orçamento:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (id) {
-      fetchQuoteDetails();
-    }
-  }, [id]);
-
-  const handleSubmitNote = async () => {
-    if (!newNote.trim() || !quote?.id) return;
-    
-    setIsSubmittingNote(true);
-    try {
-      const novaNota = await QuoteService.addNote(
-        Number(quote.id), 
-        newNote.trim(), 
-        currentUser.nome 
-      );
-
-      setQuote(prev => prev ? {
-        ...prev,
-        notas: [novaNota, ...(prev.notas || [])]
-      } : null);
-      
-      setNewNote('');
-    } catch (error) {
-      console.error('Erro ao adicionar nota:', error);
-    } finally {
-      setIsSubmittingNote(false);
-    }
+  // 3. ORQUESTRAÇÃO DE EVENTOS
+  const executeSaveNote = async () => {
+    const success = await handleSubmitNote(newNote, setQuote);
+    if (success) setNewNote('');
   };
 
   const handleNewNoteKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSubmitNote();
+      executeSaveNote();
     }
   };
 
-  const handleForceStatus = async () => {
-    if (!forcePassword.trim() || !quote?.id) return;
-    
-    setIsForcingStatus(true);
-    setForceError('');
-    
-    try {
-      if (!currentUser.nome) throw new Error('Sessão expirada');
-      
-      const loginParaValidar = currentUser.login || currentUser.nome.toLowerCase();
-      
-      await QuoteService.forceStatusUpdate(Number(quote.id), forceStatusModal.targetStatus, loginParaValidar, forcePassword);
-      
-      await fetchQuoteDetails(); 
-      
+  const executeForceStatus = async () => {
+    const success = await handleForceStatus(forceStatusModal.targetStatus, forcePassword);
+    if (success) {
       setForceStatusModal({ isOpen: false, targetStatus: '' });
       setForcePassword('');
-    } catch (error: any) {
-      setForceError(error.response?.data?.error || 'Erro ao validar senha');
-    } finally {
-      setIsForcingStatus(false);
     }
   };
 
-
-  const handleConfirmOrder = async () => {
-    if (!quote?.id) {
-      alert("Erro: O ID do orçamento não foi encontrado.");
-      return;
-    }
-
+  const executeConfirmOrder = async () => {
     try {
-      const response = await OrderService.gerarPedido(quote.id);
-      
-      console.log('Pedido gerado com sucesso no backend:', response);
-      
-      if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(response.linkAssinatura);
+      const response = await handleConfirmOrder();
+      if (response.success) {
+        setGeneratedLink(response.link);
+        setIsConfirmOrderModalOpen(false);
+        setIsLinkModalOpen(true);
       }
-      
-      setGeneratedLink(response.linkAssinatura);
-      setIsConfirmOrderModalOpen(false);
-      setIsLinkModalOpen(true);
-      
-      await fetchQuoteDetails();
-
     } catch (error: any) {
-      console.error('Erro ao gerar pedido:', error);
       const mensagemErro = error.response?.data?.error || error.message || 'Erro inesperado ao conectar com o servidor.';
       alert(`❌ Erro ao gerar pedido: ${mensagemErro}`);
-      
-      throw error; 
     }
   };
 
-  const formatarMoeda = (valor: number) => {
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor || 0);
-  };
-
-  const formatarData = (dataStr: string) => {
-    if (!dataStr) return '--/--/----';
-    return new Date(dataStr).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-  };
-
-  const handleCopyCnpj = async (cnpj: string) => {
-    if (!cnpj) return;
-    try {
-      await navigator.clipboard.writeText(cnpj.replace(/\D/g, ''));
-      setCopiedCnpj(true);
-      setTimeout(() => setCopiedCnpj(false), 2000);
-    } catch (err) {
-      console.error('Falha ao copiar CNPJ', err);
-    }
-  };
-
+  // 4. GUARDS E FEEDBACK DE CARREGAMENTO
   if (isLoading) {
     return (
       <div className="h-full flex items-center justify-center bg-[#f8fafc]">
@@ -187,20 +90,32 @@ export default function QuoteDetails() {
       </div>
     );
   }
-
+// 5. VARIÁVEIS COMPUTADAS PARA O TEMPLATE
   const modulos = quote.modulos || ['Financeiro', 'NFe', 'Estoque'];
   const formattedId = String(quote.id || '0000').padStart(4, '0');
   const steps = ['RASCUNHO', 'ENVIADO', 'APROVADO', 'REJEITADO'];
   const currentStatus = (quote.status?.toUpperCase() || 'RASCUNHO');
   const currentStepIdx = steps.indexOf(currentStatus);
+  const usuarioAtual = JSON.parse(localStorage.getItem('@CRM:user') || '{}');
 
-return (
+  // Adicionado: Concatenação condicional e limpa do endereço
+  const partesEndereco = [];
+  if (quote.logradouro) partesEndereco.push(quote.numero ? `${quote.logradouro}, ${quote.numero}` : quote.logradouro);
+  if (quote.complemento) partesEndereco.push(quote.complemento);
+  if (quote.bairro) partesEndereco.push(quote.bairro);
+  if (quote.cidade) partesEndereco.push(quote.uf ? `${quote.cidade} - ${quote.uf}` : quote.cidade);
+  else if (quote.uf) partesEndereco.push(quote.uf);
+  
+  const enderecoFormatado = partesEndereco.join(', ');
+
+  // 6. RENDERIZAÇÃO DA VIEW
+  return (
     <>
       <div className="h-full flex flex-col bg-theme-base font-sans overflow-hidden">
-
+        
+        {/* CABEÇALHO */}
         <header className="bg-theme-panel border-b border-theme-border px-4 sm:px-6 py-4 shrink-0 z-20 shadow-sm">
           <div className="max-w-7xl mx-auto flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 lg:gap-6">
-            
             <div className="flex items-start gap-3 sm:gap-4 md:ml-5 w-full lg:w-auto overflow-hidden">
               <button 
                 onClick={() => navigate('/orcamentos')}
@@ -210,15 +125,10 @@ return (
                 <ArrowLeft size={20} />
               </button>
               
-              <div className="min-w-0 flex-1"> {/* min-w-0 evita que o flex item vaze a tela no mobile */}
+              <div className="min-w-0 flex-1">
                 <div className="text-theme-muted text-[11px] mb-1 font-medium uppercase tracking-wider truncate">
-                  <span 
-                    onClick={() => navigate('/orcamentos')}
-                    className="relative z-30 cursor-pointer hover:text-theme-accent transition-colors"
-                    title="Voltar para Orçamentos"
-                  >
-                    Orçamentos
-                  </span> / <span className="text-theme-muted truncate">{quote.nomeCliente}</span> / #{formattedId}
+                  <span onClick={() => navigate('/orcamentos')} className="relative z-30 cursor-pointer hover:text-theme-accent transition-colors">Orçamentos</span> 
+                  / <span className="text-theme-muted truncate">{quote.nomeCliente}</span> / #{formattedId}
                 </div>
                 
                 <div className="flex flex-col xl:flex-row xl:items-center gap-3 xl:gap-8">
@@ -226,7 +136,6 @@ return (
                     Orçamento #{formattedId}
                   </h1>
                   
-                  {/* Container dos Steps com flex-wrap para mobile */}
                   <div className="flex items-center gap-1.5 flex-wrap sm:flex-nowrap sm:overflow-x-auto pb-1 sm:pb-0 hide-scrollbar">
                     {steps.map((step, idx) => {
                       const isCompleted = idx < currentStepIdx;
@@ -260,36 +169,27 @@ return (
             </div>
 
             <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3 w-full lg:w-auto shrink-0 mt-2 lg:mt-0">
-              <button 
-                onClick={() => setIsEditModalOpen(true)}
-                className="w-full sm:w-auto flex-1 sm:flex-none flex items-center justify-center gap-2 bg-theme-panel border border-theme-border hover:border-theme-text text-theme-text px-4 py-2 sm:py-2.5 rounded-shape-lg text-sm font-bold transition-all"
-              >
-                <Pencil size={16} />
-                Editar
+              <button onClick={() => setIsEditModalOpen(true)} className="w-full sm:w-auto flex-1 sm:flex-none flex items-center justify-center gap-2 bg-theme-panel border border-theme-border hover:border-theme-text text-theme-text px-4 py-2 sm:py-2.5 rounded-shape-lg text-sm font-bold transition-all">
+                <Pencil size={16} /> Editar
               </button>
-              
-              <button 
-                onClick={() => setIsSendModalOpen(true)} 
-                className="w-full sm:w-auto flex-1 sm:flex-none flex items-center justify-center gap-2 bg-theme-accent hover:opacity-90 text-white px-5 py-2 sm:py-2.5 rounded-shape-lg text-sm font-bold transition-all shadow-sm hover:shadow-md active:scale-95"
-              >
-                <Send size={16} />
-                Enviar Proposta
+              <button onClick={() => setIsSendModalOpen(true)} className="w-full sm:w-auto flex-1 sm:flex-none flex items-center justify-center gap-2 bg-theme-accent hover:opacity-90 text-white px-5 py-2 sm:py-2.5 rounded-shape-lg text-sm font-bold transition-all shadow-sm active:scale-95">
+                <Send size={16} /> Enviar Proposta
               </button>
             </div>
           </div>
         </header>
 
+        {/* CORPO DA TELA */}
         <div className="p-4 sm:p-6 flex-1 overflow-y-auto">
           <div className="max-w-7xl mx-auto grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6">
             
-            {/* COLUNA PRINCIPAL (2/3) */}
             <div className="xl:col-span-2 flex flex-col gap-4 sm:gap-6">
               
+              {/* CARD: DADOS DO CLIENTE */}
               <div className="bg-theme-panel rounded-shape-lg border border-theme-border shadow-sm overflow-hidden shrink-0">
                 <div className="px-4 sm:px-6 py-3 border-b border-theme-border bg-theme-base/50">
                   <h2 className="text-[11px] font-bold text-theme-muted uppercase tracking-widest flex items-center gap-2">
-                    <Building size={14} />
-                    Dados do Cliente
+                    <Building size={14} /> Dados do Cliente
                   </h2>
                 </div>
                 <div className="p-4 sm:p-6 grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
@@ -303,11 +203,7 @@ return (
                       <div className="flex items-center gap-2 group">
                         <p className="text-sm font-semibold text-theme-text">{quote.cnpj || 'Não informado'}</p>
                         {quote.cnpj && (
-                          <button 
-                            onClick={() => handleCopyCnpj(quote.cnpj!)}
-                            className="p-1 hover:bg-theme-base rounded-shape text-theme-muted hover:text-theme-accent transition-all"
-                            title="Copiar apenas números"
-                          >
+                          <button onClick={() => handleCopyCnpj(quote.cnpj!)} className="p-1 hover:bg-theme-base rounded-shape text-theme-muted hover:text-theme-accent transition-all" title="Copiar apenas números">
                             {copiedCnpj ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
                           </button>
                         )}
@@ -316,58 +212,45 @@ return (
                   </div>
                   <div className="space-y-4">
                     <div>
-                        <label className="text-[10px] font-bold text-theme-muted uppercase tracking-wider block mb-2">Contato Direto</label>
-                        <div className="flex flex-col gap-3">
+                      <label className="text-[10px] font-bold text-theme-muted uppercase tracking-wider block mb-2">Contato Direto</label>
+                      <div className="flex flex-col gap-3">
                         {quote.email && (
-                            <a 
-                            href={`mailto:${quote.email}`} 
-                            className="inline-flex items-center gap-2 text-sm text-theme-text hover:text-theme-accent transition-colors group w-fit max-w-full"
-                            >
-                            <Mail size={16} className="text-theme-muted group-hover:text-theme-accent transition-colors shrink-0" />
+                          <a href={`mailto:${quote.email}`} className="inline-flex items-center gap-2 text-sm text-theme-text hover:text-theme-accent transition-colors group w-fit max-w-full">
+                            <Mail size={16} className="text-theme-muted group-hover:text-theme-accent shrink-0" />
                             <span className="font-semibold truncate">{quote.email}</span>
-                            <ExternalLink size={14} className="text-theme-muted opacity-0 group-hover:opacity-100 group-hover:text-theme-accent transition-all duration-300 -ml-0.5 shrink-0 hidden sm:block" />
-                            </a>
+                            <ExternalLink size={14} className="text-theme-muted opacity-0 group-hover:opacity-100 hidden sm:block" />
+                          </a>
                         )}
-                        
                         {quote.telefonePrincipal && (
-                            <a 
-                            href={`tel:${quote.telefonePrincipal.replace(/\D/g, '')}`} 
-                            className="inline-flex items-center gap-2 text-sm text-theme-text hover:text-theme-accent transition-colors group w-fit"
-                            >
-                            <Phone size={16} className="text-theme-muted group-hover:text-theme-accent transition-colors shrink-0" />
+                          <a href={`tel:${quote.telefonePrincipal.replace(/\D/g, '')}`} className="inline-flex items-center gap-2 text-sm text-theme-text hover:text-theme-accent group w-fit">
+                            <Phone size={16} className="text-theme-muted group-hover:text-theme-accent shrink-0" />
                             <span className="font-semibold">{quote.telefonePrincipal}</span>
-                            <ExternalLink size={14} className="text-theme-muted opacity-0 group-hover:opacity-100 group-hover:text-theme-accent transition-all duration-300 -ml-0.5 shrink-0 hidden sm:block" />
-                            </a>
+                            <ExternalLink size={14} className="text-theme-muted opacity-0 group-hover:opacity-100 hidden sm:block" />
+                          </a>
                         )}
-                        </div>
+                      </div>
                     </div>
-                    
                     <div>
-                        <label className="text-[10px] font-bold text-theme-muted uppercase tracking-wider block mb-2">Localização</label>
-                        {quote.endereco ? (
-                        <a 
-                            href={`http://googleusercontent.com/maps.google.com/?q=${encodeURIComponent(quote.endereco)}`} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="inline-flex items-start sm:items-center gap-2 text-sm text-theme-text hover:text-theme-accent transition-colors group w-fit"
-                        >
-                            <MapPin size={16} className="text-theme-muted group-hover:text-theme-accent shrink-0 transition-colors mt-0.5 sm:mt-0" />
-                            <span className="font-semibold">{quote.endereco}</span>
-                            <ExternalLink size={14} className="text-theme-muted opacity-0 group-hover:opacity-100 group-hover:text-theme-accent transition-all duration-300 -ml-0.5 shrink-0 hidden sm:block" />
+                      <label className="text-[10px] font-bold text-theme-muted uppercase tracking-wider block mb-2">Localização</label>
+                      {enderecoFormatado ? (
+                        <a href={`http://maps.google.com/?q=${encodeURIComponent(enderecoFormatado)}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-start sm:items-center gap-2 text-sm text-theme-text hover:text-theme-accent group w-fit">
+                          <MapPin size={16} className="text-theme-muted group-hover:text-theme-accent shrink-0" />
+                          <span className="font-semibold">{enderecoFormatado}</span>
+                          <ExternalLink size={14} className="text-theme-muted opacity-0 group-hover:opacity-100 hidden sm:block" />
                         </a>
-                        ) : (
+                      ) : (
                         <p className="text-sm text-theme-muted italic px-1">Endereço não informado</p>
-                        )}
+                      )}
                     </div>
                   </div>
                 </div>
               </div>
 
+              {/* CARD: ESCOPO DO PROJETO */}
               <div className="bg-theme-panel rounded-shape-lg border border-theme-border shadow-sm overflow-hidden shrink-0">
                 <div className="px-4 sm:px-6 py-3 border-b border-theme-border bg-theme-base/50">
                   <h2 className="text-[11px] font-bold text-theme-muted uppercase tracking-widest flex items-center gap-2">
-                    <CheckSquare size={14} />
-                    Escopo do Projeto
+                    <CheckSquare size={14} /> Escopo do Projeto
                   </h2>
                 </div>
                 <div className="p-4 sm:p-6 flex flex-wrap gap-2">
@@ -379,16 +262,15 @@ return (
                 </div>
               </div>
 
+              {/* CARD: ANOTAÇÕES */}
               <div className="bg-theme-panel rounded-shape-lg border border-theme-border shadow-sm flex flex-col flex-1 min-h-100">
                 <div className="px-4 sm:px-6 py-3 border-b border-theme-border shrink-0">
                   <h2 className="text-[11px] font-bold text-theme-muted uppercase tracking-widest flex items-center gap-2">
-                    <Pencil size={14} />
-                    Anotações
+                    <Pencil size={14} /> Anotações
                   </h2>
                 </div>
                 
                 <div className="flex-1 flex flex-col overflow-hidden">
-                  {/* Tabela de anotações com scroll horizontal em mobile se necessário */}
                   <div className="overflow-x-auto flex-1 flex flex-col">
                     <div className="min-w-[320px] flex-1 flex flex-col">
                       <div className="grid grid-cols-[60px_90px_1fr] sm:grid-cols-[80px_130px_1fr] gap-2 sm:gap-4 px-4 sm:px-6 py-2 border-b border-theme-border bg-theme-base top-0 z-10 shrink-0">
@@ -403,8 +285,7 @@ return (
                             <div className="text-[10px] sm:text-[11px] text-theme-muted pt-0.5">{formatarData(quote.createdAt)}</div>
                             <div className="text-[10px] sm:text-[11px] font-semibold text-theme-text truncate pt-0.5">Sistema</div>
                             <div className="text-[11px] sm:text-[12px] text-theme-text leading-relaxed wrap-break-word">
-                              <span className="font-bold mr-1">Interesses:</span>
-                              {quote.interesses}
+                              <span className="font-bold mr-1">Interesses:</span>{quote.interesses}
                             </div>
                           </div>
                         )}
@@ -414,8 +295,7 @@ return (
                             <div className="text-[10px] sm:text-[11px] text-theme-muted pt-0.5">{formatarData(quote.createdAt)}</div>
                             <div className="text-[10px] sm:text-[11px] font-semibold text-theme-text truncate pt-0.5">Sistema</div>
                             <div className="text-[11px] sm:text-[12px] text-theme-text leading-relaxed wrap-break-word">
-                              <span className="font-bold mr-1">Obs. Iniciais:</span>
-                              {quote.observacoes}
+                              <span className="font-bold mr-1">Obs. Iniciais:</span>{quote.observacoes}
                             </div>
                           </div>
                         )}
@@ -425,17 +305,13 @@ return (
                             <div className="text-[10px] sm:text-[11px] text-theme-muted pt-0.5">{formatarData(nota.createdAt)}</div>
                             <div className="text-[10px] sm:text-[11px] font-semibold text-theme-text truncate pt-0.5" title={nota.usuario}>{nota.usuario}</div>
                             <div className="text-[11px] sm:text-[12px] text-theme-text relative w-full">
-                              <div className="px-1 -mx-1 rounded-shape whitespace-pre-wrap leading-relaxed border border-transparent wrap-break-word">
-                                {nota.texto}
-                              </div>
+                              <div className="px-1 -mx-1 rounded-shape whitespace-pre-wrap leading-relaxed border border-transparent wrap-break-word">{nota.texto}</div>
                             </div>
                           </div>
                         ))}
 
                         {(!quote.notas?.length && !quote.interesses && !quote.observacoes) && (
-                          <div className="py-8 text-center text-xs text-theme-muted font-medium">
-                            Nenhum registro encontrado.
-                          </div>
+                          <div className="py-8 text-center text-xs text-theme-muted font-medium">Nenhum registro encontrado.</div>
                         )}
                       </div>
                     </div>
@@ -454,9 +330,9 @@ return (
                       disabled={isSubmittingNote}
                     />
                     <button
-                      onClick={handleSubmitNote}
+                      onClick={executeSaveNote}
                       disabled={!newNote.trim() || isSubmittingNote}
-                      className="h-11 px-3 sm:px-4 bg-theme-text text-theme-panel rounded-shape-lg hover:opacity-90 disabled:opacity-50 transition-colors shrink-0 flex items-center justify-center font-bold text-[10px] sm:text-[11px] uppercase tracking-wider"
+                      className="h-11 px-3 sm:px-4 bg-theme-text text-theme-panel rounded-shape-lg hover:opacity-90 disabled:opacity-50 flex items-center justify-center font-bold text-[10px] sm:text-[11px] uppercase tracking-wider"
                     >
                       {isSubmittingNote ? <Loader2 size={16} className="animate-spin" /> : 'Salvar'}
                     </button>
@@ -473,14 +349,13 @@ return (
 
             </div>
 
-            {/* COLUNA LATERAL (1/3) */}
             <div className="space-y-4 sm:space-y-6">
               
+              {/* CARD: FINANCEIRO */}
               <div className="bg-theme-panel rounded-shape-lg border border-theme-border shadow-sm overflow-hidden xl:top-6">
                 <div className="px-4 sm:px-6 py-4 border-b border-theme-border bg-theme-base">
                   <h2 className="text-[11px] font-bold text-theme-text uppercase tracking-widest flex items-center gap-2">
-                    <DollarSign size={14} className="text-theme-accent" />
-                    Resumo Financeiro
+                    <DollarSign size={14} className="text-theme-accent" /> Resumo Financeiro
                   </h2>
                 </div>
                 <div className="p-4 sm:p-6 space-y-4">
@@ -507,18 +382,10 @@ return (
 
                   {currentStatus !== 'APROVADO' && currentStatus !== 'REJEITADO' && (
                     <>
-                      <button 
-                        onClick={() => setIsConfirmOrderModalOpen(true)}
-                        className="w-full mt-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black py-2.5 sm:py-2 rounded-shape-lg transition-all shadow-md hover:shadow-xl hover:-translate-y-0.5 flex items-center justify-center gap-2 active:scale-95"
-                      >
-                        <CheckCircle2 size={20} />
-                        GERAR PEDIDO
+                      <button onClick={() => setIsConfirmOrderModalOpen(true)} className="w-full mt-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black py-2.5 sm:py-2 rounded-shape-lg transition-all shadow-md active:scale-95 flex items-center justify-center gap-2">
+                        <CheckCircle2 size={20} /> GERAR PEDIDO
                       </button>
-
-                      <button 
-                        onClick={() => setForceStatusModal({ isOpen: true, targetStatus: 'REJEITADO' })}
-                        className="w-full mt-3 py-2 sm:py-1 text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-shape-lg text-[10px] sm:text-[9px] font-black uppercase tracking-widest transition-colors flex items-center justify-center"
-                      >
+                      <button onClick={() => setForceStatusModal({ isOpen: true, targetStatus: 'REJEITADO' })} className="w-full mt-3 py-2 sm:py-1 text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-shape-lg text-[10px] sm:text-[9px] font-black uppercase tracking-widest flex items-center justify-center">
                         Orçamento Rejeitado
                       </button>
                     </>
@@ -538,29 +405,23 @@ return (
                 </div>
               </div>
 
-              {/* LINHA DO TEMPO */}
+              {/* CARD: HISTÓRICO */}
               <div className="bg-theme-panel rounded-shape-lg border border-theme-border shadow-sm overflow-hidden">
                 <div className="px-4 sm:px-6 py-3 border-b border-theme-border bg-theme-base/50">
                   <h2 className="text-[11px] font-bold text-theme-muted uppercase tracking-widest flex items-center gap-2">
-                    <Clock size={14} />
-                    Histórico de Ações
+                    <Clock size={14} /> Histórico de Ações
                   </h2>
                 </div>
                 <div className="p-4 sm:p-6">
                   <div className="relative pl-5 sm:pl-6 border-l-2 border-theme-border space-y-6 sm:space-y-8">
-                    
                     {quote.historico && quote.historico.length > 0 ? (
                       quote.historico.map((item, index) => {
                         const isLatest = index === 0;
-                        
                         return (
                           <div key={item.id} className={`relative ${!isLatest ? 'opacity-60' : ''}`}>
                             <div className={`absolute -left-6.75 sm:-left-7.75 border-4 border-theme-panel w-3.5 h-3.5 rounded-full top-1 ${isLatest ? 'bg-theme-accent shadow-sm' : 'bg-theme-border'}`}></div>
-                            
                             <div className={isLatest ? "bg-theme-panel border border-theme-border p-3 rounded-shape-lg shadow-sm" : "p-1"}>
-                              <p className={`text-xs font-bold wrap-break-word ${isLatest ? 'text-theme-text' : 'text-theme-muted'}`}>
-                                {item.acao}
-                              </p>
+                              <p className={`text-xs font-bold wrap-break-word ${isLatest ? 'text-theme-text' : 'text-theme-muted'}`}>{item.acao}</p>
                               <div className="flex flex-wrap items-center gap-1.5 mt-1 text-theme-muted">
                                 <User size={10} shrink-0 />
                                 <span className="text-[9px] font-bold uppercase tracking-tighter truncate max-w-25">{item.usuario}</span>
@@ -573,7 +434,6 @@ return (
                     ) : (
                       <p className="text-xs text-theme-muted font-medium italic py-2 sm:py-4">Nenhum histórico registrado.</p>
                     )}
-
                   </div>
                 </div>
               </div>
@@ -583,43 +443,34 @@ return (
         </div>
       </div>
 
+      {/* MODAIS */}
       {forceStatusModal.isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-theme-text/40 backdrop-blur-sm transition-all">
-          <div className="bg-theme-panel rounded-shape-lg shadow-xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in-95 duration-200 m-4">
+          <div className="bg-theme-panel rounded-shape-lg shadow-xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in-95 m-4">
             <div className="px-5 sm:px-6 py-4 bg-amber-50 border-b border-amber-100">
-              <h3 className="text-sm font-black text-amber-900 uppercase tracking-widest flex items-center gap-2">
-                Ação Restrita
-              </h3>
-              <p className="text-xs text-amber-700 mt-1">
-                Você está forçando o status para <span className="font-bold">"{forceStatusModal.targetStatus}"</span>.
-              </p>
+              <h3 className="text-sm font-black text-amber-900 uppercase flex items-center gap-2">Ação Restrita</h3>
+              <p className="text-xs text-amber-700 mt-1">Você está forçando o status para <span className="font-bold">"{forceStatusModal.targetStatus}"</span>.</p>
             </div>
-            
             <div className="p-5 sm:p-6 space-y-4">
               <div>
-                <label className="text-[10px] font-bold text-theme-muted uppercase tracking-wider block mb-2">Confirme sua senha</label>
+                <label className="text-[10px] font-bold text-theme-muted uppercase block mb-2">Confirme sua senha</label>
                 <input 
-                  type="password"
-                  autoFocus
-                  value={forcePassword}
+                  type="password" autoFocus value={forcePassword}
                   onChange={(e) => setForcePassword(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleForceStatus()}
-                  className="w-full bg-theme-base border border-theme-border text-sm text-theme-text rounded-shape-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-theme-accent/20 focus:border-theme-accent transition-all"
+                  onKeyDown={(e) => e.key === 'Enter' && executeForceStatus()}
+                  className="w-full bg-theme-base border border-theme-border text-sm text-theme-text rounded-shape-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-theme-accent/20 transition-all"
                   placeholder="••••••••"
                 />
                 {forceError && <p className="text-xs font-semibold text-rose-500 mt-2">{forceError}</p>}
               </div>
-
               <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 pt-2">
                 <button 
                   onClick={() => { setForceStatusModal({ isOpen: false, targetStatus: '' }); setForcePassword(''); setForceError(''); }}
                   disabled={isForcingStatus}
                   className="flex-1 px-4 py-2.5 sm:py-2 text-xs font-bold text-theme-muted hover:bg-theme-base rounded-shape-lg transition-colors"
-                >
-                  CANCELAR
-                </button>
+                >CANCELAR</button>
                 <button 
-                  onClick={handleForceStatus}
+                  onClick={executeForceStatus}
                   disabled={isForcingStatus || !forcePassword}
                   className="flex-1 bg-amber-600 hover:bg-amber-700 text-white px-4 py-2.5 sm:py-2 rounded-shape-lg text-xs font-bold transition-all disabled:opacity-50 flex items-center justify-center"
                 >
@@ -631,44 +482,33 @@ return (
         </div>
       )}
 
-        {/* MODAL: ENVIAR PROPOSTA */}
-        {isSendModalOpen && (
-          <EnviarPropostaModal
-            quote={quote}
-            usuarioAtual={currentUser}
-            onClose={() => setIsSendModalOpen(false)}
-            onSuccess={() => {
-              console.log("Proposta enviada com sucesso!");
-              setIsSendModalOpen(false);
-              fetchQuoteDetails();
-            }}
-          />
-        )}
-
-        {/* MODAL: EDIÇÃO DE ORÇAMENTO */}
-        {isEditModalOpen && (
-          <QuoteModal
-            quote={quote}
-            onClose={() => {
-              setIsEditModalOpen(false);
-              fetchQuoteDetails(); 
-            }}
-          />
-        )}
-
-        {/* MODAL: Confirmação de Aprovação */}
-        <ConfirmacaoAprovacaoModal
-          isOpen={isConfirmOrderModalOpen}
-          onClose={() => setIsConfirmOrderModalOpen(false)}
-          onConfirm={handleConfirmOrder}
-          data={{
-            cliente: quote.nomeCliente,
-            cnpj: quote.cnpj || '',
-            valor: quote.valorNegociado || quote.valorBase || 0,
-            modulos: quote.modulos || []
-          }}
+      {isSendModalOpen && (
+        <EnviarPropostaModal
+          quote={quote}
+          usuarioAtual={usuarioAtual}
+          onClose={() => setIsSendModalOpen(false)}
+          onSuccess={() => { setIsSendModalOpen(false); refetch(); }}
         />
-        
-      </>
+      )}
+
+      {isEditModalOpen && (
+        <QuoteModal
+          quote={quote}
+          onClose={() => { setIsEditModalOpen(false); refetch(); }}
+        />
+      )}
+
+      <ConfirmacaoAprovacaoModal
+        isOpen={isConfirmOrderModalOpen}
+        onClose={() => setIsConfirmOrderModalOpen(false)}
+        onConfirm={executeConfirmOrder}
+        data={{
+          cliente: quote.nomeCliente,
+          cnpj: quote.cnpj || '',
+          valor: quote.valorNegociado || quote.valorBase || 0,
+          modulos: quote.modulos || []
+        }}
+      />
+    </>
   );
 }

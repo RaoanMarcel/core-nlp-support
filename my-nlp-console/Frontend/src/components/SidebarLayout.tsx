@@ -40,18 +40,16 @@ export default function AppLayout({ children, onLogout }: AppLayoutProps) {
     return currentUser.permissions?.includes(requiredPermission);
   };
 
-  // ADICIONAMOS "requiredPermission" NOS ITENS QUE PRECISAM DE TRAVA
   const navItems = [
     { path: '/', label: 'Briefing Gerencial', icon: LayoutDashboard },
     { path: '/fila', label: 'Fila de Tickets', icon: Inbox },
     { path: '/base', label: 'Base Interna', icon: BookOpen },
-    { path: '/companies', label: 'Empresas', icon: Building2, requiredPermission: 'companies:view' }, // <-- NOVO MENU AQUI
-    { path: '/contratos', label: 'Contratos', icon: FileText, requiredPermission: 'prospects:view' }, 
+    { path: '/companies', label: 'Empresas', icon: Building2, requiredPermission: 'companies:view' },
+    { path: '/contratos', label: 'Prospecção', icon: FileText, requiredPermission: 'prospects:view' }, 
     { path: '/orcamentos', label: 'Orçamentos', icon: Calculator, requiredPermission: 'quotes:view' }, 
     { path: '/relatorios', label: 'Geração de Relatórios', icon: SlidersHorizontal},
   ];
 
-  // FILTRA OS MENUS ANTES DE RENDERIZAR
   const visibleNavItems = navItems.filter(item => hasMenuPermission(item.requiredPermission));
 
   return (
@@ -161,7 +159,7 @@ export default function AppLayout({ children, onLogout }: AppLayoutProps) {
               {iniciais}
             </div>
             <div className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">
-              <p className="text-sm font-bold text-theme-text leading-tight capitalize truncate max-w-[120px] transition-colors">
+              <p className="text-sm font-bold text-theme-text leading-tight capitalize truncate max-w-30 transition-colors">
                 {currentUser.nome}
               </p>
               <p className="text-[10px] font-semibold text-theme-muted uppercase mt-0.5 transition-colors">

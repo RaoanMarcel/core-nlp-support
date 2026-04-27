@@ -1,13 +1,5 @@
 import type { IModulo } from '../Quotes/types';
 
-export const MODULOS_DISPONIVEIS: IModulo[] = [
-  { id: 'NFE', nome: 'NF-e', descricao: 'Emissão de Notas Fiscais', valorBase: 89.90 },
-  { id: 'NFCE', nome: 'NFC-e', descricao: 'Venda Rápida de Balcão', valorBase: 45.00 },
-  { id: 'FINANCEIRO', nome: 'Financeiro Pro', descricao: 'Contas, DRE e Fluxo', valorBase: 150.00 },
-  { id: 'ESTOQUE', nome: 'Estoque Avançado', descricao: 'Lotes, Grade e Kardex', valorBase: 110.00 },
-  { id: 'MDFE', nome: 'MDF-e / CTe', descricao: 'Manifesto e Transporte', valorBase: 95.00 },
-];
-
 export const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 };
