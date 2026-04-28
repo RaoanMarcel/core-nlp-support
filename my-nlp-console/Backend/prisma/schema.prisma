@@ -42,6 +42,7 @@ generator client {
     REPROVADO
     POSSIBILIDADE
     RETORNAR
+    CNPJ_BAIXADO
   }
 
   model Prospect {

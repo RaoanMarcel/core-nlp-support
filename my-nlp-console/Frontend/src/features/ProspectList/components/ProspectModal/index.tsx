@@ -287,7 +287,7 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
                       disabled={loading.saving} 
                       className="flex justify-center items-center gap-2 px-4 py-2.5 bg-slate-500/10 text-slate-600 border border-slate-500/20 rounded-xl text-xs font-bold hover:bg-slate-600 hover:text-white hover:shadow-md hover:-translate-y-0.5 transition-all w-full"
                     >
-                      <FileX size={16} strokeWidth={2.5} /> CNPJ Baixado
+                      CNPJ Baixado
                     </button>
                   </div>
                 </div>
@@ -338,7 +338,6 @@ export default function ProspectModal({ prospect, onClose, currentUserId, curren
                 <button onClick={() => finishAtendimento('CNPJ_BAIXADO')} disabled={loading.saving} className="flex items-center gap-1.5 px-3 py-2 text-sm border border-slate-500/20 text-slate-600 font-bold rounded-lg hover:bg-slate-500/10 transition-all">
                   <FileX size={16} strokeWidth={2.5} /> Baixado
                 </button>
-
                 <button onClick={() => finishAtendimento('REPROVADO')} disabled={loading.saving} className="flex items-center gap-1.5 px-3 py-2 text-sm border border-red-500/20 text-red-600 font-bold rounded-lg hover:bg-red-500/10 transition-all">
                   <XCircle size={16} strokeWidth={2.5} /> Não interessado
                 </button>

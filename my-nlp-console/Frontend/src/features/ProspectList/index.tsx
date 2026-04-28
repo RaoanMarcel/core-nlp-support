@@ -73,7 +73,8 @@ export default function ProspectList() {
 
     if (prospect.status === 'EM_ATENDIMENTO') return;
 
-    if (['APROVADO', 'REPROVADO', 'POSSIBILIDADE', 'RETORNAR'].includes(prospect.status)) {
+    // 👇 CORREÇÃO APLICADA AQUI: Adicionado 'CNPJ_BAIXADO' para liberar o clique
+    if (['APROVADO', 'REPROVADO', 'POSSIBILIDADE', 'RETORNAR', 'CNPJ_BAIXADO'].includes(prospect.status)) {
       setSelectedProspect(prospect);
       setIsModalOpen(true);
       return;
